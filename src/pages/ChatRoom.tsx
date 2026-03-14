@@ -548,7 +548,7 @@ export default function ChatRoom() {
   const [chatPurpose, setChatPurpose] = useState<string | null>(null);
   const [isGroupChat, setIsGroupChat] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Array<{ user_id: string; name: string; photo_url: string | null; tennis_photo_url: string | null }>>([]);
   const [otherLastRead, setOtherLastRead] = useState<string | null>(null);
   const [participantLastReads, setParticipantLastReads] = useState<Record<string, string | null>>({});
   const [showProfilePopup, setShowProfilePopup] = useState(false);
@@ -855,24 +855,31 @@ export default function ChatRoom() {
             }
             if (msg.sender_id !== user.id && msg.type !== 'system') {
               if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+              const showToastWithProfile = (prof: Profile | null) => {
+                const name = prof?.name ?? '';
+                setInAppToast({ name, content: msg.content });
+                toastTimeoutRef.current = setTimeout(() => setInAppToast(null), 3200);
+              };
               setSenderProfiles((prev) => {
-                if (msg.sender_id && !prev[msg.sender_id]) {
+                if (msg.sender_id) {
+                  const existing = prev[msg.sender_id];
+                  if (existing) {
+                    showToastWithProfile(existing);
+                    return prev;
+                  }
                   supabase
                     .from('profiles')
                     .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height')
                     .eq('user_id', msg.sender_id)
                     .maybeSingle()
                     .then(({ data }) => {
-                      if (data) setSenderProfiles((p) => ({ ...p, [data.user_id]: data as Profile }));
+                      if (data) {
+                        setSenderProfiles((p) => ({ ...p, [data.user_id]: data as Profile }));
+                        showToastWithProfile(data as Profile);
+                      }
                     });
                 }
                 return prev;
-              });
-              setOtherUser((otherProf) => {
-                const name = otherProf?.name ?? '';
-                setInAppToast({ name, content: msg.content });
-                toastTimeoutRef.current = setTimeout(() => setInAppToast(null), 3200);
-                return otherProf;
               });
             }
             return [...prev, msg];
@@ -969,11 +976,41 @@ export default function ChatRoom() {
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState<PresencePayload>();
-        const anyTyping = Object.entries(state)
+        const typingList = Object.entries(state)
           .filter(([key]) => key !== user.id)
           .flatMap(([, list]) => list)
-          .some((p) => p.typing === true);
-        setIsTyping(anyTyping);
+          .filter((p) => p.typing === true);
+        if (typingList.length === 0) {
+          setTypingUsers([]);
+          return;
+        }
+        const typingIds = typingList.map((p) => p.user_id);
+        setTypingUsers((prev) => {
+          const alreadyTracked = prev.map((u) => u.user_id);
+          const missing = typingIds.filter((id) => !alreadyTracked.includes(id));
+          if (missing.length === 0) {
+            return prev.filter((u) => typingIds.includes(u.user_id));
+          }
+          Promise.all(
+            missing.map((id) =>
+              supabase.from('profiles').select('user_id, name, photo_url, tennis_photo_url').eq('user_id', id).maybeSingle()
+            )
+          ).then((results) => {
+            setTypingUsers((current) => {
+              const filtered = current.filter((u) => typingIds.includes(u.user_id));
+              const newUsers = results
+                .map((r) => r.data)
+                .filter((d): d is NonNullable<typeof d> => !!d)
+                .map((d) => ({ user_id: d.user_id, name: d.name ?? '알 수 없음', photo_url: d.photo_url ?? null, tennis_photo_url: (d as { tennis_photo_url?: string | null }).tennis_photo_url ?? null }));
+              const merged = [...filtered];
+              for (const nu of newUsers) {
+                if (!merged.find((u) => u.user_id === nu.user_id)) merged.push(nu);
+              }
+              return merged;
+            });
+          });
+          return prev.filter((u) => typingIds.includes(u.user_id));
+        });
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -1648,15 +1685,23 @@ export default function ChatRoom() {
             animation: 'slideDown 0.25s ease',
           }}
         >
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 overflow-hidden"
-            style={{ background: avatarBg }}
-          >
-            {(isDating ? otherUser?.photo_url : (otherUser?.tennis_photo_url || otherUser?.photo_url))
-              ? <img src={isDating ? otherUser!.photo_url! : (otherUser!.tennis_photo_url || otherUser!.photo_url)!} alt="" className="w-full h-full object-cover" />
-              : <span>{inAppToast.name?.charAt(0) ?? '?'}</span>
-            }
-          </div>
+          {(() => {
+            const toastSender = Object.values(senderProfiles).find((p) => p.name === inAppToast.name);
+            const toastPhoto = toastSender
+              ? (isDating ? toastSender.photo_url : ((toastSender as Profile & { tennis_photo_url?: string | null }).tennis_photo_url || toastSender.photo_url))
+              : null;
+            return (
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 overflow-hidden"
+                style={{ background: avatarBg }}
+              >
+                {toastPhoto
+                  ? <img src={toastPhoto} alt="" className="w-full h-full object-cover" />
+                  : <span>{inAppToast.name?.charAt(0) ?? '?'}</span>
+                }
+              </div>
+            );
+          })()}
           <div className="min-w-0">
             {inAppToast.name && (
               <p className="text-xs font-semibold leading-none mb-0.5" style={{ color: isDating ? '#E8A0BF' : '#C9A84C' }}>
@@ -2177,18 +2222,33 @@ export default function ChatRoom() {
               );
             })}
 
-            {isTyping && (
-              <div className="flex items-start gap-2 py-[2px] pr-12">
-                <div className="w-9 flex-shrink-0 flex flex-col items-center">
-                  <OpponentAvatar size="sm" />
+            {typingUsers.map((tu) => {
+              const tuPhoto = isDating ? tu.photo_url : (tu.tennis_photo_url || tu.photo_url);
+              return (
+                <div key={tu.user_id} className="flex items-start gap-2 py-[2px] pr-12">
+                  <div className="w-9 flex-shrink-0 flex flex-col items-center">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
+                      style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #B76E79 100%)' : 'linear-gradient(135deg, #004d20 0%, #006400 100%)', boxShadow: `0 0 0 2px ${isDating ? 'rgba(183,110,121,0.25)' : 'rgba(0,100,0,0.18)'}` }}
+                    >
+                      {tuPhoto ? (
+                        <img src={tuPhoto} alt={tu.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-sm">{tu.name?.charAt(0) ?? '?'}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-xs font-semibold mb-1 ml-0.5" style={{ color: isDating ? '#B76E79' : '#006400' }}>{tu.name}</span>
+                    <div className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm" style={otherBubbleStyle}>
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm" style={otherBubbleStyle}>
-                  <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
-                  <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
-                  <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
-                </div>
-              </div>
-            )}
+              );
+            })}
 
             <div ref={messagesEndRef} />
           </div>

@@ -494,6 +494,28 @@ export default function GroupChatRoom() {
         type: 'system',
         is_read: false,
       });
+
+      if (court) {
+        const [courtRes, kickedProfRes] = await Promise.all([
+          supabase.from('courts').select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants').eq('id', court.id).maybeSingle(),
+          supabase.from('profiles').select('gender').eq('user_id', targetId).maybeSingle(),
+        ]);
+        const courtData = courtRes.data as { male_slots?: number; female_slots?: number; confirmed_male_slots?: number; confirmed_female_slots?: number; status?: string; current_participants?: number } | null;
+        const kickedGender = kickedProfRes.data?.gender;
+        if (courtData) {
+          const isMaleKicked = kickedGender === 'male' || kickedGender === '남성';
+          const updates: Record<string, unknown> = {};
+          if (isMaleKicked) {
+            updates.confirmed_male_slots = Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1);
+          } else {
+            updates.confirmed_female_slots = Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1);
+          }
+          updates.current_participants = Math.max(0, (courtData.current_participants ?? 0) - 1);
+          if (courtData.status === 'closed') updates.status = 'open';
+          await supabase.from('courts').update(updates as never).eq('id', court.id);
+        }
+      }
+
       await supabase.channel(`group_kick_${groupChatId}_${targetId}`).send({
         type: 'broadcast',
         event: 'group_kick_user',
