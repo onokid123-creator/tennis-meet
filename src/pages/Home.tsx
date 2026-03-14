@@ -1,0 +1,534 @@
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useCourts } from '../contexts/CourtsContext';
+import { supabase } from '../lib/supabase';
+import { Court } from '../types';
+import { Plus } from 'lucide-react';
+import BottomNav from '../components/BottomNav';
+import TennisCourtCard from '../components/TennisCourtCard';
+import BrandLogo from '../components/BrandLogo';
+import SwipeCourtDeck from '../components/SwipeCourtDeck';
+
+type Tab = 'others' | 'mine';
+type CategoryTab = 'tennis' | 'dating';
+
+function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () => void; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-t-3xl px-6 pt-6 pb-10"
+        style={{ background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F0 100%)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'rgba(183,110,121,0.3)' }} />
+        <p className="text-lg font-bold mb-1" style={{ color: '#2D1820' }}>설레는 만남은 추가 정보가 필요해요!</p>
+        <p className="text-xs mb-6" style={{ color: 'rgba(45,24,32,0.5)' }}>MBTI · 키 · 자기소개 · 사진 3장을 등록하면 설레는 만남을 즐길 수 있어요</p>
+        <button
+          onClick={onRegister}
+          className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
+          style={{ background: 'linear-gradient(135deg, #B76E79 0%, #C9A84C 100%)' }}
+        >
+          프로필 등록하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TennisProfileSetupPopup({ onUseExisting, onCreateNew, onClose }: { onUseExisting: () => void; onCreateNew: () => void; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(0,0,0,0.6)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-t-3xl px-6 pt-6 pb-10"
+        style={{ background: '#fff' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+        <p className="text-lg font-bold text-gray-900 mb-1">오직테니스 프로필 설정</p>
+        <p className="text-sm text-gray-500 mb-6">사진 1장 · 구력 · 테니스 스타일을 등록해주세요</p>
+        <button
+          onClick={onUseExisting}
+          className="w-full py-3.5 rounded-2xl font-semibold text-sm mb-3"
+          style={{ background: '#F3F4F6', color: '#374151' }}
+        >
+          기존 프로필 사용
+        </button>
+        <button
+          onClick={onCreateNew}
+          className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
+          style={{ background: '#C9A84C' }}
+        >
+          직접 등록하기
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
+  const navigate = useNavigate();
+  const { profile, user } = useAuth();
+  const { refreshKey, triggerRefresh } = useCourts();
+  const [courts, setCourts] = useState<Court[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>('others');
+  const [categoryTab, setCategoryTab] = useState<CategoryTab>(() => {
+    return profile?.purpose === 'dating' ? 'dating' : 'tennis';
+  });
+  const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
+  const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
+  const [applyTargetCourt, setApplyTargetCourt] = useState<Court | null>(null);
+  const [applyMessage, setApplyMessage] = useState('');
+  const [applyLoading, setApplyLoading] = useState(false);
+  const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
+
+  const userRef = useRef(user);
+  const profileRef = useRef(profile);
+
+  useEffect(() => {
+    userRef.current = user;
+    profileRef.current = profile;
+  }, [user, profile]);
+
+  useEffect(() => {
+    if (profile?.purpose) {
+      setCategoryTab(profile.purpose as CategoryTab);
+    }
+  }, [profile?.purpose]);
+
+  useEffect(() => {
+    if (!user) return;
+    const localBlockedRaw = localStorage.getItem('blocked_users');
+    const localBlocked: string[] = localBlockedRaw ? JSON.parse(localBlockedRaw) : [];
+    Promise.all([
+      supabase.from('blocks').select('blocked_id').eq('blocker_id', user.id),
+      supabase.from('blocks').select('blocker_id').eq('blocked_id', user.id),
+    ]).then(([byMe, byOthers]) => {
+      const blockedByMe = (byMe.data ?? []).map((r) => r.blocked_id);
+      const blockedByOthers = (byOthers.data ?? []).map((r) => r.blocker_id);
+      const merged = Array.from(new Set([...localBlocked, ...blockedByMe, ...blockedByOthers]));
+      setBlockedUserIds(merged);
+    });
+  }, [user]);
+
+  const fetchCourts = useCallback(async (purpose: CategoryTab, tab: Tab) => {
+    const currentUser = userRef.current;
+
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const timeoutId = setTimeout(() => setLoading(false), 5000);
+
+    try {
+      let query = supabase
+        .from('courts')
+        .select(`
+          *,
+          profile:user_id (*)
+        `)
+        .eq('purpose', purpose)
+        .order('created_at', { ascending: false });
+
+      if (tab === 'mine') {
+        query = query.eq('user_id', currentUser.id);
+      } else {
+        query = query.neq('status', 'closed');
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('코트 가져오기 실패:', error);
+        setCourts([]);
+        return;
+      }
+
+      let result = data || [];
+
+      if (tab === 'others' && purpose === 'tennis') {
+        const now = new Date();
+        result = result.filter((c) => {
+          if (!c.date || !c.start_time) return true;
+          const startDateTime = new Date(`${c.date}T${c.start_time}`);
+          return now < startDateTime;
+        });
+      }
+
+      if (tab === 'others' && blockedUserIds.length > 0) {
+        result = result.filter((c) => !blockedUserIds.includes(c.user_id));
+      }
+
+      setCourts(result);
+
+      result.forEach((court) => {
+        if (court.purpose === 'dating') {
+          const photos: string[] = court.owner_photos?.length
+            ? court.owner_photos
+            : [court.owner_photo].filter(Boolean) as string[];
+          photos.forEach((src) => {
+            if (src) { const img = new window.Image(); img.src = src; }
+          });
+        }
+      });
+    } catch (err) {
+      console.error('코트 가져오기 오류:', err);
+      setCourts([]);
+    } finally {
+      clearTimeout(timeoutId);
+      setLoading(false);
+    }
+  }, [blockedUserIds]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchCourts(categoryTab, activeTab);
+  }, [activeTab, categoryTab, user, fetchCourts]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchCourts(categoryTab, activeTab);
+  }, [refreshKey]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channelName = `courts_home_${user.id}`;
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'courts' }, () => {
+        fetchCourts(categoryTab, activeTab);
+      })
+      .subscribe();
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) fetchCourts(categoryTab, activeTab);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user, categoryTab, activeTab, fetchCourts]);
+
+  const handleCategoryTab = (tab: CategoryTab) => {
+    if (tab === categoryTab) return;
+    const userPurpose = profile?.purpose;
+
+    if (tab === 'dating' && userPurpose === 'tennis') {
+      if (!profile?.bio && !profile?.mbti && !profile?.height) {
+        setShowDatingProfilePopup(true);
+        return;
+      }
+    }
+
+    if (tab === 'tennis' && userPurpose === 'dating') {
+      if (!profile?.tennis_style) {
+        setShowTennisProfilePopup(true);
+        return;
+      }
+    }
+
+    setCategoryTab(tab);
+    setActiveTab('others');
+  };
+
+  const openApplyPopup = (court: Court) => {
+    setApplyTargetCourt(court);
+    setApplyMessage('');
+  };
+
+  const handleApplySubmit = async () => {
+    if (!user || !profile || !applyTargetCourt) return;
+    if (applyLoading) return;
+
+    const { data: existingApp } = await supabase
+      .from('applications')
+      .select('id, status')
+      .eq('court_id', applyTargetCourt.id)
+      .eq('applicant_id', user.id)
+      .maybeSingle();
+
+    if (existingApp) {
+      if (existingApp.status === 'pending') {
+        alert('이미 신청한 코트입니다. 호스트의 수락을 기다려주세요.');
+      } else if (existingApp.status === 'accepted') {
+        alert('이미 수락된 신청입니다. 채팅 탭을 확인해주세요.');
+      } else {
+        alert('이미 신청한 코트입니다.');
+      }
+      setApplyTargetCourt(null);
+      return;
+    }
+
+    setApplyLoading(true);
+    const { error } = await supabase.from('applications').insert({
+      court_id: applyTargetCourt.id,
+      owner_id: applyTargetCourt.user_id,
+      applicant_id: user.id,
+      purpose: applyTargetCourt.purpose,
+      status: 'pending',
+      message: applyMessage.trim() || null,
+    });
+    setApplyLoading(false);
+
+    if (error) {
+      alert('신청에 실패했습니다. 다시 시도해주세요.');
+      return;
+    }
+
+    setApplyTargetCourt(null);
+  };
+
+  const handleDelete = async (courtId: string) => {
+    if (!confirm('이 게시글을 삭제할까요?')) return;
+
+    const { error } = await supabase.from('courts').delete().eq('id', courtId);
+
+    if (error) {
+      alert('삭제에 실패했습니다.');
+      return;
+    }
+
+    triggerRefresh();
+  };
+
+  const handleEdit = (court: Court) => {
+    navigate('/create-court', { state: { editCourt: court } });
+  };
+
+  const isDating = categoryTab === 'dating';
+
+  const headerBg = isDating
+    ? 'linear-gradient(180deg, #F43F5E 0%, #FECDD3 100%)'
+    : '#1B4332';
+
+  const pageBg = isDating
+    ? '#FFF1F2'
+    : '#F0FDF4';
+
+  const activeTabColor = isDating ? '#FB7185' : '#4ADE80';
+  const accentGold = '#C9A84C';
+
+  return (
+    <div className="min-h-screen pb-20" style={{ background: pageBg }}>
+      <header
+        className="sticky top-0 z-10"
+        style={{ background: headerBg, boxShadow: isDating ? '0 4px 24px rgba(251,113,133,0.3)' : '0 4px 24px rgba(26,74,58,0.3)' }}
+      >
+        <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+          <BrandLogo size="sm" light={true} />
+          <button
+            onClick={() => navigate('/create-court', { state: { purpose: categoryTab } })}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-sm transition active:scale-95"
+            style={{ background: accentGold, color: '#fff', boxShadow: '0 2px 8px rgba(201,168,76,0.4)' }}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>코트 등록</span>
+          </button>
+        </div>
+
+        <div className="px-4 pb-3 flex gap-2">
+          <button
+            onClick={() => handleCategoryTab('tennis')}
+            className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
+            style={categoryTab === 'tennis'
+              ? { background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)' }
+              : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
+            }
+          >
+            🎾 오직 테니스
+          </button>
+          <button
+            onClick={() => handleCategoryTab('dating')}
+            className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
+            style={categoryTab === 'dating'
+              ? { background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)' }
+              : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
+            }
+          >
+            🥂 설레는 만남
+          </button>
+        </div>
+
+        <div className="flex" style={{ borderTop: isDating ? '1px solid rgba(251,113,133,0.2)' : '1px solid rgba(201,168,76,0.2)' }}>
+          <button
+            onClick={() => setActiveTab('others')}
+            className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
+            style={{ color: activeTab === 'others' ? '#fff' : 'rgba(255,255,255,0.45)' }}
+          >
+            {categoryTab === 'tennis' ? '파트너 찾기' : '인연 찾기'}
+            {activeTab === 'others' && (
+              <div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full"
+                style={{ width: '40%', background: activeTabColor }}
+              />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('mine')}
+            className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
+            style={{ color: activeTab === 'mine' ? '#fff' : 'rgba(255,255,255,0.45)' }}
+          >
+            내 코트
+            {activeTab === 'mine' && (
+              <div
+                className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full"
+                style={{ width: '40%', background: activeTabColor }}
+              />
+            )}
+          </button>
+        </div>
+      </header>
+
+      <div className={isDating ? 'px-4 py-4' : 'px-4 py-5'}>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div
+              className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+              style={{ borderColor: isDating ? 'rgba(251,113,133,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }}
+            />
+            <p className="text-sm" style={{ color: isDating ? 'rgba(251,113,133,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
+          </div>
+        ) : courts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-5">
+            {isDating ? (
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(251,113,133,0.1)', border: '1.5px solid rgba(251,113,133,0.25)' }}
+              >
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FB7185" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                </svg>
+              </div>
+            ) : (
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(27,67,50,0.08)', border: '1.5px solid rgba(27,67,50,0.2)' }}
+              >
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M2 12a15.3 15.3 0 0 0 4 4c1.9 1.3 4 2 6 2s4.1-.7 6-2a15.3 15.3 0 0 0 4-4"/>
+                  <path d="M2 12a15.3 15.3 0 0 1 4-4 11.6 11.6 0 0 1 6-2 11.6 11.6 0 0 1 6 2 15.3 15.3 0 0 1 4 4"/>
+                </svg>
+              </div>
+            )}
+            <div className="text-center">
+              <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#FB7185' : '#2D6A4F' }}>
+                {isDating ? activeTab === 'others' ? '아직 인연이 없어요' : '아직 등록한 코트가 없어요' : activeTab === 'others' ? '아직 파트너가 없어요' : '아직 등록한 코트가 없어요'}
+              </p>
+              <p className="text-xs" style={{ color: isDating ? 'rgba(251,113,133,0.7)' : 'rgba(45,106,79,0.55)' }}>
+                {isDating ? '첫 번째 설레는 만남을 열어보세요!' : '첫 코트를 등록해보세요!'}
+              </p>
+            </div>
+          </div>
+        ) : isDating ? (
+          <SwipeCourtDeck
+            courts={courts}
+            onApply={(court) => openApplyPopup(court)}
+            isOwnerMode={activeTab === 'mine'}
+            onEdit={(court) => handleEdit(court)}
+            onDelete={(court) => handleDelete(court.id)}
+          />
+        ) : (
+          <div className="space-y-4">
+            {courts.map((court) => (
+              <TennisCourtCard
+                key={court.id}
+                court={court}
+                isOwner={court.user_id === user?.id}
+                onApply={activeTab === 'others' ? () => openApplyPopup(court) : undefined}
+                onEdit={() => handleEdit(court)}
+                onDelete={() => handleDelete(court.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <BottomNav active="home" />
+
+      {showDatingProfilePopup && (
+        <DatingProfileRequiredPopup
+          onRegister={() => { setShowDatingProfilePopup(false); navigate('/dating-profile-setup'); }}
+          onClose={() => setShowDatingProfilePopup(false)}
+        />
+      )}
+
+      {showTennisProfilePopup && (
+        <TennisProfileSetupPopup
+          onUseExisting={async () => {
+            if (user) {
+              await supabase.from('profiles').update({
+                tennis_style: profile?.experience ? '올라운더' : '',
+              }).eq('user_id', user.id);
+            }
+            setShowTennisProfilePopup(false);
+            setCategoryTab('tennis');
+            setActiveTab('others');
+          }}
+          onCreateNew={() => { setShowTennisProfilePopup(false); navigate('/tennis-profile-setup'); }}
+          onClose={() => setShowTennisProfilePopup(false)}
+        />
+      )}
+
+      {applyTargetCourt && (() => {
+        const isDatingApply = applyTargetCourt.purpose === 'dating';
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setApplyTargetCourt(null)}
+          >
+            <div
+              className="w-full max-w-md rounded-t-3xl px-5 pt-5 pb-10 shadow-xl"
+              style={{ background: isDatingApply ? 'linear-gradient(160deg, #FB7185 0%, #FECDD3 100%)' : '#1B4332' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: isDatingApply ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)' }} />
+              <p className="font-bold text-lg text-center mb-4 text-white">
+                {isDatingApply ? '🥂 설레는 첫 인사를 보내보세요' : '🎾 테니스 신청 메시지'}
+              </p>
+              <textarea
+                value={applyMessage}
+                onChange={(e) => setApplyMessage(e.target.value)}
+                placeholder={isDatingApply
+                  ? '예) 안녕하세요 😊 코트에서 만나고 싶어요!'
+                  : '예) 안녕하세요! 같이 테니스 치고 싶어요 💪'}
+                rows={4}
+                className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none transition"
+                style={{
+                  background: 'rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  border: isDatingApply ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.2)',
+                  fontSize: '16px',
+                }}
+              />
+              <button
+                onClick={handleApplySubmit}
+                disabled={applyLoading}
+                className="w-full mt-4 py-4 rounded-2xl font-bold text-sm transition active:scale-95 disabled:opacity-60"
+                style={{ background: isDatingApply ? '#F43F5E' : accentGold, color: '#fff', boxShadow: isDatingApply ? '0 4px 12px rgba(244,63,94,0.35)' : '0 4px 12px rgba(201,168,76,0.35)' }}
+              >
+                {applyLoading ? '신청 중...' : '신청하기'}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
