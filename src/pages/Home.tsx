@@ -265,38 +265,16 @@ export default function Home() {
     if (existingApp) {
       if (existingApp.status === 'pending') {
         alert('이미 신청한 코트입니다. 호스트의 수락을 기다려주세요.');
-        setApplyTargetCourt(null);
-        return;
       } else if (existingApp.status === 'accepted') {
         alert('이미 수락된 신청입니다. 채팅 탭을 확인해주세요.');
-        setApplyTargetCourt(null);
-        return;
-      } else if (existingApp.status === 'rejected') {
-        alert('거절된 신청입니다.');
-        setApplyTargetCourt(null);
-        return;
-      }
-    }
-
-    setApplyLoading(true);
-
-    if (existingApp && existingApp.status === 'cancelled') {
-      const { error } = await supabase
-        .from('applications')
-        .update({
-          status: 'pending',
-          message: applyMessage.trim() || null,
-        })
-        .eq('id', existingApp.id);
-      setApplyLoading(false);
-      if (error) {
-        alert('신청에 실패했습니다. 다시 시도해주세요.');
-        return;
+      } else {
+        alert('이미 신청한 코트입니다.');
       }
       setApplyTargetCourt(null);
       return;
     }
 
+    setApplyLoading(true);
     const { error } = await supabase.from('applications').insert({
       court_id: applyTargetCourt.id,
       owner_id: applyTargetCourt.user_id,

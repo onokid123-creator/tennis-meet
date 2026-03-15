@@ -495,17 +495,7 @@ export default function GroupChatRoom() {
         is_read: false,
       });
 
-      if (court?.id) {
-        await supabase
-          .from('applications')
-          .update({ status: 'cancelled' })
-          .eq('court_id', court.id)
-          .eq('applicant_id', targetId);
-      }
-
       if (court) {
-        const kickedParticipant = participants.find((p) => p.user_id === targetId);
-        const isConfirmed = kickedParticipant?.status === 'confirmed';
         const [courtRes, kickedProfRes] = await Promise.all([
           supabase.from('courts').select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants').eq('id', court.id).maybeSingle(),
           supabase.from('profiles').select('gender').eq('user_id', targetId).maybeSingle(),
@@ -515,14 +505,12 @@ export default function GroupChatRoom() {
         if (courtData) {
           const isMaleKicked = kickedGender === 'male' || kickedGender === '남성';
           const updates: Record<string, unknown> = {};
-          if (isConfirmed) {
-            if (isMaleKicked) {
-              updates.confirmed_male_slots = Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1);
-            } else {
-              updates.confirmed_female_slots = Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1);
-            }
-            updates.current_participants = Math.max(0, (courtData.current_participants ?? 0) - 1);
+          if (isMaleKicked) {
+            updates.confirmed_male_slots = Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1);
+          } else {
+            updates.confirmed_female_slots = Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1);
           }
+          updates.current_participants = Math.max(0, (courtData.current_participants ?? 0) - 1);
           if (courtData.status === 'closed') updates.status = 'open';
           await supabase.from('courts').update(updates as never).eq('id', court.id);
         }
