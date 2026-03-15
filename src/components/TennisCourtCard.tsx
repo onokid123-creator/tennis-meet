@@ -77,19 +77,27 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
         className="px-4 pt-3.5 pb-2.5 flex items-center justify-between"
         style={{ borderBottom: '1px solid rgba(26,74,58,0.07)' }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {court.format && (
             <span
               className="font-bold rounded-full px-3 py-1 tracking-wide"
               style={{
-                background: 'rgba(26,74,58,0.08)',
+                background: 'rgba(26,74,58,0.09)',
                 color: '#1B5E42',
                 fontSize: 11.5,
-                border: '1px solid rgba(26,74,58,0.18)',
+                border: '1.5px solid rgba(26,74,58,0.2)',
                 letterSpacing: '0.03em',
               }}
             >
               {court.format}
+            </span>
+          )}
+          {court.match_type && court.match_type !== court.format && (
+            <span
+              className="font-semibold rounded-full px-2.5 py-1"
+              style={{ background: 'rgba(201,168,76,0.1)', color: '#A07828', fontSize: 11, border: '1px solid rgba(201,168,76,0.25)' }}
+            >
+              {court.match_type}
             </span>
           )}
           {isClosingSoon && !isClosed && (
@@ -102,10 +110,10 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           )}
           {isClosed && (
             <span
-              className="font-semibold rounded-full px-2.5 py-1"
-              style={{ background: 'rgba(239,68,68,0.08)', color: '#DC2626', fontSize: 11, border: '1px solid rgba(239,68,68,0.2)' }}
+              className="font-bold rounded-full px-2.5 py-1 flex items-center gap-1"
+              style={{ background: 'rgba(239,68,68,0.09)', color: '#DC2626', fontSize: 11, border: '1.5px solid rgba(239,68,68,0.22)' }}
             >
-              마감
+              🔒 마감
             </span>
           )}
         </div>
@@ -221,51 +229,62 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
         </div>
 
         {(totalMale > 0 || totalFemale > 0) && (
-          <div className="mb-3 flex items-center gap-2 flex-wrap">
+          <div className="mb-3">
             {isClosed ? (
-              <span
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.2)' }}
+              <div
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl"
+                style={{ background: 'rgba(239,68,68,0.06)', border: '1.5px solid rgba(239,68,68,0.18)' }}
               >
-                모집 마감
-              </span>
+                <span style={{ fontSize: 15 }}>🔒</span>
+                <span className="text-sm font-bold" style={{ color: '#DC2626', letterSpacing: '0.01em' }}>모집 마감</span>
+                {court.court_fee != null && court.court_fee >= 0 && (
+                  <span className="ml-auto text-xs font-semibold" style={{ color: '#A07828' }}>
+                    1인 {court.court_fee.toLocaleString()}원
+                  </span>
+                )}
+              </div>
             ) : (
-              <>
-                {totalMale > 0 && (
-                  <span
-                    className="text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1"
-                    style={{
-                      background: remainMale <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(59,130,246,0.08)',
-                      color: remainMale <= 0 ? '#DC2626' : '#2563EB',
-                      border: `1px solid ${remainMale <= 0 ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)'}`,
-                    }}
-                  >
-                    남 {remainMale <= 0 ? '마감' : `${remainMale}명`}
-                    {confirmedMale > 0 && remainMale > 0 && <span style={{ opacity: 0.55 }}>({confirmedMale}/{totalMale})</span>}
-                  </span>
-                )}
-                {totalFemale > 0 && (
-                  <span
-                    className="text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1"
-                    style={{
-                      background: remainFemale <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(236,72,153,0.08)',
-                      color: remainFemale <= 0 ? '#DC2626' : '#DB2777',
-                      border: `1px solid ${remainFemale <= 0 ? 'rgba(239,68,68,0.2)' : 'rgba(236,72,153,0.2)'}`,
-                    }}
-                  >
-                    여 {remainFemale <= 0 ? '마감' : `${remainFemale}명`}
-                    {confirmedFemale > 0 && remainFemale > 0 && <span style={{ opacity: 0.55 }}>({confirmedFemale}/{totalFemale})</span>}
-                  </span>
-                )}
-              </>
-            )}
-            {court.court_fee != null && court.court_fee >= 0 && (
-              <span
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ background: 'rgba(201,168,76,0.1)', color: '#A07828', border: '1px solid rgba(201,168,76,0.25)' }}
+              <div
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl flex-wrap"
+                style={{ background: 'rgba(26,74,58,0.05)', border: '1.5px solid rgba(26,74,58,0.12)' }}
               >
-                1인 {court.court_fee.toLocaleString()}원
-              </span>
+                <span style={{ fontSize: 14 }}>🎾</span>
+                <span className="text-xs font-semibold" style={{ color: '#2D6A4F', opacity: 0.8 }}>구해요</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {totalMale > 0 && (
+                    <span
+                      className="text-xs font-bold px-2.5 py-1 rounded-full"
+                      style={{
+                        background: remainMale <= 0 ? 'rgba(239,68,68,0.08)' : 'rgba(59,130,246,0.1)',
+                        color: remainMale <= 0 ? '#DC2626' : '#1D4ED8',
+                        border: `1.5px solid ${remainMale <= 0 ? 'rgba(239,68,68,0.22)' : 'rgba(59,130,246,0.25)'}`,
+                      }}
+                    >
+                      {remainMale <= 0 ? '남 마감' : `남 ${remainMale}명`}
+                    </span>
+                  )}
+                  {totalFemale > 0 && (
+                    <span
+                      className="text-xs font-bold px-2.5 py-1 rounded-full"
+                      style={{
+                        background: remainFemale <= 0 ? 'rgba(239,68,68,0.08)' : 'rgba(236,72,153,0.09)',
+                        color: remainFemale <= 0 ? '#DC2626' : '#BE185D',
+                        border: `1.5px solid ${remainFemale <= 0 ? 'rgba(239,68,68,0.22)' : 'rgba(236,72,153,0.22)'}`,
+                      }}
+                    >
+                      {remainFemale <= 0 ? '여 마감' : `여 ${remainFemale}명`}
+                    </span>
+                  )}
+                </div>
+                {court.court_fee != null && court.court_fee >= 0 && (
+                  <span
+                    className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-full"
+                    style={{ background: 'rgba(201,168,76,0.1)', color: '#A07828', border: '1px solid rgba(201,168,76,0.25)' }}
+                  >
+                    1인 {court.court_fee.toLocaleString()}원
+                  </span>
+                )}
+              </div>
             )}
           </div>
         )}

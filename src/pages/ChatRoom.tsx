@@ -1432,21 +1432,17 @@ export default function ChatRoom() {
         const isMale = otherUser.gender === 'male' || otherUser.gender === '남성';
         const newConfirmedMale = isMale ? Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1) : (courtData.confirmed_male_slots ?? 0);
         const newConfirmedFemale = !isMale ? Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1) : (courtData.confirmed_female_slots ?? 0);
-        const newMaleSlots = isMale ? (courtData.male_slots ?? 0) + 1 : (courtData.male_slots ?? 0);
-        const newFemaleSlots = !isMale ? (courtData.female_slots ?? 0) + 1 : (courtData.female_slots ?? 0);
         const newCurrentParticipants = Math.max(0, (courtData.current_participants ?? 0) - 1);
         const wasClosedNowOpen = courtData.status === 'closed';
         await supabase.from('courts').update({
           confirmed_male_slots: newConfirmedMale,
           confirmed_female_slots: newConfirmedFemale,
-          male_slots: newMaleSlots,
-          female_slots: newFemaleSlots,
           current_participants: newCurrentParticipants,
           ...(wasClosedNowOpen ? { status: 'open' } : {}),
         } as never).eq('id', courtId);
       }
     }
-    setHostBarDismissed(true);
+    setMatchConfirmed(false);
   };
 
   const handleParticipantCancel = async (participantId: string, participantName: string) => {
