@@ -1277,6 +1277,11 @@ export default function ChatRoom() {
             .eq('group_chat_id', gcData.id)
             .eq('user_id', targetId);
         }
+        await supabase
+          .from('applications')
+          .update({ status: 'cancelled' })
+          .eq('court_id', courtId)
+          .eq('applicant_id', targetId);
       }
 
       const { error: delError } = await supabase

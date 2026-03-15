@@ -495,6 +495,14 @@ export default function GroupChatRoom() {
         is_read: false,
       });
 
+      if (court?.id) {
+        await supabase
+          .from('applications')
+          .update({ status: 'cancelled' })
+          .eq('court_id', court.id)
+          .eq('applicant_id', targetId);
+      }
+
       if (court) {
         const [courtRes, kickedProfRes] = await Promise.all([
           supabase.from('courts').select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants').eq('id', court.id).maybeSingle(),
