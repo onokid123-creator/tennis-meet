@@ -1260,9 +1260,7 @@ export default function ChatRoom() {
     const targetName = kickTargetUser.name;
     setKickingId(targetId);
     try {
-      const kickMsg = chatPurpose === 'dating'
-        ? `${targetName}님이 자리를 떠났습니다 💌`
-        : `${targetName}님이 코트에서 퇴장되었습니다 🎾`;
+      const kickMsg = `${targetName}님이 채팅방에서 나갔습니다.`;
 
       if (courtId) {
         const { data: gcData } = await supabase
@@ -1296,7 +1294,8 @@ export default function ChatRoom() {
         if (courtData) {
           const isMaleKicked = kickedGender === 'male' || kickedGender === '남성';
           const updates: Record<string, unknown> = {};
-          if (isConfirmed) {
+          const shouldDecrementSlots = isConfirmed || !isGroupChat;
+          if (shouldDecrementSlots) {
             if (isMaleKicked) {
               updates.confirmed_male_slots = Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1);
             } else {
@@ -1875,6 +1874,16 @@ export default function ChatRoom() {
               style={{ color: isDating ? 'rgba(139,48,96,0.5)' : 'rgba(0,77,32,0.45)' }}
             >
               <Users className="w-4 h-4" />
+            </button>
+          )}
+          {!isGroupChat && isHost && otherUser && !isDeletedUser && (
+            <button
+              onClick={() => handleKickUser(otherUser.user_id || otherUser.id, otherUser.name)}
+              disabled={!!kickingId}
+              className="px-2.5 py-1 rounded-xl text-xs font-bold transition active:scale-95 disabled:opacity-50 flex-shrink-0"
+              style={{ color: '#EF4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
+            >
+              {kickingId ? '...' : '강퇴'}
             </button>
           )}
           {!isGroupChat && otherUser && !isDeletedUser && (
@@ -2686,8 +2695,8 @@ export default function ChatRoom() {
           style={{ background: 'rgba(0,0,0,0.7)' }}
         >
           <div className="bg-white rounded-2xl shadow-xl mx-6 p-6 w-full max-w-sm">
-            <h2 className="text-base font-bold text-gray-900 mb-2 text-center">이 참여자를 강퇴하시겠어요?</h2>
-            <p className="text-sm text-gray-500 text-center mb-6">{kickTargetUser.name}님이 채팅방에서 퇴장됩니다.</p>
+            <h2 className="text-base font-bold text-gray-900 mb-2 text-center">강퇴하시겠어요?</h2>
+            <p className="text-sm text-gray-500 text-center mb-6">{kickTargetUser.name}님이 채팅방에서 나가게 됩니다.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => { setShowKickConfirm(false); setKickTargetUser(null); }}
