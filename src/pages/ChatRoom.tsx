@@ -712,6 +712,13 @@ export default function ChatRoom() {
       const isGroup = !!chat?.is_group;
       if (isGroup) setIsGroupChat(true);
 
+      if (!isGroup && chat?.user1_id === user.id) {
+        const opponentConfirmed = participants.find((p) => p.user_id !== user.id);
+        if (opponentConfirmed && (opponentConfirmed as { user_id: string; is_confirmed?: boolean }).is_confirmed) {
+          setMatchConfirmed(true);
+        }
+      }
+
       setParticipantCount(pCount);
 
       if (pCount === 0) {
@@ -1387,6 +1394,13 @@ export default function ChatRoom() {
       setToast('차단된 유저는 매칭 확정이 불가합니다.');
       return;
     }
+    if (otherUser && chatId) {
+      await supabase
+        .from('chat_participants')
+        .update({ is_confirmed: true })
+        .eq('chat_id', chatId)
+        .eq('user_id', otherUser.user_id || otherUser.id);
+    }
     if (courtId && otherUser) {
       const courtRes = await supabase
         .from('courts')
@@ -1420,6 +1434,13 @@ export default function ChatRoom() {
     if (isGroupChat) {
       setShowCancelPicker(true);
       return;
+    }
+    if (otherUser && chatId) {
+      await supabase
+        .from('chat_participants')
+        .update({ is_confirmed: false })
+        .eq('chat_id', chatId)
+        .eq('user_id', otherUser.user_id || otherUser.id);
     }
     if (courtId && otherUser) {
       const courtRes = await supabase
@@ -1911,25 +1932,52 @@ export default function ChatRoom() {
             borderBottom: isDating ? '1px solid rgba(201,84,122,0.18)' : '1px solid rgba(45,106,79,0.18)',
           }}
         >
-          <div className="flex gap-2">
-            <button
-              onClick={handleMatchConfirm}
-              className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white shadow-sm"
-              style={myBubbleStyle}
-            >
-              {isDating ? '💕 매칭 확정하기' : '🎾 라인업 확정'}
-            </button>
-            <button
-              onClick={handleMatchCancel}
-              className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
-              style={{
-                background: isDating ? 'rgba(255,210,225,0.6)' : 'rgba(200,215,205,0.6)',
-                color: isDating ? '#8B3060' : '#3D5C48',
-              }}
-            >
-              매칭 취소하기
-            </button>
-          </div>
+          {!isGroupChat && matchConfirmed ? (
+            <div className="flex items-center gap-2">
+              <div
+                className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl"
+                style={{ background: isDating ? 'rgba(201,84,122,0.08)' : 'rgba(45,106,79,0.08)', border: isDating ? '1px solid rgba(201,84,122,0.2)' : '1px solid rgba(45,106,79,0.2)' }}
+              >
+                <span style={{ color: isDating ? '#C9547A' : '#2D6A4F', fontSize: 15 }}>{isDating ? '💕' : '🎾'}</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>확정됨</span>
+                  {otherUser && (
+                    <span className="text-xs truncate" style={{ color: isDating ? 'rgba(139,48,96,0.7)' : 'rgba(27,67,50,0.7)' }}>{otherUser.name}</span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleMatchCancel}
+                className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
+                style={{
+                  background: isDating ? 'rgba(255,210,225,0.6)' : 'rgba(200,215,205,0.6)',
+                  color: isDating ? '#8B3060' : '#3D5C48',
+                }}
+              >
+                매칭 취소하기
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={handleMatchConfirm}
+                className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white shadow-sm"
+                style={myBubbleStyle}
+              >
+                {isDating ? '💕 매칭 확정하기' : '🎾 라인업 확정'}
+              </button>
+              <button
+                onClick={handleMatchCancel}
+                className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
+                style={{
+                  background: isDating ? 'rgba(255,210,225,0.6)' : 'rgba(200,215,205,0.6)',
+                  color: isDating ? '#8B3060' : '#3D5C48',
+                }}
+              >
+                매칭 취소하기
+              </button>
+            </div>
+          )}
         </div>
       )}
 
