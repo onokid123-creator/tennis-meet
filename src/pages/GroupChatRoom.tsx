@@ -94,23 +94,6 @@ export default function GroupChatRoom() {
     });
   }, [user]);
 
-  const fetchGroupChatData = useCallback(async () => {
-    const { data } = await supabase
-      .from('group_chats')
-      .select(`*, court:court_id (*), host:host_id (*)`)
-      .eq('id', groupChatId)
-      .maybeSingle();
-
-    if (data) {
-      setHostId(data.host_id);
-      setCourt(data.court || null);
-      if (data.host) {
-        setHostProfile({ name: data.host.name, photo_url: data.host.photo_url || null, tennis_photo_url: data.host.tennis_photo_url || null });
-      }
-      if (data.purpose) setPurpose(data.purpose as 'tennis' | 'dating');
-    }
-  }, [groupChatId]);
-
   const fetchMessages = useCallback(async () => {
     setLoading(true);
     try {
@@ -177,6 +160,24 @@ export default function GroupChatRoom() {
       }))
     );
   }, [groupChatId]);
+
+  const fetchGroupChatData = useCallback(async () => {
+    const { data } = await supabase
+      .from('group_chats')
+      .select(`*, court:court_id (*), host:host_id (*), confirmed_user_ids`)
+      .eq('id', groupChatId)
+      .maybeSingle();
+
+    if (data) {
+      setHostId(data.host_id);
+      setCourt(data.court || null);
+      if (data.host) {
+        setHostProfile({ name: data.host.name, photo_url: data.host.photo_url || null, tennis_photo_url: data.host.tennis_photo_url || null });
+      }
+      if (data.purpose) setPurpose(data.purpose as 'tennis' | 'dating');
+      if (data.confirmed_user_ids) fetchConfirmedParticipants();
+    }
+  }, [groupChatId, fetchConfirmedParticipants]);
 
   useEffect(() => {
     fetchGroupChatData();
