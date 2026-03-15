@@ -154,12 +154,12 @@ export default function GroupChatRoom() {
   }, [groupChatId]);
 
   const fetchConfirmedParticipants = useCallback(async () => {
-    const { data } = await supabase
-      .from('group_chat_members')
-      .select('user_id')
-      .eq('group_chat_id', groupChatId)
-      .eq('status', 'confirmed');
-    const confirmedIds = (data ?? []).map((r: { user_id: string }) => r.user_id);
+    const { data: gcData } = await supabase
+      .from('group_chats')
+      .select('confirmed_user_ids')
+      .eq('id', groupChatId)
+      .maybeSingle();
+    const confirmedIds: string[] = (gcData as { confirmed_user_ids?: string[] | null } | null)?.confirmed_user_ids ?? [];
     if (confirmedIds.length === 0) {
       setConfirmedParticipants([]);
       return;
@@ -309,10 +309,10 @@ export default function GroupChatRoom() {
       ? confirmedParticipants.map((p) => p.user_id)
       : [...confirmedParticipants.map((p) => p.user_id), participant.user_id];
 
-    const { error } = await supabase.rpc('confirm_match', {
-      p_group_chat_id: groupChatId!,
-      p_user_ids: nextConfirmedIds,
-    });
+    const { error } = await supabase
+      .from('group_chats')
+      .update({ confirmed_user_ids: nextConfirmedIds })
+      .eq('id', groupChatId!);
 
     if (error) {
       showToastMsg('확정 중 오류가 발생했습니다.');
@@ -435,13 +435,8 @@ export default function GroupChatRoom() {
     setShowCancelConfirm(false);
 
     await supabase
-      .from('group_chat_members')
-      .update({ status: 'pending' })
-      .eq('group_chat_id', groupChatId!);
-
-    await supabase
       .from('group_chats')
-      .update({ matched: false })
+      .update({ confirmed_user_ids: [], matched: false })
       .eq('id', groupChatId!);
 
     if (court) {
