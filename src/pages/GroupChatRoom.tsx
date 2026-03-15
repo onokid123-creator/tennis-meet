@@ -296,37 +296,25 @@ export default function GroupChatRoom() {
     if (court) {
       const isMale = participantGender === 'male' || participantGender === '남성';
       const newConfirmedMale = isMale
-        ? (court.confirmed_male_slots ?? 0) + 1
+        ? ((court.male_slots ?? 0) > (court.confirmed_male_slots ?? 0) ? (court.confirmed_male_slots ?? 0) + 1 : (court.confirmed_male_slots ?? 0))
         : (court.confirmed_male_slots ?? 0);
       const newConfirmedFemale = !isMale
-        ? (court.confirmed_female_slots ?? 0) + 1
+        ? ((court.female_slots ?? 0) > (court.confirmed_female_slots ?? 0) ? (court.confirmed_female_slots ?? 0) + 1 : (court.confirmed_female_slots ?? 0))
         : (court.confirmed_female_slots ?? 0);
-      const newMaleSlots = isMale
-        ? Math.max(0, (court.male_slots ?? 0) - 1)
-        : (court.male_slots ?? 0);
-      const newFemaleSlots = !isMale
-        ? Math.max(0, (court.female_slots ?? 0) - 1)
-        : (court.female_slots ?? 0);
 
       const courtExtra = court as Court & { current_participants?: number; capacity?: number };
       const newCurrentParticipants = (courtExtra.current_participants ?? 0) + 1;
-      const shouldClose = newMaleSlots === 0 && newFemaleSlots === 0;
+      const totalSlots = (court.male_slots ?? 0) + (court.female_slots ?? 0);
+      const newTotalConfirmed = newConfirmedMale + newConfirmedFemale;
+      const capacityVal = courtExtra.capacity ?? 0;
+      const shouldClose = (totalSlots > 0 && newTotalConfirmed >= totalSlots) || (capacityVal > 0 && newCurrentParticipants >= capacityVal);
 
       await supabase.from('courts').update({
         confirmed_male_slots: newConfirmedMale,
         confirmed_female_slots: newConfirmedFemale,
-        male_slots: newMaleSlots,
-        female_slots: newFemaleSlots,
         current_participants: newCurrentParticipants,
         ...(shouldClose ? { status: 'closed' } : {}),
       } as never).eq('id', court.id);
-      setCourt((prev) => prev ? {
-        ...prev,
-        confirmed_male_slots: newConfirmedMale,
-        confirmed_female_slots: newConfirmedFemale,
-        male_slots: newMaleSlots,
-        female_slots: newFemaleSlots,
-      } as Court : prev);
     }
 
     await supabase.from('court_group_chat_messages').insert({
@@ -365,13 +353,29 @@ export default function GroupChatRoom() {
       return;
     }
     if (court) {
-      const { data: freshCourt } = await supabase.from('courts').select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants').eq('id', court.id).maybeSingle();
-      const fc = freshCourt as { male_slots?: number; female_slots?: number; confirmed_male_slots?: number; confirmed_female_slots?: number; status?: string; current_participants?: number } | null;
-      const shouldClose = (fc?.male_slots ?? 0) === 0 && (fc?.female_slots ?? 0) === 0;
-      if (shouldClose) {
-        await supabase.from('courts').update({ status: 'closed' } as never).eq('id', court.id);
-        setCourt((prev) => prev ? { ...prev } as Court : prev);
+      const confirmedParticipants = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId);
+      let totalMaleToAdd = 0;
+      let totalFemaleToAdd = 0;
+      for (const p of confirmedParticipants) {
+        const gender = p.profile?.gender;
+        if (gender === 'male' || gender === '남성') totalMaleToAdd++;
+        else totalFemaleToAdd++;
       }
+      const courtExtra = court as Court & { current_participants?: number; capacity?: number };
+      const newConfirmedMale = Math.min((court.male_slots ?? 0), (court.confirmed_male_slots ?? 0) + totalMaleToAdd);
+      const newConfirmedFemale = Math.min((court.female_slots ?? 0), (court.confirmed_female_slots ?? 0) + totalFemaleToAdd);
+      const newCurrentParticipants = (courtExtra.current_participants ?? 0) + confirmedParticipants.length;
+      const totalSlots = (court.male_slots ?? 0) + (court.female_slots ?? 0);
+      const newTotalConfirmed = newConfirmedMale + newConfirmedFemale;
+      const capacityVal = courtExtra.capacity ?? 0;
+      const shouldClose = (totalSlots > 0 && newTotalConfirmed >= totalSlots) || (capacityVal > 0 && newCurrentParticipants >= capacityVal);
+      await supabase.from('courts').update({
+        confirmed_male_slots: newConfirmedMale,
+        confirmed_female_slots: newConfirmedFemale,
+        current_participants: newCurrentParticipants,
+        ...(shouldClose ? { status: 'closed' } : {}),
+      } as never).eq('id', court.id);
+      setCourt((prev) => prev ? { ...prev, confirmed_male_slots: newConfirmedMale, confirmed_female_slots: newConfirmedFemale } as Court : prev);
     }
     const msg = isDating ? '💌 매칭이 확정됐어요! 설레는 만남이 기대돼요!' : '🎾 매칭이 확정됐어요! 코트에서 만나요!';
     const ok = await supabase.from('court_group_chat_messages').insert({
@@ -386,39 +390,26 @@ export default function GroupChatRoom() {
 
   const handleMatchCancel = async () => {
     if (court) {
-      const { data: freshCourt } = await supabase.from('courts').select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants').eq('id', court.id).maybeSingle();
-      const fc = freshCourt as { male_slots?: number; female_slots?: number; confirmed_male_slots?: number; confirmed_female_slots?: number; status?: string; current_participants?: number } | null;
-      if (fc) {
-        const confirmedParticipants = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId);
-        let totalMaleToRemove = 0;
-        let totalFemaleToRemove = 0;
-        for (const p of confirmedParticipants) {
-          const gender = p.profile?.gender;
-          if (gender === 'male' || gender === '남성') totalMaleToRemove++;
-          else totalFemaleToRemove++;
-        }
-        const newConfirmedMale = Math.max(0, (fc.confirmed_male_slots ?? 0) - totalMaleToRemove);
-        const newConfirmedFemale = Math.max(0, (fc.confirmed_female_slots ?? 0) - totalFemaleToRemove);
-        const newMaleSlots = (fc.male_slots ?? 0) + totalMaleToRemove;
-        const newFemaleSlots = (fc.female_slots ?? 0) + totalFemaleToRemove;
-        const newCurrentParticipants = Math.max(0, (fc.current_participants ?? 0) - confirmedParticipants.length);
-        const wasClosedNowOpen = fc.status === 'closed';
-        await supabase.from('courts').update({
-          confirmed_male_slots: newConfirmedMale,
-          confirmed_female_slots: newConfirmedFemale,
-          male_slots: newMaleSlots,
-          female_slots: newFemaleSlots,
-          current_participants: newCurrentParticipants,
-          ...(wasClosedNowOpen ? { status: 'open' } : {}),
-        } as never).eq('id', court.id);
-        setCourt((prev) => prev ? {
-          ...prev,
-          confirmed_male_slots: newConfirmedMale,
-          confirmed_female_slots: newConfirmedFemale,
-          male_slots: newMaleSlots,
-          female_slots: newFemaleSlots,
-        } as Court : prev);
+      const courtExtra = court as Court & { current_participants?: number; status?: string };
+      const confirmedParticipants = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId);
+      let totalMaleToRemove = 0;
+      let totalFemaleToRemove = 0;
+      for (const p of confirmedParticipants) {
+        const gender = p.profile?.gender;
+        if (gender === 'male' || gender === '남성') totalMaleToRemove++;
+        else totalFemaleToRemove++;
       }
+      const newConfirmedMale = Math.max(0, (court.confirmed_male_slots ?? 0) - totalMaleToRemove);
+      const newConfirmedFemale = Math.max(0, (court.confirmed_female_slots ?? 0) - totalFemaleToRemove);
+      const newCurrentParticipants = Math.max(0, (courtExtra.current_participants ?? 0) - confirmedParticipants.length);
+      const wasClosedNowOpen = courtExtra.status === 'closed';
+      await supabase.from('courts').update({
+        confirmed_male_slots: newConfirmedMale,
+        confirmed_female_slots: newConfirmedFemale,
+        current_participants: newCurrentParticipants,
+        ...(wasClosedNowOpen ? { status: 'open' } : {}),
+      } as never).eq('id', court.id);
+      setCourt((prev) => prev ? { ...prev, confirmed_male_slots: newConfirmedMale, confirmed_female_slots: newConfirmedFemale } as Court : prev);
     }
     await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
@@ -527,25 +518,13 @@ export default function GroupChatRoom() {
           if (isConfirmed) {
             if (isMaleKicked) {
               updates.confirmed_male_slots = Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1);
-              updates.male_slots = (courtData.male_slots ?? 0) + 1;
             } else {
               updates.confirmed_female_slots = Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1);
-              updates.female_slots = (courtData.female_slots ?? 0) + 1;
             }
             updates.current_participants = Math.max(0, (courtData.current_participants ?? 0) - 1);
           }
           if (courtData.status === 'closed') updates.status = 'open';
           await supabase.from('courts').update(updates as never).eq('id', court.id);
-          setCourt((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              confirmed_male_slots: updates.confirmed_male_slots !== undefined ? updates.confirmed_male_slots as number : prev.confirmed_male_slots,
-              confirmed_female_slots: updates.confirmed_female_slots !== undefined ? updates.confirmed_female_slots as number : prev.confirmed_female_slots,
-              male_slots: updates.male_slots !== undefined ? updates.male_slots as number : prev.male_slots,
-              female_slots: updates.female_slots !== undefined ? updates.female_slots as number : prev.female_slots,
-            } as Court;
-          });
         }
       }
 
@@ -702,37 +681,36 @@ export default function GroupChatRoom() {
       </header>
 
       {court && (() => {
-        const remainMale = court.male_slots ?? 0;
-        const remainFemale = court.female_slots ?? 0;
-        const confirmedMale = court.confirmed_male_slots ?? 0;
-        const confirmedFemale = court.confirmed_female_slots ?? 0;
-        const hasMaleSlots = (remainMale + confirmedMale) > 0;
-        const hasFemaleSlots = (remainFemale + confirmedFemale) > 0;
-        if (!hasMaleSlots && !hasFemaleSlots) return null;
-        const isFull = remainMale === 0 && remainFemale === 0 && (confirmedMale > 0 || confirmedFemale > 0);
-        const totalRemain = remainMale + remainFemale;
+        const totalMale = court.male_slots ?? 0;
+        const totalFemale = court.female_slots ?? 0;
+        const filledMale = Math.min(court.confirmed_male_slots ?? 0, totalMale);
+        const filledFemale = Math.min(court.confirmed_female_slots ?? 0, totalFemale);
+        const totalSlots = totalMale + totalFemale;
+        const filledSlots = filledMale + filledFemale;
+        const isFull = totalSlots > 0 && filledSlots >= totalSlots;
+        if (totalSlots === 0) return null;
         return (
           <div
             className="px-4 py-2 flex items-center justify-between flex-shrink-0"
             style={{ background: isDating ? '#2A1525' : '#162f22', borderBottom: `1px solid ${accentColor}25` }}
           >
             <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              {isFull ? '마감 ✅' : `모집 중 ${isDating ? '🥂' : '🎾'} 남은 자리 ${totalRemain}명`}
+              {isFull ? '마감 ✅' : `현재 ${filledSlots}/${totalSlots}명 모집중 ${isDating ? '🥂' : '🎾'}`}
             </span>
             <div className="flex items-center gap-3">
-              {hasMaleSlots && (
+              {totalMale > 0 && (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>남</span>
-                  <span className="text-xs font-bold" style={{ color: remainMale === 0 ? '#4ADE80' : 'rgba(255,255,255,0.85)' }}>
-                    {remainMale === 0 ? '마감' : `${remainMale}명`}
+                  <span className="text-xs font-bold" style={{ color: filledMale >= totalMale ? '#4ADE80' : 'rgba(255,255,255,0.85)' }}>
+                    {filledMale}/{totalMale}{filledMale >= totalMale ? ' 마감' : ''}
                   </span>
                 </div>
               )}
-              {hasFemaleSlots && (
+              {totalFemale > 0 && (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>여</span>
-                  <span className="text-xs font-bold" style={{ color: remainFemale === 0 ? '#4ADE80' : 'rgba(255,255,255,0.85)' }}>
-                    {remainFemale === 0 ? '마감' : `${remainFemale}명`}
+                  <span className="text-xs font-bold" style={{ color: filledFemale >= totalFemale ? '#4ADE80' : 'rgba(255,255,255,0.85)' }}>
+                    {filledFemale}/{totalFemale}{filledFemale >= totalFemale ? ' 마감' : ''}
                   </span>
                 </div>
               )}

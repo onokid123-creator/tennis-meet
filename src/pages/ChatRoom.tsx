@@ -712,13 +712,6 @@ export default function ChatRoom() {
       const isGroup = !!chat?.is_group;
       if (isGroup) setIsGroupChat(true);
 
-      if (!isGroup && chat?.user1_id === user.id) {
-        const opponentConfirmed = participants.find((p) => p.user_id !== user.id);
-        if (opponentConfirmed && (opponentConfirmed as { user_id: string; is_confirmed?: boolean }).is_confirmed) {
-          setMatchConfirmed(true);
-        }
-      }
-
       setParticipantCount(pCount);
 
       if (pCount === 0) {
@@ -1306,10 +1299,8 @@ export default function ChatRoom() {
           if (isConfirmed) {
             if (isMaleKicked) {
               updates.confirmed_male_slots = Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1);
-              updates.male_slots = (courtData.male_slots ?? 0) + 1;
             } else {
               updates.confirmed_female_slots = Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1);
-              updates.female_slots = (courtData.female_slots ?? 0) + 1;
             }
             updates.current_participants = Math.max(0, (courtData.current_participants ?? 0) - 1);
           }
@@ -1394,26 +1385,24 @@ export default function ChatRoom() {
       setToast('차단된 유저는 매칭 확정이 불가합니다.');
       return;
     }
-    if (otherUser && chatId) {
-      await supabase
-        .from('chat_participants')
-        .update({ is_confirmed: true })
-        .eq('chat_id', chatId)
-        .eq('user_id', otherUser.user_id || otherUser.id);
-    }
     if (courtId && otherUser) {
-      const courtRes = await supabase
-        .from('courts')
-        .select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants, capacity')
-        .eq('id', courtId)
-        .maybeSingle();
+      const [courtRes] = await Promise.all([
+        supabase
+          .from('courts')
+          .select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants, capacity')
+          .eq('id', courtId)
+          .maybeSingle(),
+      ]);
       const courtData = courtRes.data as { male_slots?: number; female_slots?: number; confirmed_male_slots?: number; confirmed_female_slots?: number; status?: string; current_participants?: number; capacity?: number } | null;
       if (courtData) {
         const isMale = otherUser.gender === 'male' || otherUser.gender === '남성';
         const newConfirmedMale = isMale ? (courtData.confirmed_male_slots ?? 0) + 1 : (courtData.confirmed_male_slots ?? 0);
         const newConfirmedFemale = !isMale ? (courtData.confirmed_female_slots ?? 0) + 1 : (courtData.confirmed_female_slots ?? 0);
+        const totalSlots = (courtData.male_slots ?? 0) + (courtData.female_slots ?? 0);
+        const newTotalConfirmed = newConfirmedMale + newConfirmedFemale;
         const newCurrentParticipants = (courtData.current_participants ?? 0) + 1;
-        const shouldClose = (courtData.male_slots ?? 0) === 0 && (courtData.female_slots ?? 0) === 0;
+        const capacityVal = courtData.capacity ?? 0;
+        const shouldClose = (totalSlots > 0 && newTotalConfirmed >= totalSlots) || (capacityVal > 0 && newCurrentParticipants >= capacityVal);
         await supabase.from('courts').update({
           confirmed_male_slots: newConfirmedMale,
           confirmed_female_slots: newConfirmedFemale,
@@ -1434,13 +1423,6 @@ export default function ChatRoom() {
     if (isGroupChat) {
       setShowCancelPicker(true);
       return;
-    }
-    if (otherUser && chatId) {
-      await supabase
-        .from('chat_participants')
-        .update({ is_confirmed: false })
-        .eq('chat_id', chatId)
-        .eq('user_id', otherUser.user_id || otherUser.id);
     }
     if (courtId && otherUser) {
       const courtRes = await supabase
@@ -1463,7 +1445,7 @@ export default function ChatRoom() {
         } as never).eq('id', courtId);
       }
     }
-    setMatchConfirmed(false);
+    setHostBarDismissed(true);
   };
 
   const handleParticipantCancel = async (participantId: string, participantName: string) => {
@@ -1495,8 +1477,7 @@ export default function ChatRoom() {
           const newConfirmedFemale = !isMale
             ? Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1)
             : (courtData.confirmed_female_slots ?? 0);
-          const newMaleSlots = isMale ? (courtData.male_slots ?? 0) + 1 : (courtData.male_slots ?? 0);
-          const newFemaleSlots = !isMale ? (courtData.female_slots ?? 0) + 1 : (courtData.female_slots ?? 0);
+
           const newCurrentParticipants = Math.max(0, (courtData.current_participants ?? 0) - 1);
           const wasClosedNowOpen = courtData.status === 'closed';
 
@@ -1505,8 +1486,6 @@ export default function ChatRoom() {
             .update({
               confirmed_male_slots: newConfirmedMale,
               confirmed_female_slots: newConfirmedFemale,
-              male_slots: newMaleSlots,
-              female_slots: newFemaleSlots,
               current_participants: newCurrentParticipants,
               ...(wasClosedNowOpen ? { status: 'open' } : {}),
             } as never)
@@ -1578,22 +1557,18 @@ export default function ChatRoom() {
           const newConfirmedFemale = !isMale
             ? (courtData.confirmed_female_slots ?? 0) + 1
             : (courtData.confirmed_female_slots ?? 0);
-          const newMaleSlots = isMale
-            ? Math.max(0, (courtData.male_slots ?? 0) - 1)
-            : (courtData.male_slots ?? 0);
-          const newFemaleSlots = !isMale
-            ? Math.max(0, (courtData.female_slots ?? 0) - 1)
-            : (courtData.female_slots ?? 0);
+
+          const totalSlots = (courtData.male_slots ?? 0) + (courtData.female_slots ?? 0);
+          const newTotalConfirmed = newConfirmedMale + newConfirmedFemale;
           const newCurrentParticipants = (courtData.current_participants ?? 0) + 1;
-          const shouldClose = newMaleSlots === 0 && newFemaleSlots === 0;
+          const capacityVal = courtData.capacity ?? 0;
+          const shouldClose = (totalSlots > 0 && newTotalConfirmed >= totalSlots) || (capacityVal > 0 && newCurrentParticipants >= capacityVal);
 
           await supabase
             .from('courts')
             .update({
               confirmed_male_slots: newConfirmedMale,
               confirmed_female_slots: newConfirmedFemale,
-              male_slots: newMaleSlots,
-              female_slots: newFemaleSlots,
               current_participants: newCurrentParticipants,
               ...(shouldClose ? { status: 'closed' } : {}),
             } as never)
@@ -1932,52 +1907,25 @@ export default function ChatRoom() {
             borderBottom: isDating ? '1px solid rgba(201,84,122,0.18)' : '1px solid rgba(45,106,79,0.18)',
           }}
         >
-          {!isGroupChat && matchConfirmed ? (
-            <div className="flex items-center gap-2">
-              <div
-                className="flex-1 flex items-center gap-2 px-3 py-2 rounded-2xl"
-                style={{ background: isDating ? 'rgba(201,84,122,0.08)' : 'rgba(45,106,79,0.08)', border: isDating ? '1px solid rgba(201,84,122,0.2)' : '1px solid rgba(45,106,79,0.2)' }}
-              >
-                <span style={{ color: isDating ? '#C9547A' : '#2D6A4F', fontSize: 15 }}>{isDating ? '💕' : '🎾'}</span>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-bold" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>확정됨</span>
-                  {otherUser && (
-                    <span className="text-xs truncate" style={{ color: isDating ? 'rgba(139,48,96,0.7)' : 'rgba(27,67,50,0.7)' }}>{otherUser.name}</span>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={handleMatchCancel}
-                className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
-                style={{
-                  background: isDating ? 'rgba(255,210,225,0.6)' : 'rgba(200,215,205,0.6)',
-                  color: isDating ? '#8B3060' : '#3D5C48',
-                }}
-              >
-                매칭 취소하기
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={handleMatchConfirm}
-                className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white shadow-sm"
-                style={myBubbleStyle}
-              >
-                {isDating ? '💕 매칭 확정하기' : '🎾 라인업 확정'}
-              </button>
-              <button
-                onClick={handleMatchCancel}
-                className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
-                style={{
-                  background: isDating ? 'rgba(255,210,225,0.6)' : 'rgba(200,215,205,0.6)',
-                  color: isDating ? '#8B3060' : '#3D5C48',
-                }}
-              >
-                매칭 취소하기
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleMatchConfirm}
+              className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white shadow-sm"
+              style={myBubbleStyle}
+            >
+              {isDating ? '💕 매칭 확정하기' : '🎾 라인업 확정'}
+            </button>
+            <button
+              onClick={handleMatchCancel}
+              className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
+              style={{
+                background: isDating ? 'rgba(255,210,225,0.6)' : 'rgba(200,215,205,0.6)',
+                color: isDating ? '#8B3060' : '#3D5C48',
+              }}
+            >
+              매칭 취소하기
+            </button>
+          </div>
         </div>
       )}
 
