@@ -382,16 +382,14 @@ export default function Applications() {
 
   const handleAcceptGroupChat = async (
     app: Application,
-    forceNew: boolean
+    _forceNew: boolean
   ): Promise<{ chatId: string; isNew: boolean; error?: never } | { chatId?: never; isNew?: never; error: string }> => {
     const courtId = app.court_id;
     const applicantId = app.applicant_id;
     const hostId = user!.id;
     const purpose = app.purpose ?? 'tennis';
 
-    const rpcName = forceNew ? 'accept_group_chat_force_new' : 'accept_group_chat';
-
-    const { data: rpcData, error: rpcErr } = await supabase.rpc(rpcName, {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('accept_group_chat', {
       p_court_id: courtId,
       p_host_id: hostId,
       p_applicant_id: applicantId,
