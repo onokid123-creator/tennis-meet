@@ -66,7 +66,7 @@ export default function GroupChatRoom() {
     const now = new Date().toISOString();
     setParticipantLastReads((prev) => ({ ...prev, [user.id]: now }));
     await supabase
-      .from('court_group_chat_messages')
+      .from('messages')
       .update({ is_read: true })
       .eq('group_chat_id', groupChatId)
       .eq('is_read', false)
@@ -96,7 +96,7 @@ export default function GroupChatRoom() {
 
   const fetchGroupChatData = useCallback(async () => {
     const { data } = await supabase
-      .from('court_group_chats')
+      .from('group_chats')
       .select(`*, court:court_id (*), host:host_id (*)`)
       .eq('id', groupChatId)
       .maybeSingle();
@@ -124,7 +124,7 @@ export default function GroupChatRoom() {
       const joinedAt = (myPartData as { created_at?: string | null } | null)?.created_at ?? null;
 
       let query = supabase
-        .from('court_group_chat_messages')
+        .from('messages')
         .select(`*, sender:sender_id (*)`)
         .eq('group_chat_id', groupChatId)
         .order('created_at', { ascending: true });
@@ -188,7 +188,7 @@ export default function GroupChatRoom() {
       .channel(`group_chat_${groupChatId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'court_group_chat_messages', filter: `group_chat_id=eq.${groupChatId}` },
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `group_chat_id=eq.${groupChatId}` },
         (payload) => {
           const newMsg = payload.new as GroupChatMessage;
           setMessages((prev) => {
@@ -271,7 +271,7 @@ export default function GroupChatRoom() {
     if (type === 'user') setNewMessage('');
 
     const { data: inserted, error } = await supabase
-      .from('court_group_chat_messages')
+      .from('messages')
       .insert({
         group_chat_id: groupChatId!,
         sender_id: user.id,
@@ -341,7 +341,7 @@ export default function GroupChatRoom() {
       } as never).eq('id', court.id);
     }
 
-    await supabase.from('court_group_chat_messages').insert({
+    await supabase.from('messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
       content: isDating ? `💌 ${participant.profile.name}님 참가 확정됐어요! 설레는 만남이 기대돼요!` : `🎾 ${participant.profile.name}님 참가 확정됐어요! 코트에서 만나요!`,
@@ -369,7 +369,7 @@ export default function GroupChatRoom() {
     if (!confirm(`${participant.profile.name}님을 채팅방에서 내보낼까요?`)) return;
     setActionLoading(participant.user_id);
 
-    await supabase.from('court_group_chat_messages').insert({
+    await supabase.from('messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
       content: isDating ? `😢 ${participant.profile.name}님, 이번엔 아쉽게도 자리가 찼어요` : `😢 ${participant.profile.name}님, 이번엔 아쉽게도 자리가 찼어요`,
@@ -413,7 +413,7 @@ export default function GroupChatRoom() {
       setCourt((prev) => prev ? { ...prev, confirmed_male_slots: newConfirmedMale, confirmed_female_slots: newConfirmedFemale } as Court : prev);
     }
     const msg = isDating ? '💌 매칭이 확정됐어요! 설레는 만남이 기대돼요!' : '🎾 매칭이 확정됐어요! 코트에서 만나요!';
-    const ok = await supabase.from('court_group_chat_messages').insert({
+    const ok = await supabase.from('messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
       content: msg,
@@ -442,7 +442,7 @@ export default function GroupChatRoom() {
       } as never).eq('id', court.id);
       setCourt((prev) => prev ? { ...prev, confirmed_male_slots: 0, confirmed_female_slots: 0 } as Court : prev);
     }
-    await supabase.from('court_group_chat_messages').insert({
+    await supabase.from('messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
       content: isDating ? '😢 아쉽지만 매칭이 취소됐어요.' : '😢 아쉽지만 매칭이 취소됐어요.',
@@ -462,7 +462,7 @@ export default function GroupChatRoom() {
 
     const myName = profile?.name ?? '알 수 없음';
     const leaveRequestMsg = `${myName}님이 나가기를 요청했어요. 사유: '${leaveReason.trim()}'`;
-    await supabase.from('court_group_chat_messages').insert({
+    await supabase.from('messages').insert({
       group_chat_id: groupChatId!,
       sender_id: user!.id,
       content: leaveRequestMsg,
@@ -485,8 +485,8 @@ export default function GroupChatRoom() {
     const requesterName = requesterProfile?.name ?? '알 수 없음';
     const systemMsg = `${requesterName}님이 나갔어요 😢 사유: '${reason}'`;
 
-    await supabase.from('court_group_chat_messages').update({ payload: { reason, requester_id: requesterId, status: 'accepted' } }).eq('id', messageId);
-    await supabase.from('court_group_chat_messages').insert({
+    await supabase.from('messages').update({ payload: { reason, requester_id: requesterId, status: 'accepted' } }).eq('id', messageId);
+    await supabase.from('messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
       content: systemMsg,
@@ -520,7 +520,7 @@ export default function GroupChatRoom() {
     try {
       const kickMsg = isDating ? `${targetName}님이 자리를 떠났습니다 💌` : `${targetName}님이 코트에서 퇴장되었습니다 🎾`;
       await supabase.from('group_chat_members').delete().eq('group_chat_id', groupChatId).eq('user_id', targetId);
-      await supabase.from('court_group_chat_messages').insert({
+      await supabase.from('messages').insert({
         group_chat_id: groupChatId,
         sender_id: null,
         content: kickMsg,
