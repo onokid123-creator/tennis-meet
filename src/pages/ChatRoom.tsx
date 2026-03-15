@@ -1299,8 +1299,10 @@ export default function ChatRoom() {
           if (isConfirmed) {
             if (isMaleKicked) {
               updates.confirmed_male_slots = Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1);
+              updates.male_slots = (courtData.male_slots ?? 0) + 1;
             } else {
               updates.confirmed_female_slots = Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1);
+              updates.female_slots = (courtData.female_slots ?? 0) + 1;
             }
             updates.current_participants = Math.max(0, (courtData.current_participants ?? 0) - 1);
           }
@@ -1386,23 +1388,18 @@ export default function ChatRoom() {
       return;
     }
     if (courtId && otherUser) {
-      const [courtRes] = await Promise.all([
-        supabase
-          .from('courts')
-          .select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants, capacity')
-          .eq('id', courtId)
-          .maybeSingle(),
-      ]);
+      const courtRes = await supabase
+        .from('courts')
+        .select('male_slots, female_slots, confirmed_male_slots, confirmed_female_slots, status, current_participants, capacity')
+        .eq('id', courtId)
+        .maybeSingle();
       const courtData = courtRes.data as { male_slots?: number; female_slots?: number; confirmed_male_slots?: number; confirmed_female_slots?: number; status?: string; current_participants?: number; capacity?: number } | null;
       if (courtData) {
         const isMale = otherUser.gender === 'male' || otherUser.gender === '남성';
         const newConfirmedMale = isMale ? (courtData.confirmed_male_slots ?? 0) + 1 : (courtData.confirmed_male_slots ?? 0);
         const newConfirmedFemale = !isMale ? (courtData.confirmed_female_slots ?? 0) + 1 : (courtData.confirmed_female_slots ?? 0);
-        const totalSlots = (courtData.male_slots ?? 0) + (courtData.female_slots ?? 0);
-        const newTotalConfirmed = newConfirmedMale + newConfirmedFemale;
         const newCurrentParticipants = (courtData.current_participants ?? 0) + 1;
-        const capacityVal = courtData.capacity ?? 0;
-        const shouldClose = (totalSlots > 0 && newTotalConfirmed >= totalSlots) || (capacityVal > 0 && newCurrentParticipants >= capacityVal);
+        const shouldClose = (courtData.male_slots ?? 0) === 0 && (courtData.female_slots ?? 0) === 0;
         await supabase.from('courts').update({
           confirmed_male_slots: newConfirmedMale,
           confirmed_female_slots: newConfirmedFemale,
@@ -1435,11 +1432,15 @@ export default function ChatRoom() {
         const isMale = otherUser.gender === 'male' || otherUser.gender === '남성';
         const newConfirmedMale = isMale ? Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1) : (courtData.confirmed_male_slots ?? 0);
         const newConfirmedFemale = !isMale ? Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1) : (courtData.confirmed_female_slots ?? 0);
+        const newMaleSlots = isMale ? (courtData.male_slots ?? 0) + 1 : (courtData.male_slots ?? 0);
+        const newFemaleSlots = !isMale ? (courtData.female_slots ?? 0) + 1 : (courtData.female_slots ?? 0);
         const newCurrentParticipants = Math.max(0, (courtData.current_participants ?? 0) - 1);
         const wasClosedNowOpen = courtData.status === 'closed';
         await supabase.from('courts').update({
           confirmed_male_slots: newConfirmedMale,
           confirmed_female_slots: newConfirmedFemale,
+          male_slots: newMaleSlots,
+          female_slots: newFemaleSlots,
           current_participants: newCurrentParticipants,
           ...(wasClosedNowOpen ? { status: 'open' } : {}),
         } as never).eq('id', courtId);
@@ -1477,7 +1478,8 @@ export default function ChatRoom() {
           const newConfirmedFemale = !isMale
             ? Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1)
             : (courtData.confirmed_female_slots ?? 0);
-
+          const newMaleSlots = isMale ? (courtData.male_slots ?? 0) + 1 : (courtData.male_slots ?? 0);
+          const newFemaleSlots = !isMale ? (courtData.female_slots ?? 0) + 1 : (courtData.female_slots ?? 0);
           const newCurrentParticipants = Math.max(0, (courtData.current_participants ?? 0) - 1);
           const wasClosedNowOpen = courtData.status === 'closed';
 
@@ -1486,6 +1488,8 @@ export default function ChatRoom() {
             .update({
               confirmed_male_slots: newConfirmedMale,
               confirmed_female_slots: newConfirmedFemale,
+              male_slots: newMaleSlots,
+              female_slots: newFemaleSlots,
               current_participants: newCurrentParticipants,
               ...(wasClosedNowOpen ? { status: 'open' } : {}),
             } as never)
@@ -1557,18 +1561,22 @@ export default function ChatRoom() {
           const newConfirmedFemale = !isMale
             ? (courtData.confirmed_female_slots ?? 0) + 1
             : (courtData.confirmed_female_slots ?? 0);
-
-          const totalSlots = (courtData.male_slots ?? 0) + (courtData.female_slots ?? 0);
-          const newTotalConfirmed = newConfirmedMale + newConfirmedFemale;
+          const newMaleSlots = isMale
+            ? Math.max(0, (courtData.male_slots ?? 0) - 1)
+            : (courtData.male_slots ?? 0);
+          const newFemaleSlots = !isMale
+            ? Math.max(0, (courtData.female_slots ?? 0) - 1)
+            : (courtData.female_slots ?? 0);
           const newCurrentParticipants = (courtData.current_participants ?? 0) + 1;
-          const capacityVal = courtData.capacity ?? 0;
-          const shouldClose = (totalSlots > 0 && newTotalConfirmed >= totalSlots) || (capacityVal > 0 && newCurrentParticipants >= capacityVal);
+          const shouldClose = newMaleSlots === 0 && newFemaleSlots === 0;
 
           await supabase
             .from('courts')
             .update({
               confirmed_male_slots: newConfirmedMale,
               confirmed_female_slots: newConfirmedFemale,
+              male_slots: newMaleSlots,
+              female_slots: newFemaleSlots,
               current_participants: newCurrentParticipants,
               ...(shouldClose ? { status: 'closed' } : {}),
             } as never)
