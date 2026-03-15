@@ -690,7 +690,7 @@ export default function ChatRoom() {
     (async () => {
       const [participantsRes, chatRes] = await Promise.all([
         supabase.from('chat_participants').select('user_id, is_confirmed, last_read_at, joined_at').eq('chat_id', chatId),
-        supabase.from('chats').select('id, user1_id, user2_id, purpose, court_id, is_group').eq('id', chatId).maybeSingle(),
+        supabase.from('chats').select('id, user1_id, user2_id, purpose, court_id, is_group, confirmed_user_ids').eq('id', chatId).maybeSingle(),
       ]);
 
       const participants = participantsRes.data ?? [];
@@ -736,14 +736,12 @@ export default function ChatRoom() {
         }
       }
 
-      const confirmedIds = participants
-        .filter((p) => (p as { user_id: string; is_confirmed?: boolean }).is_confirmed === true && p.user_id !== user.id)
-        .map((p) => p.user_id);
-      if (confirmedIds.length > 0) {
+      const chatConfirmedIds: string[] = (chat as { confirmed_user_ids?: string[] | null } | null)?.confirmed_user_ids ?? [];
+      if (chatConfirmedIds.length > 0) {
         const { data: confirmedProfs } = await supabase
           .from('profiles')
           .select('user_id, name, photo_url, tennis_photo_url')
-          .in('user_id', confirmedIds);
+          .in('user_id', chatConfirmedIds);
         if (confirmedProfs) {
           setConfirmedParticipants(confirmedProfs.map((p) => ({
             user_id: p.user_id,
@@ -1402,6 +1400,22 @@ export default function ChatRoom() {
         } as never).eq('id', courtId);
       }
     }
+    if (otherUser) {
+      const newConfirmedIds = [otherUser.user_id];
+      await supabase.from('chats').update({ confirmed_user_ids: newConfirmedIds }).eq('id', chatId!);
+      const { data: confirmedProfs } = await supabase
+        .from('profiles')
+        .select('user_id, name, photo_url, tennis_photo_url')
+        .in('user_id', newConfirmedIds);
+      if (confirmedProfs) {
+        setConfirmedParticipants(confirmedProfs.map((p) => ({
+          user_id: p.user_id,
+          name: p.name,
+          photo_url: (p as { photo_url?: string | null }).photo_url ?? undefined,
+          tennis_photo_url: (p as { tennis_photo_url?: string | null }).tennis_photo_url ?? undefined,
+        })));
+      }
+    }
     const msg =
       chatPurpose === 'dating'
         ? '💕 매칭이 확정됐어요! 경기 전에 미리 식사 약속도 잡아보세요 🍱✨'
@@ -1440,6 +1454,9 @@ export default function ChatRoom() {
         } as never).eq('id', courtId);
       }
     }
+    await supabase.from('chats').update({ confirmed_user_ids: [] }).eq('id', chatId!);
+    setConfirmedParticipants([]);
+    setMatchConfirmed(false);
     setHostBarDismissed(true);
   };
 
@@ -1497,7 +1514,11 @@ export default function ChatRoom() {
       setGroupAvatars((prev) =>
         prev.map((av) => av.user_id === participantId ? { ...av, is_confirmed: false } : av)
       );
-      setConfirmedParticipants((prev) => prev.filter((p) => p.user_id !== participantId));
+      setConfirmedParticipants((prev) => {
+        const next = prev.filter((p) => p.user_id !== participantId);
+        supabase.from('chats').update({ confirmed_user_ids: next.map((p) => p.user_id) }).eq('id', chatId!).then(() => {});
+        return next;
+      });
 
       const cancelMsg =
         chatPurpose === 'dating'
@@ -1530,7 +1551,11 @@ export default function ChatRoom() {
       setConfirmedParticipants((prev) => {
         if (prev.some((p) => p.user_id === participantId)) return prev;
         const av = groupAvatars.find((a) => a.user_id === participantId);
-        if (av) return [...prev, { user_id: av.user_id, name: av.name, photo_url: av.photo_url, tennis_photo_url: av.tennis_photo_url }];
+        if (av) {
+          const next = [...prev, { user_id: av.user_id, name: av.name, photo_url: av.photo_url, tennis_photo_url: av.tennis_photo_url }];
+          supabase.from('chats').update({ confirmed_user_ids: next.map((p) => p.user_id) }).eq('id', chatId!).then(() => {});
+          return next;
+        }
         return prev;
       });
 

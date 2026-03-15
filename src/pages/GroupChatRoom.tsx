@@ -175,7 +175,8 @@ export default function GroupChatRoom() {
         setHostProfile({ name: data.host.name, photo_url: data.host.photo_url || null, tennis_photo_url: data.host.tennis_photo_url || null });
       }
       if (data.purpose) setPurpose(data.purpose as 'tennis' | 'dating');
-      if (data.confirmed_user_ids) fetchConfirmedParticipants();
+      if (data.matched) setMatchConfirmed(true);
+      fetchConfirmedParticipants();
     }
   }, [groupChatId, fetchConfirmedParticipants]);
 
@@ -392,11 +393,12 @@ export default function GroupChatRoom() {
       showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
       return;
     }
+    const confirmedList = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId);
+    const confirmedIds = confirmedList.map((p) => p.user_id);
     if (court) {
-      const confirmedParticipants = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId);
       let totalMaleToAdd = 0;
       let totalFemaleToAdd = 0;
-      for (const p of confirmedParticipants) {
+      for (const p of confirmedList) {
         const gender = p.profile?.gender;
         if (gender === 'male' || gender === '남성') totalMaleToAdd++;
         else totalFemaleToAdd++;
@@ -404,7 +406,7 @@ export default function GroupChatRoom() {
       const courtExtra = court as Court & { current_participants?: number; capacity?: number };
       const newConfirmedMale = Math.min((court.male_slots ?? 0), (court.confirmed_male_slots ?? 0) + totalMaleToAdd);
       const newConfirmedFemale = Math.min((court.female_slots ?? 0), (court.confirmed_female_slots ?? 0) + totalFemaleToAdd);
-      const newCurrentParticipants = (courtExtra.current_participants ?? 0) + confirmedParticipants.length;
+      const newCurrentParticipants = (courtExtra.current_participants ?? 0) + confirmedList.length;
       const totalSlots = (court.male_slots ?? 0) + (court.female_slots ?? 0);
       const newTotalConfirmed = newConfirmedMale + newConfirmedFemale;
       const capacityVal = courtExtra.capacity ?? 0;
@@ -417,6 +419,10 @@ export default function GroupChatRoom() {
       } as never).eq('id', court.id);
       setCourt((prev) => prev ? { ...prev, confirmed_male_slots: newConfirmedMale, confirmed_female_slots: newConfirmedFemale } as Court : prev);
     }
+    await supabase
+      .from('group_chats')
+      .update({ confirmed_user_ids: confirmedIds, matched: true })
+      .eq('id', groupChatId!);
     const msg = isDating ? '💌 매칭이 확정됐어요! 설레는 만남이 기대돼요!' : '🎾 매칭이 확정됐어요! 코트에서 만나요!';
     const ok = await supabase.from('messages').insert({
       group_chat_id: groupChatId!,
@@ -425,7 +431,10 @@ export default function GroupChatRoom() {
       type: 'system',
       is_read: false,
     });
-    if (!ok.error) setMatchConfirmed(true);
+    if (!ok.error) {
+      setMatchConfirmed(true);
+      await fetchConfirmedParticipants();
+    }
   };
 
   const handleMatchCancel = () => {
