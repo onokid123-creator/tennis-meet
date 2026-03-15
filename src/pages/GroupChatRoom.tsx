@@ -305,15 +305,17 @@ export default function GroupChatRoom() {
     }
     setActionLoading(participant.user_id);
 
-    const { error } = await supabase
-      .from('group_chat_members')
-      .upsert({
-        group_chat_id: groupChatId!,
-        user_id: participant.user_id,
-        status: 'confirmed'
-      }, { onConflict: 'group_chat_id,user_id' });
+    const nextConfirmedIds = confirmedParticipants.some((p) => p.user_id === participant.user_id)
+      ? confirmedParticipants.map((p) => p.user_id)
+      : [...confirmedParticipants.map((p) => p.user_id), participant.user_id];
+
+    const { error } = await supabase.rpc('confirm_match', {
+      p_group_chat_id: groupChatId!,
+      p_user_ids: nextConfirmedIds,
+    });
 
     if (error) {
+      showToastMsg('확정 중 오류가 발생했습니다.');
       setActionLoading(null);
       return;
     }
@@ -431,6 +433,17 @@ export default function GroupChatRoom() {
 
   const handleMatchCancelConfirm = async () => {
     setShowCancelConfirm(false);
+
+    await supabase
+      .from('group_chat_members')
+      .update({ status: 'pending' })
+      .eq('group_chat_id', groupChatId!);
+
+    await supabase
+      .from('group_chats')
+      .update({ matched: false })
+      .eq('id', groupChatId!);
+
     if (court) {
       const courtExtra = court as Court & { current_participants?: number; status?: string };
       const count = confirmedParticipants.length;
