@@ -377,33 +377,86 @@ export default function Applications() {
     const hostId = user!.id;
     const purpose = app.purpose ?? 'tennis';
 
-    const { data: rpcData, error: rpcErr } = await supabase.rpc('accept_group_chat_with_rejoin', {
-      p_court_id: courtId,
-      p_host_id: hostId,
-      p_applicant_id: applicantId,
-      p_purpose: purpose,
-    });
+    const { data: existing, error: fetchErr } = await supabase
+      .from('court_group_chats')
+      .select('id')
+      .eq('court_id', courtId)
+      .maybeSingle();
 
-    if (rpcErr || !rpcData) {
-      return { error: `단체방 처리 실패: ${rpcErr?.message ?? '반환 데이터 없음'}` };
+    if (fetchErr) {
+      return { error: `단체방 조회 실패: ${fetchErr.message}` };
     }
 
-    const result = rpcData as { chat_id: string; is_new: boolean; is_rejoin: boolean };
-    const chatId = result.chat_id;
-    const isNew = result.is_new;
-    const isRejoin = result.is_rejoin ?? false;
+    let groupChatId: string;
+    let isNew = false;
+
+    if (existing) {
+      groupChatId = existing.id;
+    } else {
+      const { data: created, error: createErr } = await supabase
+        .from('court_group_chats')
+        .insert({ court_id: courtId, host_id: hostId, purpose })
+        .select('id')
+        .maybeSingle();
+
+      if (createErr || !created) {
+        return { error: `단체방 생성 실패: ${createErr?.message ?? '반환 데이터 없음'}` };
+      }
+      groupChatId = created.id;
+      isNew = true;
+    }
+
+    const { data: existingHostPart } = await supabase
+      .from('court_group_chat_participants')
+      .select('id')
+      .eq('group_chat_id', groupChatId)
+      .eq('user_id', hostId)
+      .maybeSingle();
+
+    if (!existingHostPart) {
+      await supabase.from('court_group_chat_participants').insert({
+        group_chat_id: groupChatId,
+        user_id: hostId,
+        status: 'confirmed',
+        joined_at: new Date().toISOString(),
+      });
+    }
+
+    const { data: existingApplicantPart } = await supabase
+      .from('court_group_chat_participants')
+      .select('id')
+      .eq('group_chat_id', groupChatId)
+      .eq('user_id', applicantId)
+      .maybeSingle();
+
+    let isRejoin = false;
+    if (existingApplicantPart) {
+      await supabase
+        .from('court_group_chat_participants')
+        .update({ status: 'pending', joined_at: new Date().toISOString() })
+        .eq('id', existingApplicantPart.id);
+      isRejoin = true;
+    } else {
+      await supabase.from('court_group_chat_participants').insert({
+        group_chat_id: groupChatId,
+        user_id: applicantId,
+        status: 'pending',
+        joined_at: new Date().toISOString(),
+      });
+    }
 
     const { count: participantCount } = await supabase
-      .from('chat_participants')
+      .from('court_group_chat_participants')
       .select('id', { count: 'exact', head: true })
-      .eq('chat_id', chatId);
+      .eq('group_chat_id', groupChatId)
+      .neq('status', 'rejected');
 
     const capacity = getCapacity(app.court?.format || '');
     if ((participantCount ?? 0) >= capacity) {
       await supabase.from('courts').update({ status: 'closed' }).eq('id', courtId);
     }
 
-    return { chatId, isNew, isRejoin };
+    return { chatId: groupChatId, isNew, isRejoin };
   };
 
   const handleAccept1v1Chat = async (
@@ -500,19 +553,33 @@ export default function Applications() {
           welcomeMsg = '채팅방이 생성되었어요.';
         }
 
-        await supabase.from('messages').insert({
-          chat_id: targetChatId,
-          sender_id: user!.id,
-          content: welcomeMsg,
-          is_read: false,
-          type: 'system',
-        });
+        if (useGroupChat) {
+          await supabase.from('court_group_chat_messages').insert({
+            group_chat_id: targetChatId,
+            sender_id: user!.id,
+            content: welcomeMsg,
+            is_read: false,
+            type: 'system',
+          });
+        } else {
+          await supabase.from('messages').insert({
+            chat_id: targetChatId,
+            sender_id: user!.id,
+            content: welcomeMsg,
+            is_read: false,
+            type: 'system',
+          });
+        }
       }
 
       setReceivedApps((prev) => prev.filter((a) => a.id !== app.id));
       setSelectedApp(null);
 
-      setTimeout(() => navigate(`/chat/${targetChatId}`), 100);
+      if (useGroupChat) {
+        setTimeout(() => navigate(`/group-chat/${targetChatId}`), 100);
+      } else {
+        setTimeout(() => navigate(`/chat/${targetChatId}`), 100);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setAcceptError(msg);
