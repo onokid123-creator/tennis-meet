@@ -369,27 +369,15 @@ export default function Applications() {
     return isGroupFormat(format) ? 4 : 2;
   };
 
-  const hasKickedHistory = async (courtId: string, applicantId: string): Promise<boolean> => {
-    const { data } = await supabase
-      .from('applications')
-      .select('id')
-      .eq('court_id', courtId)
-      .eq('applicant_id', applicantId)
-      .in('status', ['kicked', 'cancelled'])
-      .limit(1);
-    return (data?.length ?? 0) > 0;
-  };
-
   const handleAcceptGroupChat = async (
-    app: Application,
-    _forceNew: boolean
-  ): Promise<{ chatId: string; isNew: boolean; error?: never } | { chatId?: never; isNew?: never; error: string }> => {
+    app: Application
+  ): Promise<{ chatId: string; isNew: boolean; isRejoin: boolean; error?: never } | { chatId?: never; isNew?: never; isRejoin?: never; error: string }> => {
     const courtId = app.court_id;
     const applicantId = app.applicant_id;
     const hostId = user!.id;
     const purpose = app.purpose ?? 'tennis';
 
-    const { data: rpcData, error: rpcErr } = await supabase.rpc('accept_group_chat', {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('accept_group_chat_with_rejoin', {
       p_court_id: courtId,
       p_host_id: hostId,
       p_applicant_id: applicantId,
@@ -400,9 +388,10 @@ export default function Applications() {
       return { error: `단체방 처리 실패: ${rpcErr?.message ?? '반환 데이터 없음'}` };
     }
 
-    const result = rpcData as { chat_id: string; is_new: boolean };
+    const result = rpcData as { chat_id: string; is_new: boolean; is_rejoin: boolean };
     const chatId = result.chat_id;
     const isNew = result.is_new;
+    const isRejoin = result.is_rejoin ?? false;
 
     const { count: participantCount } = await supabase
       .from('chat_participants')
@@ -414,90 +403,37 @@ export default function Applications() {
       await supabase.from('courts').update({ status: 'closed' }).eq('id', courtId);
     }
 
-    return { chatId, isNew };
+    return { chatId, isNew, isRejoin };
   };
 
   const handleAccept1v1Chat = async (
-    app: Application,
-    forceNew: boolean
-  ): Promise<{ chatId: string; isNew: boolean; error?: never } | { chatId?: never; isNew?: never; error: string }> => {
+    app: Application
+  ): Promise<{ chatId: string; isNew: boolean; isRejoin: boolean; error?: never } | { chatId?: never; isNew?: never; isRejoin?: never; error: string }> => {
     const hostId = user!.id;
     const applicantId = app.applicant_id;
     const courtId = app.court_id;
     const purpose = app.purpose ?? 'tennis';
 
-    if (forceNew) {
-      const { data: rpcData, error: rpcErr } = await supabase.rpc('accept_1v1_chat_force_new', {
-        p_host_id: hostId,
-        p_applicant_id: applicantId,
-        p_court_id: courtId,
-        p_purpose: purpose,
-      });
-
-      if (rpcErr || !rpcData) {
-        return { error: `채팅방 생성 실패: ${rpcErr?.message ?? '반환 데이터 없음'}` };
-      }
-
-      const result = rpcData as { chat_id: string; is_new: boolean };
-      return { chatId: result.chat_id, isNew: true };
-    }
-
-    const { data: existingChats } = await supabase
-      .from('chats')
-      .select('id, user1_id, user2_id')
-      .eq('court_id', courtId)
-      .eq('is_group', false);
-
-    if (existingChats && existingChats.length > 0) {
-      const match = existingChats.find((c) => {
-        const ids = [c.user1_id, c.user2_id];
-        return ids.includes(hostId) && ids.includes(applicantId);
-      });
-      if (match) {
-        await supabase.rpc('accept_1v1_chat', {
-          p_chat_id: match.id,
-          p_host_id: hostId,
-          p_applicant_id: applicantId,
-        });
-        return { chatId: match.id, isNew: true };
-      }
-    }
-
-    const { data: newChat, error: chatError } = await supabase
-      .from('chats')
-      .insert({
-        user1_id: hostId,
-        user2_id: applicantId,
-        purpose,
-        court_id: courtId,
-        is_group: false,
-      })
-      .select('id')
-      .maybeSingle();
-
-    if (chatError) {
-      console.error('[1v1] chats INSERT 실패:', chatError);
-      return { error: `채팅방 생성 실패: ${chatError.message}` };
-    }
-    if (!newChat) {
-      return { error: '채팅방 생성 실패: 반환 데이터 없음 (RLS 확인 필요)' };
-    }
-
-    const chatId = newChat.id;
-
-    const { error: rpcErr } = await supabase.rpc('accept_1v1_chat', {
-      p_chat_id: chatId,
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('accept_1v1_chat_safe', {
+      p_court_id: courtId,
       p_host_id: hostId,
       p_applicant_id: applicantId,
+      p_purpose: purpose,
     });
 
-    if (rpcErr) {
-      console.error('[1v1] 참여자 등록 실패:', rpcErr);
+    if (rpcErr || !rpcData) {
+      return { error: `채팅방 생성 실패: ${rpcErr?.message ?? '반환 데이터 없음'}` };
     }
 
-    await supabase.from('courts').update({ status: 'closed' }).eq('id', courtId);
+    const result = rpcData as { chat_id: string; is_new: boolean };
+    const chatId = result.chat_id;
+    const isNew = result.is_new;
 
-    return { chatId, isNew: true };
+    if (isNew) {
+      await supabase.from('courts').update({ status: 'closed' }).eq('id', courtId);
+    }
+
+    return { chatId, isNew, isRejoin: !isNew };
   };
 
   const handleAccept = async (app: Application) => {
@@ -525,51 +461,52 @@ export default function Applications() {
       const courtPurpose = app.purpose ?? 'tennis';
       const useGroupChat = isGroupFormat(courtFormat);
 
-      const forceNew = await hasKickedHistory(app.court_id, app.applicant_id);
-
       let targetChatId: string | null = null;
       let isNewChat = false;
+      let isRejoin = false;
 
       if (useGroupChat) {
-        const groupResult = await handleAcceptGroupChat(app, forceNew);
+        const groupResult = await handleAcceptGroupChat(app);
         if (groupResult.error) {
           setAcceptError(groupResult.error);
           return;
         }
         targetChatId = groupResult.chatId ?? null;
         isNewChat = groupResult.isNew ?? false;
+        isRejoin = groupResult.isRejoin ?? false;
       } else {
-        const result = await handleAccept1v1Chat(app, forceNew);
+        const result = await handleAccept1v1Chat(app);
         if (result.error) {
           setAcceptError(result.error);
           return;
         }
         targetChatId = result.chatId ?? null;
         isNewChat = result.isNew ?? false;
+        isRejoin = result.isRejoin ?? false;
       }
 
       if (targetChatId) {
-        const welcomeMsg =
-          courtPurpose === 'dating'
-            ? '채팅방이 생성되었어요. 경기 전에 식사 약속도 미리 잡아보세요! 🍱✨'
-            : '매칭 완료! 코트 위에서 즐거운 경기 되세요 🎾🔥';
-        if (isNewChat) {
-          await supabase.from('messages').insert({
-            chat_id: targetChatId,
-            sender_id: user!.id,
-            content: welcomeMsg,
-            is_read: false,
-            type: 'system',
-          });
+        const applicantName = app.applicant?.name ?? '상대방';
+
+        let welcomeMsg: string;
+        if (isRejoin) {
+          welcomeMsg = `${applicantName}님이 입장했어요.`;
+        } else if (isNewChat) {
+          welcomeMsg =
+            courtPurpose === 'dating'
+              ? '채팅방이 생성되었어요. 경기 전에 식사 약속도 미리 잡아보세요!'
+              : '채팅방이 생성되었어요. 코트 위에서 즐거운 경기 되세요!';
         } else {
-          await supabase.from('messages').insert({
-            chat_id: targetChatId,
-            sender_id: user!.id,
-            content: '채팅방이 생성되었어요.',
-            is_read: false,
-            type: 'system',
-          });
+          welcomeMsg = '채팅방이 생성되었어요.';
         }
+
+        await supabase.from('messages').insert({
+          chat_id: targetChatId,
+          sender_id: user!.id,
+          content: welcomeMsg,
+          is_read: false,
+          type: 'system',
+        });
       }
 
       setReceivedApps((prev) => prev.filter((a) => a.id !== app.id));
