@@ -61,6 +61,7 @@ export interface Application {
   status: 'pending' | 'accepted' | 'rejected';
   purpose: 'tennis' | 'dating';
   message?: string | null;
+  rejection_reason?: string | null;
   created_at: string;
   applicant?: Profile;
   owner?: Profile;

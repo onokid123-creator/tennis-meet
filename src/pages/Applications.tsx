@@ -281,6 +281,8 @@ export default function Applications() {
   const [rejectTarget, setRejectTarget] = useState<Application | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const fetchApplications = useCallback(async () => {
     if (!user) return;
@@ -544,74 +546,31 @@ export default function Applications() {
 
       await supabase.from('applications').update({
         status: 'rejected',
-        ...(reason ? { rejection_reason: reason } : {}),
+        rejection_reason: reason || null,
       }).eq('id', app.id);
-
-      if (reason) {
-        const rejectMsg =
-          app.purpose === 'dating'
-            ? `💌 신청이 거절되었습니다. 사유: ${reason}`
-            : `🎾 신청이 거절되었습니다. 사유: ${reason}`;
-
-        const { data: existingChat } = await supabase
-          .from('chats')
-          .select('id')
-          .or(`and(user1_id.eq.${user!.id},user2_id.eq.${app.applicant_id}),and(user1_id.eq.${app.applicant_id},user2_id.eq.${user!.id})`)
-          .eq('court_id', app.court_id)
-          .maybeSingle();
-
-        if (existingChat) {
-          await supabase.from('messages').insert({
-            chat_id: existingChat.id,
-            sender_id: user!.id,
-            content: rejectMsg,
-            is_read: false,
-            type: 'system',
-          });
-        } else {
-          const { data: newChat } = await supabase
-            .from('chats')
-            .insert({
-              user1_id: user!.id,
-              user2_id: app.applicant_id,
-              purpose: app.purpose ?? 'tennis',
-              court_id: app.court_id,
-              is_group: false,
-            })
-            .select('id')
-            .maybeSingle();
-
-          if (newChat) {
-            await supabase.rpc('accept_1v1_chat', {
-              p_chat_id: newChat.id,
-              p_host_id: user!.id,
-              p_applicant_id: app.applicant_id,
-            });
-            await supabase.from('messages').insert({
-              chat_id: newChat.id,
-              sender_id: user!.id,
-              content: rejectMsg,
-              is_read: false,
-              type: 'system',
-            });
-          }
-        }
-      }
-
-      if (app.purpose === 'dating') {
-        const blockedRaw = localStorage.getItem('blocked_users');
-        const blocked: string[] = blockedRaw ? JSON.parse(blockedRaw) : [];
-        if (!blocked.includes(app.applicant_id)) {
-          blocked.push(app.applicant_id);
-          localStorage.setItem('blocked_users', JSON.stringify(blocked));
-        }
-      }
 
       setReceivedApps((prev) => prev.filter((a) => a.id !== app.id));
       setRejectTarget(null);
       setRejectReason('');
     } finally {
       setRejectSubmitting(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget || deleteSubmitting) return;
+    setDeleteSubmitting(true);
+    try {
+      await supabase.from('applications').delete().eq('id', deleteTarget.id);
+      const isOwner = deleteTarget.owner_id === user?.id;
+      if (isOwner) {
+        setReceivedApps((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+      } else {
+        setSentApps((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+      }
+      setDeleteTarget(null);
+    } finally {
+      setDeleteSubmitting(false);
     }
   };
 
@@ -767,20 +726,30 @@ export default function Applications() {
           </div>
         </div>
 
-        {app.status === 'pending' && (
-          <div
-            className="py-2 text-center text-xs font-medium tracking-wide"
-            style={{ borderTop: '1px solid #F0F0F0', color: '#C9A84C' }}
+        <div
+          className="flex items-center justify-between py-2 px-3"
+          style={{ borderTop: '1px solid #F0F0F0' }}
+        >
+          {app.status === 'pending' ? (
+            <span className="text-xs font-medium" style={{ color: '#C9A84C' }}>탭하여 프로필 보기</span>
+          ) : (
+            <span />
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); setDeleteTarget(app); }}
+            className="text-xs font-medium px-3 py-1 rounded-full transition active:scale-95"
+            style={{ background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.18)' }}
           >
-            탭하여 프로필 보기
-          </div>
-        )}
+            삭제
+          </button>
+        </div>
       </div>
     );
   };
 
   const renderSentCard = (app: Application) => {
     const host = app.owner;
+    const rejectionMsg = app.status === 'rejected' && app.rejection_reason ? app.rejection_reason : null;
 
     return (
       <div
@@ -828,7 +797,7 @@ export default function Applications() {
 
             {app.court && (
               <div
-                className="mt-1 pt-2"
+                className="mb-2 pt-2"
                 style={{ borderTop: '1px solid #F0F0F0' }}
               >
                 <div className="flex items-center gap-1.5 mb-0.5">
@@ -846,7 +815,31 @@ export default function Applications() {
                 )}
               </div>
             )}
+
+            {rejectionMsg && (
+              <div
+                className="mt-1 px-3 py-2 rounded-xl"
+                style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)' }}
+              >
+                <p className="text-xs font-medium leading-relaxed" style={{ color: '#DC2626' }}>
+                  {app.purpose === 'dating' ? `💌 신청이 거절되었습니다. 사유: ${rejectionMsg}` : `🎾 신청이 거절되었습니다. 사유: ${rejectionMsg}`}
+                </p>
+              </div>
+            )}
           </div>
+        </div>
+
+        <div
+          className="flex justify-end py-2 px-3"
+          style={{ borderTop: '1px solid #F0F0F0' }}
+        >
+          <button
+            onClick={() => setDeleteTarget(app)}
+            className="text-xs font-medium px-3 py-1 rounded-full transition active:scale-95"
+            style={{ background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.18)' }}
+          >
+            삭제
+          </button>
         </div>
       </div>
     );
@@ -1054,6 +1047,46 @@ export default function Applications() {
                 style={{ background: rejectTarget.purpose === 'dating' ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
               >
                 {rejectSubmitting ? '처리 중...' : '거절하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setDeleteTarget(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
+            style={{
+              background: '#fff',
+              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
+            <p className="font-bold text-gray-900 text-base mb-1">신청 삭제</p>
+            <p className="text-sm text-gray-400 mb-5">
+              이 신청을 삭제하시겠어요? 삭제 후에는 복구할 수 없습니다.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteSubmitting}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
+              >
+                {deleteSubmitting ? '삭제 중...' : '삭제하기'}
               </button>
             </div>
           </div>
