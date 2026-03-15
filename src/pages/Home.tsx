@@ -281,20 +281,10 @@ export default function Home() {
     setApplyLoading(true);
 
     if (existingApp && existingApp.status === 'cancelled') {
-      const { error } = await supabase
+      await supabase
         .from('applications')
-        .update({
-          status: 'pending',
-          message: applyMessage.trim() || null,
-        })
+        .delete()
         .eq('id', existingApp.id);
-      setApplyLoading(false);
-      if (error) {
-        alert('신청에 실패했습니다. 다시 시도해주세요.');
-        return;
-      }
-      setApplyTargetCourt(null);
-      return;
     }
 
     const { error } = await supabase.from('applications').insert({
