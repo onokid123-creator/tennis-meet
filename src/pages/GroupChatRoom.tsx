@@ -45,6 +45,8 @@ export default function GroupChatRoom() {
   const [profilePopupKickTarget, setProfilePopupKickTarget] = useState<{ user_id: string; name: string } | null>(null);
   const [showConversationSheet, setShowConversationSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [confirmedParticipants, setConfirmedParticipants] = useState<Array<{ user_id: string; name: string; photo_url?: string; tennis_photo_url?: string }>>([]);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const showToastMsg = (msg: string) => {
@@ -156,10 +158,36 @@ export default function GroupChatRoom() {
     setParticipantLastReads((prev) => ({ ...prev, ...reads }));
   }, [groupChatId]);
 
+  const fetchConfirmedParticipants = useCallback(async () => {
+    const { data } = await supabase
+      .from('court_group_chat_participants')
+      .select('user_id')
+      .eq('group_chat_id', groupChatId)
+      .eq('status', 'confirmed');
+    const confirmedIds = (data ?? []).map((r: { user_id: string }) => r.user_id);
+    if (confirmedIds.length === 0) {
+      setConfirmedParticipants([]);
+      return;
+    }
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('user_id, name, photo_url, tennis_photo_url')
+      .in('user_id', confirmedIds);
+    setConfirmedParticipants(
+      (profs ?? []).map((p) => ({
+        user_id: p.user_id,
+        name: p.name,
+        photo_url: (p as { photo_url?: string | null }).photo_url ?? undefined,
+        tennis_photo_url: (p as { tennis_photo_url?: string | null }).tennis_photo_url ?? undefined,
+      }))
+    );
+  }, [groupChatId]);
+
   useEffect(() => {
     fetchGroupChatData();
     fetchMessages();
     fetchParticipants();
+    fetchConfirmedParticipants();
 
     const msgChannel = supabase
       .channel(`group_chat_${groupChatId}`)
@@ -215,7 +243,7 @@ export default function GroupChatRoom() {
       supabase.removeChannel(participantChannel);
       supabase.removeChannel(kickChannel);
     };
-  }, [groupChatId, fetchGroupChatData, fetchMessages, fetchParticipants, navigate, user]);
+  }, [groupChatId, fetchGroupChatData, fetchMessages, fetchParticipants, fetchConfirmedParticipants, navigate, user]);
 
   useEffect(() => {
     scrollToBottom();
@@ -326,6 +354,17 @@ export default function GroupChatRoom() {
     });
 
     fetchGroupChatData();
+    setConfirmedParticipants((prev) => {
+      if (prev.some((p) => p.user_id === participant.user_id)) return prev;
+      const prof = participant.profile;
+      if (!prof) return prev;
+      return [...prev, {
+        user_id: participant.user_id,
+        name: prof.name,
+        photo_url: prof.photo_url ?? undefined,
+        tennis_photo_url: (prof as { tennis_photo_url?: string | null }).tennis_photo_url ?? undefined,
+      }];
+    });
     setActionLoading(null);
   };
 
@@ -388,10 +427,16 @@ export default function GroupChatRoom() {
     if (!ok.error) setMatchConfirmed(true);
   };
 
-  const handleMatchCancel = async () => {
+  const handleMatchCancel = () => {
+    setShowCancelConfirm(true);
+  };
+
+  const handleMatchCancelConfirm = async () => {
+    setShowCancelConfirm(false);
+    const confirmedList = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId);
     if (court) {
       const courtExtra = court as Court & { current_participants?: number; status?: string };
-      const confirmedParticipants = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId);
+      const confirmedParticipants = confirmedList;
       let totalMaleToRemove = 0;
       let totalFemaleToRemove = 0;
       for (const p of confirmedParticipants) {
@@ -418,6 +463,8 @@ export default function GroupChatRoom() {
       type: 'system',
       is_read: false,
     });
+    setMatchConfirmed(false);
+    setConfirmedParticipants([]);
   };
 
   const handleLeave = () => {
@@ -1097,6 +1144,78 @@ export default function GroupChatRoom() {
           </button>
         </form>
       </div>
+
+      {showCancelConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowCancelConfirm(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
+            style={{
+              background: isDating ? '#FFF8F2' : '#F4F8F5',
+              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-10 h-1 rounded-full mx-auto mb-4"
+              style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }}
+            />
+            <p className="font-bold text-gray-900 text-base text-center mb-1">
+              {isDating ? '매칭 취소할 참여자 목록' : '라인업 취소할 참여자 목록'}
+            </p>
+            <p className="text-xs text-gray-400 text-center mb-5">
+              확정된 참여자만 표시됩니다
+            </p>
+            <div className="flex flex-col gap-2 mb-4">
+              {confirmedParticipants.map((p) => (
+                <div
+                  key={p.user_id}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl"
+                  style={{ background: '#fff', border: `1.5px solid ${isDating ? 'rgba(201,84,122,0.18)' : 'rgba(27,67,50,0.15)'}` }}
+                >
+                  <div
+                    className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
+                    style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+                  >
+                    {(isDating ? p.photo_url : (p.tennis_photo_url || p.photo_url))
+                      ? <img src={(isDating ? p.photo_url : (p.tennis_photo_url || p.photo_url))!} alt={p.name} className="w-full h-full object-cover" />
+                      : <span>{p.name?.charAt(0) ?? '?'}</span>}
+                  </div>
+                  <span className="flex-1 text-sm font-semibold" style={{ color: '#1a1a1a' }}>{p.name}</span>
+                  <span
+                    className="text-xs font-semibold px-2.5 py-1 rounded-full text-white"
+                    style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+                  >
+                    확정됨
+                  </span>
+                </div>
+              ))}
+              {confirmedParticipants.length === 0 && (
+                <p className="text-sm text-center py-4" style={{ color: 'rgba(0,0,0,0.4)' }}>확정된 참여자가 없습니다.</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                닫기
+              </button>
+              <button
+                onClick={handleMatchCancelConfirm}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95"
+                style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
+              >
+                매칭 취소하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showLeaveConfirm && (
         <div

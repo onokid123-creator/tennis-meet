@@ -586,6 +586,7 @@ export default function ChatRoom() {
   const [kickingId, setKickingId] = useState<string | null>(null);
   const [showUnblockMessagePopup, setShowUnblockMessagePopup] = useState(false);
   const [unblockMessageTarget, setUnblockMessageTarget] = useState<{ user_id: string; name: string } | null>(null);
+  const [confirmedParticipants, setConfirmedParticipants] = useState<Array<{ user_id: string; name: string; photo_url?: string; tennis_photo_url?: string }>>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -733,6 +734,26 @@ export default function ChatRoom() {
             is_confirmed: confirmedMap[p.user_id] ?? false,
           })));
         }
+      }
+
+      const confirmedIds = participants
+        .filter((p) => (p as { user_id: string; is_confirmed?: boolean }).is_confirmed === true && p.user_id !== user.id)
+        .map((p) => p.user_id);
+      if (confirmedIds.length > 0) {
+        const { data: confirmedProfs } = await supabase
+          .from('profiles')
+          .select('user_id, name, photo_url, tennis_photo_url')
+          .in('user_id', confirmedIds);
+        if (confirmedProfs) {
+          setConfirmedParticipants(confirmedProfs.map((p) => ({
+            user_id: p.user_id,
+            name: p.name,
+            photo_url: (p as { photo_url?: string | null }).photo_url ?? undefined,
+            tennis_photo_url: (p as { tennis_photo_url?: string | null }).tennis_photo_url ?? undefined,
+          })));
+        }
+      } else {
+        setConfirmedParticipants([]);
       }
 
       let opponentId: string | null = null;
@@ -1394,6 +1415,10 @@ export default function ChatRoom() {
       setShowCancelPicker(true);
       return;
     }
+    setShowCancelPicker(true);
+  };
+
+  const handleMatchCancelDirect = async () => {
     if (courtId && otherUser) {
       const courtRes = await supabase
         .from('courts')
@@ -1472,6 +1497,7 @@ export default function ChatRoom() {
       setGroupAvatars((prev) =>
         prev.map((av) => av.user_id === participantId ? { ...av, is_confirmed: false } : av)
       );
+      setConfirmedParticipants((prev) => prev.filter((p) => p.user_id !== participantId));
 
       const cancelMsg =
         chatPurpose === 'dating'
@@ -1501,6 +1527,12 @@ export default function ChatRoom() {
       setGroupAvatars((prev) =>
         prev.map((av) => av.user_id === participantId ? { ...av, is_confirmed: true } : av)
       );
+      setConfirmedParticipants((prev) => {
+        if (prev.some((p) => p.user_id === participantId)) return prev;
+        const av = groupAvatars.find((a) => a.user_id === participantId);
+        if (av) return [...prev, { user_id: av.user_id, name: av.name, photo_url: av.photo_url, tennis_photo_url: av.tennis_photo_url }];
+        return prev;
+      });
 
       if (courtId) {
         const [courtRes, participantProfRes] = await Promise.all([
@@ -2468,7 +2500,7 @@ export default function ChatRoom() {
               확정된 참여자만 취소할 수 있습니다
             </p>
             <div className="flex flex-col gap-2 mb-3">
-              {groupAvatars.filter((av) => av.user_id !== user?.id && av.is_confirmed).map((av) => (
+              {confirmedParticipants.map((av) => (
                 <button
                   key={av.user_id}
                   onClick={() => handleParticipantCancel(av.user_id, av.name)}
@@ -2495,7 +2527,7 @@ export default function ChatRoom() {
                   </span>
                 </button>
               ))}
-              {groupAvatars.filter((av) => av.user_id !== user?.id && av.is_confirmed).length === 0 && (
+              {confirmedParticipants.length === 0 && (
                 <p className="text-sm text-center py-4" style={{ color: 'rgba(0,0,0,0.4)' }}>확정된 참여자가 없습니다.</p>
               )}
             </div>
