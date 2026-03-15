@@ -64,11 +64,6 @@ export default function GroupChatRoom() {
   const updateMyLastRead = useCallback(async () => {
     if (!groupChatId || !user) return;
     const now = new Date().toISOString();
-    await supabase
-      .from('court_group_chat_participants')
-      .update({ last_read_at: now } as never)
-      .eq('group_chat_id', groupChatId)
-      .eq('user_id', user.id);
     setParticipantLastReads((prev) => ({ ...prev, [user.id]: now }));
     await supabase
       .from('court_group_chat_messages')
@@ -121,12 +116,12 @@ export default function GroupChatRoom() {
     try {
       if (!user) { setLoading(false); return; }
       const { data: myPartData } = await supabase
-        .from('court_group_chat_participants')
-        .select('joined_at')
+        .from('group_chat_members')
+        .select('created_at')
         .eq('group_chat_id', groupChatId)
         .eq('user_id', user.id)
         .maybeSingle();
-      const joinedAt = (myPartData as { joined_at?: string | null } | null)?.joined_at ?? null;
+      const joinedAt = (myPartData as { created_at?: string | null } | null)?.created_at ?? null;
 
       let query = supabase
         .from('court_group_chat_messages')
@@ -146,7 +141,7 @@ export default function GroupChatRoom() {
 
   const fetchParticipants = useCallback(async () => {
     const { data } = await supabase
-      .from('court_group_chat_participants')
+      .from('group_chat_members')
       .select(`*, profile:user_id (*)`)
       .eq('group_chat_id', groupChatId)
       .neq('status', 'rejected');
@@ -160,7 +155,7 @@ export default function GroupChatRoom() {
 
   const fetchConfirmedParticipants = useCallback(async () => {
     const { data } = await supabase
-      .from('court_group_chat_participants')
+      .from('group_chat_members')
       .select('user_id')
       .eq('group_chat_id', groupChatId)
       .eq('status', 'confirmed');
@@ -215,7 +210,7 @@ export default function GroupChatRoom() {
       .channel(`group_participants_${groupChatId}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'court_group_chat_participants', filter: `group_chat_id=eq.${groupChatId}` },
+        { event: '*', schema: 'public', table: 'group_chat_members', filter: `group_chat_id=eq.${groupChatId}` },
         (payload) => {
           if (payload.eventType === 'UPDATE') {
             const updated = payload.new as { user_id: string; last_read_at?: string | null };
@@ -311,9 +306,10 @@ export default function GroupChatRoom() {
     setActionLoading(participant.user_id);
 
     const { error } = await supabase
-      .from('court_group_chat_participants')
+      .from('group_chat_members')
       .update({ status: 'confirmed' })
-      .eq('id', participant.id);
+      .eq('group_chat_id', groupChatId!)
+      .eq('user_id', participant.user_id);
 
     if (error) {
       setActionLoading(null);
@@ -381,7 +377,7 @@ export default function GroupChatRoom() {
       is_read: false,
     });
 
-    await supabase.from('court_group_chat_participants').update({ status: 'rejected' }).eq('id', participant.id);
+    await supabase.from('group_chat_members').update({ status: 'rejected' }).eq('group_chat_id', groupChatId!).eq('user_id', participant.user_id);
     setActionLoading(null);
   };
 
@@ -433,28 +429,18 @@ export default function GroupChatRoom() {
 
   const handleMatchCancelConfirm = async () => {
     setShowCancelConfirm(false);
-    const confirmedList = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId);
     if (court) {
       const courtExtra = court as Court & { current_participants?: number; status?: string };
-      const confirmedParticipants = confirmedList;
-      let totalMaleToRemove = 0;
-      let totalFemaleToRemove = 0;
-      for (const p of confirmedParticipants) {
-        const gender = p.profile?.gender;
-        if (gender === 'male' || gender === '남성') totalMaleToRemove++;
-        else totalFemaleToRemove++;
-      }
-      const newConfirmedMale = Math.max(0, (court.confirmed_male_slots ?? 0) - totalMaleToRemove);
-      const newConfirmedFemale = Math.max(0, (court.confirmed_female_slots ?? 0) - totalFemaleToRemove);
-      const newCurrentParticipants = Math.max(0, (courtExtra.current_participants ?? 0) - confirmedParticipants.length);
+      const count = confirmedParticipants.length;
+      const newCurrentParticipants = Math.max(0, (courtExtra.current_participants ?? 0) - count);
       const wasClosedNowOpen = courtExtra.status === 'closed';
       await supabase.from('courts').update({
-        confirmed_male_slots: newConfirmedMale,
-        confirmed_female_slots: newConfirmedFemale,
+        confirmed_male_slots: 0,
+        confirmed_female_slots: 0,
         current_participants: newCurrentParticipants,
         ...(wasClosedNowOpen ? { status: 'open' } : {}),
       } as never).eq('id', court.id);
-      setCourt((prev) => prev ? { ...prev, confirmed_male_slots: newConfirmedMale, confirmed_female_slots: newConfirmedFemale } as Court : prev);
+      setCourt((prev) => prev ? { ...prev, confirmed_male_slots: 0, confirmed_female_slots: 0 } as Court : prev);
     }
     await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
@@ -507,7 +493,7 @@ export default function GroupChatRoom() {
       type: 'system',
       is_read: false,
     });
-    await supabase.from('court_group_chat_participants').delete().eq('group_chat_id', groupChatId!).eq('user_id', requesterId);
+    await supabase.from('group_chat_members').delete().eq('group_chat_id', groupChatId!).eq('user_id', requesterId);
 
     if (court) {
       const { data: reqProfile } = await supabase.from('profiles').select('gender').eq('user_id', requesterId).maybeSingle();
@@ -533,7 +519,7 @@ export default function GroupChatRoom() {
     setKickingId(targetId);
     try {
       const kickMsg = isDating ? `${targetName}님이 자리를 떠났습니다 💌` : `${targetName}님이 코트에서 퇴장되었습니다 🎾`;
-      await supabase.from('court_group_chat_participants').delete().eq('group_chat_id', groupChatId).eq('user_id', targetId);
+      await supabase.from('group_chat_members').delete().eq('group_chat_id', groupChatId).eq('user_id', targetId);
       await supabase.from('court_group_chat_messages').insert({
         group_chat_id: groupChatId,
         sender_id: null,
