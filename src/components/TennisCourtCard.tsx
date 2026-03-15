@@ -126,7 +126,7 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
                 src={photos[photoIndex]}
                 alt={profile?.name}
                 className="w-full h-full"
-                style={{ objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
+                style={{ objectFit: 'contain', objectPosition: 'center', display: 'block', background: '#0d2218' }}
               />
             </button>
 
@@ -170,8 +170,8 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
             <div className="absolute top-3 right-3 z-10 flex gap-1.5">
               {court.format && (
                 <span
-                  className="font-bold rounded-full px-2.5 py-1 tracking-wide"
-                  style={{ background: 'rgba(27,67,50,0.82)', color: '#C9A84C', fontSize: 11, border: '1px solid rgba(201,168,76,0.4)', backdropFilter: 'blur(4px)' }}
+                  className="font-semibold rounded-full px-3 py-1 tracking-normal"
+                  style={{ background: 'rgba(255,255,255,0.18)', color: '#fff', fontSize: 12, border: '1.5px solid rgba(255,255,255,0.55)', backdropFilter: 'blur(8px)', letterSpacing: '0.04em' }}
                 >
                   {court.format}
                 </span>
@@ -271,8 +271,8 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           <div className="flex items-center gap-1">
             {court.format && (
               <span
-                className="font-bold rounded-full px-2.5 py-1"
-                style={{ background: 'rgba(27,67,50,0.08)', color: '#1B5E42', fontSize: 11, border: '1px solid rgba(27,67,50,0.18)' }}
+                className="font-semibold rounded-full px-3 py-1"
+                style={{ background: '#1B4332', color: '#fff', fontSize: 12, border: 'none', letterSpacing: '0.04em' }}
               >
                 {court.format}
               </span>

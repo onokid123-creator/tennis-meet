@@ -578,7 +578,7 @@ export default function Applications() {
   const filteredSent = sentApps.filter((a) => a.purpose === purposeTab);
   const pendingReceivedCount = filteredReceived.length;
 
-  const renderStatusBadge = (status: string) => {
+  const renderStatusBadge = (status: string, rejectionReason?: string | null) => {
     if (status === 'accepted') {
       return (
         <span
@@ -595,7 +595,7 @@ export default function Applications() {
           className="text-xs font-semibold px-2.5 py-1 rounded-full"
           style={{ background: 'rgba(156,163,175,0.12)', color: '#9CA3AF', border: '1px solid rgba(156,163,175,0.25)' }}
         >
-          거절됨
+          {rejectionReason ? `거절됨 - ${rejectionReason}` : '거절됨'}
         </span>
       );
     }
@@ -749,7 +749,6 @@ export default function Applications() {
 
   const renderSentCard = (app: Application) => {
     const host = app.owner;
-    const rejectionMsg = app.status === 'rejected' && app.rejection_reason ? app.rejection_reason : null;
 
     return (
       <div
@@ -792,7 +791,7 @@ export default function Applications() {
                   <span className="text-sm text-gray-500">{host.age}세</span>
                 )}
               </div>
-              {renderStatusBadge(app.status)}
+              {renderStatusBadge(app.status, app.rejection_reason)}
             </div>
 
             {app.court && (
@@ -816,16 +815,6 @@ export default function Applications() {
               </div>
             )}
 
-            {rejectionMsg && (
-              <div
-                className="mt-1 px-3 py-2 rounded-xl"
-                style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)' }}
-              >
-                <p className="text-xs font-medium leading-relaxed" style={{ color: '#DC2626' }}>
-                  {app.purpose === 'dating' ? `💌 신청이 거절되었습니다. 사유: ${rejectionMsg}` : `🎾 신청이 거절되었습니다. 사유: ${rejectionMsg}`}
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
