@@ -313,19 +313,53 @@ export default function Applications() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) return;
     fetchApplications();
 
     const channel = supabase
-      .channel('applications_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, () => {
-        fetchApplications();
-      })
+      .channel(`applications_realtime_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'applications',
+          filter: `owner_id=eq.${user.id}`,
+        },
+        () => {
+          fetchApplications();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'applications',
+          filter: `owner_id=eq.${user.id}`,
+        },
+        () => {
+          fetchApplications();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'applications',
+          filter: `applicant_id=eq.${user.id}`,
+        },
+        () => {
+          fetchApplications();
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchApplications]);
+  }, [fetchApplications, user]);
 
   const isGroupFormat = (format: string): boolean => {
     return ['복식', '혼복', '남복', '여복'].some((f) => format.includes(f));
