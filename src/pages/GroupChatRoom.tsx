@@ -66,6 +66,11 @@ export default function GroupChatRoom() {
     const now = new Date().toISOString();
     setParticipantLastReads((prev) => ({ ...prev, [user.id]: now }));
     await supabase
+      .from('group_chat_members')
+      .update({ last_read_at: now })
+      .eq('group_chat_id', groupChatId)
+      .eq('user_id', user.id);
+    await supabase
       .from('messages')
       .update({ is_read: true })
       .eq('group_chat_id', groupChatId)

@@ -1613,12 +1613,9 @@ export default function ChatRoom() {
     }
   };
 
-  const getUnreadBadgeMessageId = (): string | null => {
-    const myMsgs = messages.filter((m) => m.sender_id === user?.id && m.type !== 'system');
-    if (myMsgs.length === 0) return null;
-    const unread = myMsgs.filter((m) => !otherLastRead || new Date(m.created_at) > new Date(otherLastRead));
-    if (unread.length === 0) return null;
-    return unread[unread.length - 1].id;
+  const is1v1MessageUnread = (msgCreatedAt: string): boolean => {
+    if (!otherLastRead) return true;
+    return new Date(msgCreatedAt) > new Date(otherLastRead);
   };
 
   const getGroupUnreadCount = (msgCreatedAt: string): number => {
@@ -1633,8 +1630,6 @@ export default function ChatRoom() {
     }).length;
     return unreadCount;
   };
-
-  const unreadBadgeId = getUnreadBadgeMessageId();
   const isDating = chatPurpose === 'dating';
   const isDeletedUser = !isGroupChat && !otherUser;
   const isOpponentBlocked = otherUser ? blockedUserIds.includes(otherUser.user_id) : false;
@@ -2107,7 +2102,7 @@ export default function ChatRoom() {
                 const payload = msg.payload as AfterProposalPayload | null;
                 const status = payload?.status ?? 'pending';
                 const isMe = msg.sender_id === user?.id;
-                const showBadge = isMe && msg.id === unreadBadgeId;
+                const showBadge = isMe && !isGroupChat && is1v1MessageUnread(msg.created_at);
                 return (
                   <div key={msg.id} className={`flex flex-col py-1 ${isMe ? 'items-end' : 'items-start'}`}>
                     <div className={`flex items-end gap-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -2162,7 +2157,7 @@ export default function ChatRoom() {
               }
 
               const isMe = msg.sender_id === user?.id;
-              const showBadge = isMe && msg.id === unreadBadgeId;
+              const showBadge = isMe && !isGroupChat && is1v1MessageUnread(msg.created_at);
               const groupUnread = isGroupChat && !msg.id.startsWith('temp_') ? getGroupUnreadCount(msg.created_at) : 0;
               const prevMsg = idx > 0 ? messages[idx - 1] : null;
               const showDate = !prevMsg || new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
