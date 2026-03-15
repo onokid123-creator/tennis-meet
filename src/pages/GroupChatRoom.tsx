@@ -307,9 +307,11 @@ export default function GroupChatRoom() {
 
     const { error } = await supabase
       .from('group_chat_members')
-      .update({ status: 'confirmed' })
-      .eq('group_chat_id', groupChatId!)
-      .eq('user_id', participant.user_id);
+      .upsert({
+        group_chat_id: groupChatId!,
+        user_id: participant.user_id,
+        status: 'confirmed'
+      }, { onConflict: 'group_chat_id,user_id' });
 
     if (error) {
       setActionLoading(null);
