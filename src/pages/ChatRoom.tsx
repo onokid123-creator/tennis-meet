@@ -2163,7 +2163,7 @@ export default function ChatRoom() {
 
               const isMe = msg.sender_id === user?.id;
               const showBadge = isMe && msg.id === unreadBadgeId;
-              const groupUnread = isMe && isGroupChat && !msg.id.startsWith('temp_') ? getGroupUnreadCount(msg.created_at) : 0;
+              const groupUnread = isGroupChat && !msg.id.startsWith('temp_') ? getGroupUnreadCount(msg.created_at) : 0;
               const prevMsg = idx > 0 ? messages[idx - 1] : null;
               const showDate = !prevMsg || new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
               const isFailed = isMe && msg._failed === true;
@@ -2267,6 +2267,9 @@ export default function ChatRoom() {
                             <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>
                           </div>
                           <div className="flex flex-col items-start flex-shrink-0 mb-0.5 gap-0.5">
+                            {isGroupChat && groupUnread > 0 && (
+                              <span className="text-xs font-bold leading-none" style={{ color: isDating ? '#B76E79' : '#C9A84C' }}>{groupUnread}</span>
+                            )}
                             <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(139,48,96,0.45)' : 'rgba(27,67,50,0.45)' }}>
                               {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                             </span>

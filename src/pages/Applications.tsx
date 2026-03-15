@@ -13,7 +13,7 @@ interface ApplicantModalProps {
   app: Application;
   onClose: () => void;
   onAccept: (app: Application) => Promise<void>;
-  onReject: (app: Application) => Promise<void>;
+  onReject: (app: Application) => void;
   processing: boolean;
   errorMsg: string | null;
 }
@@ -278,6 +278,9 @@ export default function Applications() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<Application | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
 
   const fetchApplications = useCallback(async () => {
     if (!user) return;
@@ -486,7 +489,20 @@ export default function Applications() {
         isNewChat = result.isNew ?? false;
       }
 
-      if (isNewChat && targetChatId) {
+      const applicantName = app.applicant?.name ?? '참여자';
+      if (useGroupChat && targetChatId) {
+        const entryMsg =
+          courtPurpose === 'dating'
+            ? `💌 ${applicantName}님이 입장했습니다. 설레는 만남이 시작돼요!`
+            : `🎾 ${applicantName}님이 코트에 합류했습니다!`;
+        await supabase.from('messages').insert({
+          group_chat_id: targetChatId,
+          sender_id: null,
+          content: entryMsg,
+          is_read: false,
+          type: 'system',
+        });
+      } else if (!useGroupChat && isNewChat && targetChatId) {
         const welcomeMsg =
           courtPurpose === 'dating'
             ? '채팅방이 생성되었어요. 경기 전에 식사 약속도 미리 잡아보세요! 🍱✨'
@@ -512,12 +528,75 @@ export default function Applications() {
     }
   };
 
-  const handleReject = async (app: Application) => {
-    if (processingId) return;
-    setProcessingId(app.id);
+  const handleReject = (app: Application) => {
+    setRejectTarget(app);
+    setRejectReason('');
+    setSelectedApp(null);
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectTarget || rejectSubmitting) return;
+    setRejectSubmitting(true);
 
     try {
-      await supabase.from('applications').update({ status: 'rejected' }).eq('id', app.id);
+      const app = rejectTarget;
+      const reason = rejectReason.trim();
+
+      await supabase.from('applications').update({
+        status: 'rejected',
+        ...(reason ? { rejection_reason: reason } : {}),
+      }).eq('id', app.id);
+
+      if (reason) {
+        const rejectMsg =
+          app.purpose === 'dating'
+            ? `💌 신청이 거절되었습니다. 사유: ${reason}`
+            : `🎾 신청이 거절되었습니다. 사유: ${reason}`;
+
+        const { data: existingChat } = await supabase
+          .from('chats')
+          .select('id')
+          .or(`and(user1_id.eq.${user!.id},user2_id.eq.${app.applicant_id}),and(user1_id.eq.${app.applicant_id},user2_id.eq.${user!.id})`)
+          .eq('court_id', app.court_id)
+          .maybeSingle();
+
+        if (existingChat) {
+          await supabase.from('messages').insert({
+            chat_id: existingChat.id,
+            sender_id: user!.id,
+            content: rejectMsg,
+            is_read: false,
+            type: 'system',
+          });
+        } else {
+          const { data: newChat } = await supabase
+            .from('chats')
+            .insert({
+              user1_id: user!.id,
+              user2_id: app.applicant_id,
+              purpose: app.purpose ?? 'tennis',
+              court_id: app.court_id,
+              is_group: false,
+            })
+            .select('id')
+            .maybeSingle();
+
+          if (newChat) {
+            await supabase.rpc('accept_1v1_chat', {
+              p_chat_id: newChat.id,
+              p_host_id: user!.id,
+              p_applicant_id: app.applicant_id,
+            });
+            await supabase.from('messages').insert({
+              chat_id: newChat.id,
+              sender_id: user!.id,
+              content: rejectMsg,
+              is_read: false,
+              type: 'system',
+            });
+          }
+        }
+      }
 
       if (app.purpose === 'dating') {
         const blockedRaw = localStorage.getItem('blocked_users');
@@ -529,9 +608,10 @@ export default function Applications() {
       }
 
       setReceivedApps((prev) => prev.filter((a) => a.id !== app.id));
-      setSelectedApp(null);
+      setRejectTarget(null);
+      setRejectReason('');
     } finally {
-      setProcessingId(null);
+      setRejectSubmitting(false);
     }
   };
 
@@ -920,6 +1000,64 @@ export default function Applications() {
           processing={processingId === selectedApp.id}
           errorMsg={acceptError}
         />
+      )}
+
+      {rejectTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => { setRejectTarget(null); setRejectReason(''); }}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
+            style={{
+              background: rejectTarget.purpose === 'dating' ? '#FFF8F5' : '#F4F8F5',
+              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-10 h-1 rounded-full mx-auto mb-4"
+              style={{ background: rejectTarget.purpose === 'dating' ? 'rgba(183,110,121,0.3)' : 'rgba(27,67,50,0.25)' }}
+            />
+            <p className="font-bold text-gray-900 text-base mb-1">거절 사유 입력</p>
+            <p className="text-xs text-gray-400 mb-4">
+              {rejectTarget.purpose === 'dating'
+                ? '입력하신 사유가 신청자에게 메시지로 전달됩니다. (선택사항)'
+                : '입력하신 사유가 신청자에게 메시지로 전달됩니다. (선택사항)'}
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="거절 사유를 입력하세요..."
+              rows={3}
+              className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none"
+              style={{
+                background: '#fff',
+                border: `1.5px solid ${rejectTarget.purpose === 'dating' ? 'rgba(183,110,121,0.25)' : 'rgba(27,67,50,0.18)'}`,
+                color: '#1a1a1a',
+                marginBottom: '12px',
+              }}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setRejectTarget(null); setRejectReason(''); }}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleRejectConfirm}
+                disabled={rejectSubmitting}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
+                style={{ background: rejectTarget.purpose === 'dating' ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+              >
+                {rejectSubmitting ? '처리 중...' : '거절하기'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

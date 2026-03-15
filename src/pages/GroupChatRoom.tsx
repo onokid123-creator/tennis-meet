@@ -1037,7 +1037,7 @@ export default function GroupChatRoom() {
               const showAvatar = !isMe && isLastInSenderGroup;
               const isFirstInGroup = !isMe && (!prevMsg || prevMsg.sender_id !== message.sender_id);
               const senderPhoto = senderProfile ? (isDating ? senderProfile.photo_url : (senderProfile.tennis_photo_url || senderProfile.photo_url)) : null;
-              const groupUnread = isMe && !message.id.startsWith('temp_') ? getGroupUnreadCount(message.created_at) : 0;
+              const groupUnread = !message.id.startsWith('temp_') ? getGroupUnreadCount(message.created_at) : 0;
 
               return (
                 <div key={message.id}>
@@ -1107,9 +1107,14 @@ export default function GroupChatRoom() {
                           >
                             <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ color: isDating ? '#2D1820' : '#0F2118' }}>{message.content}</p>
                           </div>
-                          <span className="text-[10px] whitespace-nowrap flex-shrink-0 mb-1" style={{ color: isDating ? 'rgba(139,48,96,0.4)' : 'rgba(27,67,50,0.4)' }}>
-                            {new Date(message.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                          <div className="flex flex-col items-start flex-shrink-0 mb-1 gap-0.5">
+                            {groupUnread > 0 && (
+                              <span className="text-xs font-bold leading-none" style={{ color: isDating ? '#B76E79' : '#C9A84C' }}>{groupUnread}</span>
+                            )}
+                            <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(139,48,96,0.4)' : 'rgba(27,67,50,0.4)' }}>
+                              {new Date(message.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

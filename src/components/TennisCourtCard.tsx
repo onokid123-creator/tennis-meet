@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Court } from '../types';
-import { Pencil, Trash2, X } from 'lucide-react';
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TennisCourtCardProps {
   court: Court;
@@ -11,6 +11,8 @@ interface TennisCourtCardProps {
 }
 
 function getCourtStatus(court: Court): 'open' | 'closing-soon' | 'closed' {
+  if (court.status === 'closed') return 'closed';
+
   const maleSlots = court.male_slots ?? 0;
   const femaleSlots = court.female_slots ?? 0;
   const confirmedMale = court.confirmed_male_slots ?? 0;
@@ -42,178 +44,286 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
   const status = getCourtStatus(court);
   const isClosed = status === 'closed';
   const isClosingSoon = status === 'closing-soon';
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  const photoUrl = court.tennis_photo_url || profile?.photo_url;
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalIndex, setModalIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const modalTouchStartX = useRef<number | null>(null);
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('ko-KR', {
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short',
-    });
-  };
+  const photos: string[] = (() => {
+    if (court.tennis_photo_url) return [court.tennis_photo_url];
+    if (profile?.tennis_photo_url) return [profile.tennis_photo_url];
+    if (profile?.photo_url) return [profile.photo_url];
+    return [];
+  })();
 
   const totalMale = (court.confirmed_male_slots ?? 0) + (court.male_slots ?? 0);
   const totalFemale = (court.confirmed_female_slots ?? 0) + (court.female_slots ?? 0);
-  const confirmedMale = court.confirmed_male_slots ?? 0;
-  const confirmedFemale = court.confirmed_female_slots ?? 0;
   const remainMale = court.male_slots ?? 0;
   const remainFemale = court.female_slots ?? 0;
+
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+
+  const prevPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPhotoIndex((i) => (i - 1 + photos.length) % photos.length);
+  };
+  const nextPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPhotoIndex((i) => (i + 1) % photos.length);
+  };
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40 && photos.length > 1) {
+      if (diff > 0) setPhotoIndex((i) => (i + 1) % photos.length);
+      else setPhotoIndex((i) => (i - 1 + photos.length) % photos.length);
+    }
+    touchStartX.current = null;
+  };
+  const openModal = (idx: number) => { setModalIndex(idx); setModalOpen(true); };
+  const modalPrev = (e: React.MouseEvent) => { e.stopPropagation(); setModalIndex((i) => (i - 1 + photos.length) % photos.length); };
+  const modalNext = (e: React.MouseEvent) => { e.stopPropagation(); setModalIndex((i) => (i + 1) % photos.length); };
+  const handleModalTouchStart = (e: React.TouchEvent) => { modalTouchStartX.current = e.touches[0].clientX; };
+  const handleModalTouchEnd = (e: React.TouchEvent) => {
+    if (modalTouchStartX.current === null) return;
+    const diff = modalTouchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) setModalIndex((i) => (i + 1) % photos.length);
+      else setModalIndex((i) => (i - 1 + photos.length) % photos.length);
+    }
+    modalTouchStartX.current = null;
+  };
 
   return (
     <div
       className="overflow-hidden"
       style={{
         borderRadius: '22px',
-        background: 'rgba(255,255,255,0.72)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        boxShadow: '0 4px 24px rgba(26,74,58,0.1), 0 1px 4px rgba(26,74,58,0.06)',
-        border: '1px solid rgba(255,255,255,0.85)',
+        background: '#fff',
+        boxShadow: '0 4px 20px rgba(27,67,50,0.10), 0 1px 4px rgba(27,67,50,0.06)',
+        border: '1px solid rgba(27,67,50,0.08)',
       }}
     >
       <div
-        className="px-4 pt-3.5 pb-2.5 flex items-center justify-between"
-        style={{ borderBottom: '1px solid rgba(26,74,58,0.07)' }}
+        className="relative select-none"
+        style={{ height: photos.length > 0 ? '220px' : '0px' }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        <div className="flex items-center gap-2">
-          {court.format && (
-            <span
-              className="font-bold rounded-full px-3 py-1 tracking-wide"
-              style={{
-                background: 'rgba(26,74,58,0.08)',
-                color: '#1B5E42',
-                fontSize: 11.5,
-                border: '1px solid rgba(26,74,58,0.18)',
-                letterSpacing: '0.03em',
-              }}
+        {photos.length > 0 && (
+          <>
+            <button
+              className="w-full h-full block"
+              onClick={() => openModal(photoIndex)}
+              style={{ padding: 0, border: 'none', background: 'none' }}
             >
-              {court.format}
-            </span>
-          )}
-          {isClosingSoon && !isClosed && (
-            <span
-              className="font-semibold rounded-full px-2.5 py-1"
-              style={{ background: 'rgba(251,146,60,0.1)', color: '#D97706', fontSize: 11, border: '1px solid rgba(251,146,60,0.25)' }}
-            >
-              마감 임박
-            </span>
-          )}
-          {isClosed && (
-            <span
-              className="font-semibold rounded-full px-2.5 py-1"
-              style={{ background: 'rgba(239,68,68,0.08)', color: '#DC2626', fontSize: 11, border: '1px solid rgba(239,68,68,0.2)' }}
-            >
-              마감
-            </span>
-          )}
-        </div>
-        {isOwner && (
-          <div className="flex items-center gap-1">
-            <button onClick={onEdit} className="p-1.5 rounded-lg transition active:scale-95" style={{ color: 'rgba(26,74,58,0.4)' }}>
-              <Pencil className="w-3.5 h-3.5" />
+              <img
+                key={photoIndex}
+                src={photos[photoIndex]}
+                alt={profile?.name}
+                className="w-full h-full"
+                style={{ objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
+              />
             </button>
-            <button onClick={onDelete} className="p-1.5 rounded-lg transition active:scale-95" style={{ color: 'rgba(26,74,58,0.4)' }}>
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 40%, transparent 70%)' }}
+            />
+
+            {photos.length > 1 && (
+              <>
+                <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
+                  {photos.map((_, i) => (
+                    <div
+                      key={i}
+                      className="rounded-full transition-all duration-300"
+                      style={{
+                        width: i === photoIndex ? '18px' : '6px',
+                        height: '6px',
+                        background: i === photoIndex ? '#C9A84C' : 'rgba(255,255,255,0.5)',
+                      }}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={prevPhoto}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
+                  style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}
+                >
+                  <ChevronLeft className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  onClick={nextPhoto}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
+                  style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}
+                >
+                  <ChevronRight className="w-4 h-4 text-white" />
+                </button>
+              </>
+            )}
+
+            <div className="absolute top-3 right-3 z-10 flex gap-1.5">
+              {court.format && (
+                <span
+                  className="font-bold rounded-full px-2.5 py-1 tracking-wide"
+                  style={{ background: 'rgba(27,67,50,0.82)', color: '#C9A84C', fontSize: 11, border: '1px solid rgba(201,168,76,0.4)', backdropFilter: 'blur(4px)' }}
+                >
+                  {court.format}
+                </span>
+              )}
+              {isClosingSoon && !isClosed && (
+                <span
+                  className="font-semibold rounded-full px-2.5 py-1"
+                  style={{ background: 'rgba(217,119,6,0.85)', color: '#fff', fontSize: 11 }}
+                >
+                  마감 임박
+                </span>
+              )}
+              {isClosed && (
+                <span
+                  className="font-semibold rounded-full px-2.5 py-1"
+                  style={{ background: 'rgba(220,38,38,0.85)', color: '#fff', fontSize: 11 }}
+                >
+                  마감
+                </span>
+              )}
+            </div>
+
+            {isOwner && (
+              <div className="absolute bottom-3 right-3 z-10 flex gap-1.5">
+                <button
+                  onClick={onEdit}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95"
+                  style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+                >
+                  <Pencil className="w-3.5 h-3.5 text-white" />
+                </button>
+                <button
+                  onClick={onDelete}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95"
+                  style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-white" />
+                </button>
+              </div>
+            )}
+
+            <div className="absolute bottom-3 left-4 right-16 z-10">
+              <div className="flex items-center gap-2">
+                <span className="text-white font-bold" style={{ fontSize: 16, textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+                  {profile?.name}
+                </span>
+                {profile?.experience && (
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(201,168,76,0.3)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.5)', backdropFilter: 'blur(4px)' }}
+                  >
+                    {profile.experience}
+                  </span>
+                )}
+                {profile?.tennis_style && (
+                  <span
+                    className="text-xs font-medium px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', backdropFilter: 'blur(4px)' }}
+                  >
+                    {profile.tennis_style}
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
-      <div className="px-4 pt-4 pb-4">
-        <div className="flex items-start gap-3.5 mb-4">
-          <button
-            className="flex-shrink-0 relative"
-            onClick={() => photoUrl && setSelectedImage(photoUrl)}
-            disabled={!photoUrl}
-          >
+      {photos.length === 0 && (
+        <div
+          className="px-4 pt-3.5 pb-2.5 flex items-center justify-between"
+          style={{ borderBottom: '1px solid rgba(27,67,50,0.07)' }}
+        >
+          <div className="flex items-center gap-3">
             <div
-              className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center"
-              style={{
-                background: photoUrl ? 'transparent' : 'rgba(26,74,58,0.08)',
-                border: '2px solid rgba(201,168,76,0.35)',
-                boxShadow: '0 2px 8px rgba(26,74,58,0.12)',
-              }}
+              className="w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(27,67,50,0.1)', border: '1.5px solid rgba(201,168,76,0.3)' }}
             >
-              {photoUrl ? (
-                <img
-                  src={photoUrl}
-                  alt={profile?.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
-                  loading="eager"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-              ) : (
-                <span style={{ color: '#1B5E42', fontWeight: 700, fontSize: 20 }}>{profile?.name?.charAt(0) || 'U'}</span>
-              )}
+              <span style={{ color: '#1B4332', fontWeight: 700, fontSize: 18 }}>{profile?.name?.charAt(0) || 'U'}</span>
             </div>
-            <div
-              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.95)', border: '1.5px solid rgba(201,168,76,0.45)', boxShadow: '0 1px 4px rgba(0,0,0,0.1)' }}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2C7 2 3 6 3 11c0 3.5 2 6.5 5 8l1 3h6l1-3c3-1.5 5-4.5 5-8 0-5-4-9-9-9z"/>
-                <line x1="9" y1="19" x2="15" y2="19"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
-              </svg>
-            </div>
-          </button>
-
-          <div className="flex-1 min-w-0 pt-0.5">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span style={{ fontWeight: 700, fontSize: 15.5, color: '#1A2E22', letterSpacing: '-0.01em' }}>{profile?.name}</span>
-              {profile?.experience && (
-                <span
-                  className="font-semibold rounded-full px-2 py-0.5"
-                  style={{ background: 'rgba(201,168,76,0.12)', color: '#A07828', fontSize: 11, border: '1px solid rgba(201,168,76,0.3)' }}
-                >
-                  {profile.experience}
-                </span>
-              )}
-              {profile?.tennis_style && (
-                <span
-                  className="font-medium rounded-full px-2 py-0.5"
-                  style={{ background: 'rgba(26,74,58,0.07)', color: '#1B5E42', fontSize: 11, border: '1px solid rgba(26,74,58,0.14)' }}
-                >
-                  {profile.tennis_style}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              <span style={{ fontWeight: 600, fontSize: 13.5, color: '#1A2E22' }} className="truncate">{court.court_name}</span>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span style={{ fontWeight: 700, fontSize: 15, color: '#1A2E22' }}>{profile?.name}</span>
+                {profile?.experience && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(201,168,76,0.12)', color: '#A07828', border: '1px solid rgba(201,168,76,0.3)' }}>
+                    {profile.experience}
+                  </span>
+                )}
+                {profile?.tennis_style && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(27,67,50,0.07)', color: '#1B5E42', border: '1px solid rgba(27,67,50,0.14)' }}>
+                    {profile.tennis_style}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+          <div className="flex items-center gap-1">
+            {court.format && (
+              <span
+                className="font-bold rounded-full px-2.5 py-1"
+                style={{ background: 'rgba(27,67,50,0.08)', color: '#1B5E42', fontSize: 11, border: '1px solid rgba(27,67,50,0.18)' }}
+              >
+                {court.format}
+              </span>
+            )}
+            {isClosingSoon && !isClosed && (
+              <span className="font-semibold rounded-full px-2.5 py-1" style={{ background: 'rgba(251,146,60,0.1)', color: '#D97706', fontSize: 11 }}>마감 임박</span>
+            )}
+            {isClosed && (
+              <span className="font-semibold rounded-full px-2.5 py-1" style={{ background: 'rgba(239,68,68,0.08)', color: '#DC2626', fontSize: 11 }}>마감</span>
+            )}
+            {isOwner && (
+              <>
+                <button onClick={onEdit} className="p-1.5 rounded-lg transition active:scale-95" style={{ color: 'rgba(27,67,50,0.4)' }}>
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={onDelete} className="p-1.5 rounded-lg transition active:scale-95" style={{ color: 'rgba(27,67,50,0.4)' }}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="px-4 pt-3.5 pb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span style={{ fontWeight: 700, fontSize: 14, color: '#1A2E22' }} className="truncate">{court.court_name}</span>
         </div>
 
         <div
-          className="rounded-2xl px-4 py-3 mb-4 flex flex-col gap-2"
-          style={{ background: 'rgba(26,74,58,0.05)', border: '1px solid rgba(26,74,58,0.1)' }}
+          className="rounded-2xl px-4 py-3 mb-3 flex flex-col gap-2"
+          style={{ background: 'rgba(27,67,50,0.04)', border: '1px solid rgba(27,67,50,0.09)' }}
         >
           {court.date && (
             <div className="flex items-center gap-2">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1B5E42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
-              <span style={{ fontSize: 13, color: '#1A2E22', opacity: 0.75 }}>{formatDate(court.date)}</span>
+              <span style={{ fontSize: 13, color: '#1A2E22', opacity: 0.8 }}>{formatDate(court.date)}</span>
             </div>
           )}
           {court.start_time && (
             <div className="flex items-center gap-2">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1B5E42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
-              <span style={{ fontSize: 13, color: '#1A2E22', opacity: 0.75 }}>
+              <span style={{ fontSize: 13, color: '#1A2E22', opacity: 0.8 }}>
                 {court.start_time}{court.end_time ? ` — ${court.end_time}` : ''}
               </span>
             </div>
@@ -221,58 +331,72 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
         </div>
 
         {(totalMale > 0 || totalFemale > 0) && (
-          <div className="mb-3 flex items-center gap-2 flex-wrap">
+          <div className="mb-3">
             {isClosed ? (
-              <span
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.2)' }}
+              <div
+                className="rounded-xl px-4 py-2.5 text-center"
+                style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)' }}
               >
-                모집 마감
-              </span>
+                <span className="text-sm font-bold" style={{ color: '#DC2626' }}>모집 마감</span>
+              </div>
             ) : (
-              <>
+              <div className="grid gap-2" style={{ gridTemplateColumns: totalMale > 0 && totalFemale > 0 ? '1fr 1fr' : '1fr' }}>
                 {totalMale > 0 && (
-                  <span
-                    className="text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1"
+                  <div
+                    className="rounded-xl px-3 py-2.5 flex flex-col items-center gap-0.5"
                     style={{
-                      background: remainMale <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(59,130,246,0.08)',
-                      color: remainMale <= 0 ? '#DC2626' : '#2563EB',
-                      border: `1px solid ${remainMale <= 0 ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)'}`,
+                      background: remainMale <= 0 ? 'rgba(239,68,68,0.06)' : 'rgba(59,130,246,0.07)',
+                      border: `1px solid ${remainMale <= 0 ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.18)'}`,
                     }}
                   >
-                    남 {remainMale <= 0 ? '마감' : `${remainMale}명`}
-                    {confirmedMale > 0 && remainMale > 0 && <span style={{ opacity: 0.55 }}>({confirmedMale}/{totalMale})</span>}
-                  </span>
+                    <span className="text-xs font-semibold" style={{ color: remainMale <= 0 ? '#DC2626' : '#2563EB', opacity: 0.7 }}>남성</span>
+                    <span className="font-bold" style={{ fontSize: 15, color: remainMale <= 0 ? '#DC2626' : '#1D4ED8' }}>
+                      {remainMale <= 0 ? '마감' : `${remainMale}명 남음`}
+                    </span>
+                    {totalMale > 0 && (
+                      <span className="text-xs" style={{ color: 'rgba(0,0,0,0.35)' }}>
+                        {Math.min(court.confirmed_male_slots ?? 0, totalMale)}/{totalMale} 확정
+                      </span>
+                    )}
+                  </div>
                 )}
                 {totalFemale > 0 && (
-                  <span
-                    className="text-xs font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1"
+                  <div
+                    className="rounded-xl px-3 py-2.5 flex flex-col items-center gap-0.5"
                     style={{
-                      background: remainFemale <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(236,72,153,0.08)',
-                      color: remainFemale <= 0 ? '#DC2626' : '#DB2777',
-                      border: `1px solid ${remainFemale <= 0 ? 'rgba(239,68,68,0.2)' : 'rgba(236,72,153,0.2)'}`,
+                      background: remainFemale <= 0 ? 'rgba(239,68,68,0.06)' : 'rgba(236,72,153,0.07)',
+                      border: `1px solid ${remainFemale <= 0 ? 'rgba(239,68,68,0.2)' : 'rgba(236,72,153,0.18)'}`,
                     }}
                   >
-                    여 {remainFemale <= 0 ? '마감' : `${remainFemale}명`}
-                    {confirmedFemale > 0 && remainFemale > 0 && <span style={{ opacity: 0.55 }}>({confirmedFemale}/{totalFemale})</span>}
-                  </span>
+                    <span className="text-xs font-semibold" style={{ color: remainFemale <= 0 ? '#DC2626' : '#DB2777', opacity: 0.7 }}>여성</span>
+                    <span className="font-bold" style={{ fontSize: 15, color: remainFemale <= 0 ? '#DC2626' : '#BE185D' }}>
+                      {remainFemale <= 0 ? '마감' : `${remainFemale}명 남음`}
+                    </span>
+                    {totalFemale > 0 && (
+                      <span className="text-xs" style={{ color: 'rgba(0,0,0,0.35)' }}>
+                        {Math.min(court.confirmed_female_slots ?? 0, totalFemale)}/{totalFemale} 확정
+                      </span>
+                    )}
+                  </div>
                 )}
-              </>
+              </div>
             )}
-            {court.court_fee != null && court.court_fee >= 0 && (
-              <span
-                className="text-xs font-bold px-3 py-1.5 rounded-full"
-                style={{ background: 'rgba(201,168,76,0.1)', color: '#A07828', border: '1px solid rgba(201,168,76,0.25)' }}
-              >
-                1인 {court.court_fee.toLocaleString()}원
-              </span>
-            )}
+          </div>
+        )}
+
+        {court.court_fee != null && court.court_fee >= 0 && (
+          <div
+            className="flex items-center justify-between rounded-xl px-4 py-2.5 mb-3"
+            style={{ background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.2)' }}
+          >
+            <span className="text-sm font-semibold" style={{ color: '#8A6520' }}>코트 비용</span>
+            <span className="font-bold text-sm" style={{ color: '#C9A84C' }}>1인 {court.court_fee.toLocaleString()}원</span>
           </div>
         )}
 
         {court.description && (
           <div
-            className="mb-4 px-3.5 py-2.5 rounded-2xl"
+            className="mb-3 px-3.5 py-2.5 rounded-2xl"
             style={{ background: 'rgba(201,168,76,0.06)', borderLeft: '2.5px solid rgba(201,168,76,0.4)' }}
           >
             <p style={{ fontSize: 13, fontStyle: 'italic', color: 'rgba(160,120,40,0.9)', lineHeight: 1.6, margin: 0 }}>
@@ -285,7 +409,7 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           isClosed ? (
             <div
               className="w-full py-3 rounded-2xl font-medium text-center"
-              style={{ background: 'rgba(26,74,58,0.04)', color: 'rgba(26,74,58,0.3)', fontSize: 14, border: '1px solid rgba(26,74,58,0.08)' }}
+              style={{ background: 'rgba(27,67,50,0.04)', color: 'rgba(27,67,50,0.3)', fontSize: 14, border: '1px solid rgba(27,67,50,0.08)' }}
             >
               마감된 모임이에요
             </div>
@@ -294,47 +418,71 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
               onClick={onApply}
               className="w-full py-3.5 rounded-2xl font-bold transition active:scale-[0.98]"
               style={{
-                background: 'linear-gradient(135deg, #1B5E42 0%, #237351 100%)',
+                background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
                 color: '#fff',
                 fontSize: 14,
-                boxShadow: '0 4px 16px rgba(26,74,58,0.25)',
+                boxShadow: '0 4px 16px rgba(27,67,50,0.28)',
                 letterSpacing: '0.02em',
               }}
             >
-              채팅 보내봐요
+              🎾 채팅 보내봐요
             </button>
           )
         )}
       </div>
 
-      {selectedImage && (
+      {modalOpen && photos.length > 0 && (
         <div
-          onClick={() => setSelectedImage(null)}
+          onClick={() => setModalOpen(false)}
+          onTouchStart={handleModalTouchStart}
+          onTouchEnd={handleModalTouchEnd}
           style={{
             position: 'fixed', top: 0, left: 0,
             width: '100%', height: '100%',
-            background: 'rgba(0,0,0,0.95)',
+            background: 'rgba(0,0,0,0.96)',
             zIndex: 9999,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
           <img
-            src={selectedImage}
-            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }}
+            src={photos[modalIndex]}
+            alt={profile?.name}
+            style={{ maxWidth: '100%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px' }}
             onClick={(e) => e.stopPropagation()}
           />
+          {photos.length > 1 && (
+            <>
+              <button
+                onClick={modalPrev}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}
+              >
+                <ChevronLeft className="w-5 h-5 text-white" />
+              </button>
+              <button
+                onClick={modalNext}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}
+              >
+                <ChevronRight className="w-5 h-5 text-white" />
+              </button>
+            </>
+          )}
           <button
-            onClick={() => setSelectedImage(null)}
+            onClick={() => setModalOpen(false)}
             style={{
               position: 'absolute', top: '20px', right: '20px',
-              background: 'white', border: 'none', borderRadius: '50%',
-              width: '32px', height: '32px',
+              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
+              width: '36px', height: '36px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
+              cursor: 'pointer', backdropFilter: 'blur(4px)',
             }}
           >
-            <X className="w-4 h-4 text-gray-800" />
+            <X className="w-4 h-4 text-white" />
           </button>
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+            <span className="text-sm text-white/60">{modalIndex + 1} / {photos.length}</span>
+          </div>
         </div>
       )}
     </div>
