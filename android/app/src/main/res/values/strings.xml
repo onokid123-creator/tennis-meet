@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tennis Meet</string>
+    <string name="title_activity_main">Tennis Meet</string>
+    <string name="package_name">com.tennismeet.app</string>
+    <string name="custom_url_scheme">com.tennismeet.app</string>
+</resources>
