@@ -82,9 +82,8 @@ export default function TennisProfileSetup() {
         photoUrl = await uploadPhoto(photoFile);
       }
 
-      await supabase.from('profiles').upsert(
+      const { error: upsertError } = await supabase.from('profiles').upsert(
         {
-          id: user!.id,
           user_id: user!.id,
           name: name.trim(),
           age: Number(age),
@@ -97,6 +96,7 @@ export default function TennisProfileSetup() {
         },
         { onConflict: 'user_id' }
       );
+      if (upsertError) throw new Error(upsertError.message);
 
       const tennisProfile = {
         photo_url: photoUrl || undefined,

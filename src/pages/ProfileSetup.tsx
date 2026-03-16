@@ -169,7 +169,7 @@ export default function ProfileSetup() {
 
       const primaryPhoto = uploadedUrls[0] || null;
 
-      await supabase.from('profiles').upsert(
+      const { error: upsertError } = await supabase.from('profiles').upsert(
         {
           user_id: user!.id,
           name: formData.name,
@@ -187,12 +187,14 @@ export default function ProfileSetup() {
         },
         { onConflict: 'user_id' }
       );
+      if (upsertError) throw new Error(`프로필 저장 실패: ${upsertError.message}`);
 
       await refreshProfile();
       navigate('/home', { replace: true });
     } catch (err) {
       console.error('프로필 저장 실패:', err);
-      setError('저장에 실패했습니다. 다시 시도해주세요.');
+      const msg = err instanceof Error ? err.message : '저장에 실패했습니다.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -232,7 +234,7 @@ export default function ProfileSetup() {
 
       const primaryPhoto = uploadedUrls[0] || null;
 
-      await supabase.from('profiles').upsert(
+      const { error: upsertError } = await supabase.from('profiles').upsert(
         {
           user_id: user!.id,
           name: formData.name,
@@ -249,12 +251,14 @@ export default function ProfileSetup() {
         },
         { onConflict: 'user_id' }
       );
+      if (upsertError) throw new Error(`프로필 저장 실패: ${upsertError.message}`);
 
       await refreshProfile();
       navigate('/home', { replace: true });
     } catch (err) {
       console.error('프로필 저장 실패:', err);
-      setError('저장에 실패했습니다. 다시 시도해주세요.');
+      const msg = err instanceof Error ? err.message : '저장에 실패했습니다.';
+      setError(msg);
       setLoading(false);
     }
   };

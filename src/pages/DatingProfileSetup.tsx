@@ -186,9 +186,8 @@ export default function DatingProfileSetup() {
 
       localStorage.setItem('dating_profile', JSON.stringify(datingProfileData));
 
-      await supabase.from('profiles').upsert(
+      const { error: upsertError } = await supabase.from('profiles').upsert(
         {
-          id: user!.id,
           user_id: user!.id,
           name: formData.name || profile?.name || '',
           age: Number(formData.age) || profile?.age || 0,
@@ -204,6 +203,7 @@ export default function DatingProfileSetup() {
         },
         { onConflict: 'user_id' }
       );
+      if (upsertError) throw new Error(upsertError.message);
 
       updateProfile({
         name: formData.name || profile?.name || '',
