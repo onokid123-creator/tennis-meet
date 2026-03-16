@@ -134,10 +134,7 @@ export default function Home() {
     try {
       let query = supabase
         .from('courts')
-        .select(`
-          *,
-          profile:host_id (*)
-        `)
+        .select('*')
         .eq('purpose', purpose)
         .order('created_at', { ascending: false });
 
@@ -156,6 +153,22 @@ export default function Home() {
       }
 
       let result = data || [];
+
+      const hostIds = Array.from(new Set(result.map((c) => c.host_id ?? c.user_id).filter(Boolean)));
+      let profileMap: Record<string, unknown> = {};
+      if (hostIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', hostIds);
+        if (profiles) {
+          profiles.forEach((p) => { profileMap[p.user_id] = p; });
+        }
+      }
+      result = result.map((c) => ({
+        ...c,
+        profile: profileMap[c.host_id ?? c.user_id] ?? null,
+      }));
 
       if (tab === 'others' && purpose === 'tennis') {
         const now = new Date();
