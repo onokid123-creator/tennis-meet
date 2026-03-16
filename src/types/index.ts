@@ -20,6 +20,7 @@ export interface Profile {
 
 export interface Court {
   id: string;
+  host_id?: string;
   user_id: string;
   purpose: 'tennis' | 'dating';
   court_name: string;

@@ -284,6 +284,7 @@ export default function CreateCourt() {
         : (datingPhotos[0] || null);
 
       const courtData: Record<string, unknown> = {
+        host_id: user.id,
         user_id: user.id,
         purpose,
         court_name: selectedCourt!.name,

@@ -136,13 +136,13 @@ export default function Home() {
         .from('courts')
         .select(`
           *,
-          profile:user_id (*)
+          profile:host_id (*)
         `)
         .eq('purpose', purpose)
         .order('created_at', { ascending: false });
 
       if (tab === 'mine') {
-        query = query.eq('user_id', currentUser.id);
+        query = query.eq('host_id', currentUser.id);
       } else {
         query = query.neq('status', 'closed');
       }
@@ -167,7 +167,7 @@ export default function Home() {
       }
 
       if (tab === 'others' && blockedUserIds.length > 0) {
-        result = result.filter((c) => !blockedUserIds.includes(c.user_id));
+        result = result.filter((c) => !blockedUserIds.includes(c.host_id ?? c.user_id));
       }
 
       setCourts(result);
@@ -277,7 +277,7 @@ export default function Home() {
     setApplyLoading(true);
     const { error } = await supabase.from('applications').insert({
       court_id: applyTargetCourt.id,
-      owner_id: applyTargetCourt.user_id,
+      owner_id: applyTargetCourt.host_id ?? applyTargetCourt.user_id,
       applicant_id: user.id,
       purpose: applyTargetCourt.purpose,
       status: 'pending',
@@ -449,7 +449,7 @@ export default function Home() {
               <TennisCourtCard
                 key={court.id}
                 court={court}
-                isOwner={court.user_id === user?.id}
+                isOwner={(court.host_id ?? court.user_id) === user?.id}
                 onApply={activeTab === 'others' ? () => openApplyPopup(court) : undefined}
                 onEdit={() => handleEdit(court)}
                 onDelete={() => handleDelete(court.id)}
