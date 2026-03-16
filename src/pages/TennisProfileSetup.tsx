@@ -124,8 +124,9 @@ export default function TennisProfileSetup() {
       } else {
         navigate('/home', { replace: true });
       }
-    } catch {
-      setError('저장에 실패했습니다. 다시 시도해주세요.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '저장에 실패했습니다.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
