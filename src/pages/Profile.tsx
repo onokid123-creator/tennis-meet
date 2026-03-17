@@ -822,21 +822,21 @@ export default function Profile() {
                       className="text-white leading-tight flex items-baseline gap-2"
                       style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 30, letterSpacing: 2 }}
                     >
-                      <span>{profile?.tennis_name || profile?.name}</span>
-                      {(profile?.tennis_age || profile?.age) && (
-                        <span style={{ fontWeight: 600, fontSize: 24, letterSpacing: 1 }}>, {profile?.tennis_age || profile?.age}</span>
+                      <span>{profile?.name}</span>
+                      {(profile?.age) && (
+                        <span style={{ fontWeight: 600, fontSize: 24, letterSpacing: 1 }}>, {profile?.age}</span>
                       )}
-                      {(profile?.tennis_gender || profile?.gender) && (
+                      {(profile?.gender) && (
                         <span
                           style={{
                             fontSize: 26,
                             fontWeight: 700,
                             letterSpacing: 0,
-                            color: (profile?.tennis_gender || profile?.gender) === '남성' ? '#93C5FD' : '#FDA4AF',
+                            color: (profile?.gender) === '남성' ? '#93C5FD' : '#FDA4AF',
                             fontFamily: 'sans-serif',
                           }}
                         >
-                          {(profile?.tennis_gender || profile?.gender) === '남성' ? '♂' : '♀'}
+                          {(profile?.gender) === '남성' ? '♂' : '♀'}
                         </span>
                       )}
                     </h3>

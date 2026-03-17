@@ -7,6 +7,7 @@ export interface Profile {
   photo_url?: string;
   photo_urls?: string[];
   tennis_photo_url?: string;
+  tennis_photo_urls?: string[];
   phone_number?: string;
   experience?: string;
   purpose?: 'tennis' | 'dating';
@@ -37,6 +38,9 @@ export interface Court {
   female_slots?: number;
   confirmed_male_slots?: number;
   confirmed_female_slots?: number;
+  status?: string;
+  capacity?: number;
+  current_participants?: number;
   tennis_photo_url?: string;
   court_fee?: number;
   owner_photos?: string[];
@@ -71,13 +75,26 @@ export interface Application {
 export interface Chat {
   id: string;
   user1_id: string;
-  user2_id: string;
+  user2_id: string | null;
   purpose?: string;
+  court_id?: string | null;
+  is_group?: boolean;
+  left_by?: string[];
+  confirmed_user_ids?: string[];
   created_at: string;
   user1?: Profile;
   user2?: Profile;
   last_message?: Message;
   unread_count?: number;
+}
+
+export interface ChatParticipant {
+  id: string;
+  chat_id: string;
+  user_id: string;
+  is_confirmed: boolean;
+  joined_at: string;
+  profile?: Profile;
 }
 
 export interface Message {
@@ -110,6 +127,7 @@ export interface GroupChatParticipant {
   group_chat_id: string;
   user_id: string;
   status: 'pending' | 'confirmed' | 'rejected';
+  last_read_at?: string | null;
   joined_at: string;
   profile?: Profile;
 }

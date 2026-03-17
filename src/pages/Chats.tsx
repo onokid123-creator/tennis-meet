@@ -160,8 +160,8 @@ export default function Chats() {
           });
 
           chatsWithMessages.sort((a, b) => {
-            const aTime = a.last_message?.created_at ?? a.created_at;
-            const bTime = b.last_message?.created_at ?? b.created_at;
+            const aTime = a.last_message?.created_at ?? (a as unknown as { created_at: string }).created_at;
+            const bTime = b.last_message?.created_at ?? (b as unknown as { created_at: string }).created_at;
             return new Date(bTime as string).getTime() - new Date(aTime as string).getTime();
           });
 

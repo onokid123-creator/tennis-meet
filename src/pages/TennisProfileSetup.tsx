@@ -93,7 +93,7 @@ export default function TennisProfileSetup() {
           tennis_style: tennisStyle,
           purpose: 'tennis',
           profile_completed: true,
-          tennis_photo_url: photoUrl || null,
+          tennis_photo_url: photoUrl || undefined,
         },
         { onConflict: 'user_id' }
       );
@@ -116,7 +116,7 @@ export default function TennisProfileSetup() {
         tennis_style: tennisStyle,
         purpose: 'tennis',
         profile_completed: true,
-        tennis_photo_url: photoUrl || null,
+        tennis_photo_url: photoUrl || undefined,
       });
 
       if (from === 'create-court') {

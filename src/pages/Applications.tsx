@@ -497,7 +497,7 @@ export default function Applications() {
           courtPurpose === 'dating'
             ? `💌 ${applicantName}님이 입장했습니다. 설레는 만남이 시작돼요!`
             : `🎾 ${applicantName}님이 코트에 합류했습니다!`;
-        await supabase.from('messages').insert({
+        await supabase.from('court_group_chat_messages').insert({
           group_chat_id: targetChatId,
           sender_id: null,
           content: entryMsg,

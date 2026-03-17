@@ -32,10 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
-      const { data, error } = await withTimeout(
-        supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
-        FETCH_TIMEOUT_MS
-      );
+      const queryPromise = supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle();
+      const { data, error } = await withTimeout(queryPromise as unknown as Promise<{ data: Profile | null; error: unknown }>, FETCH_TIMEOUT_MS);
       if (error) {
         console.error('프로필 가져오기 실패:', error);
         return null;

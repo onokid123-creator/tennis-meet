@@ -566,6 +566,7 @@ export default function ChatRoom() {
   const [courtId, setCourtId] = useState<string | null>(null);
   const [courtName, setCourtName] = useState<string | null>(null);
   const [inAppToast, setInAppToast] = useState<{ name: string; content: string } | null>(null);
+  const [simpleToast, setSimpleToast] = useState<string | null>(null);
   const [showBlockPopup, setShowBlockPopup] = useState(false);
   const [blockTargetUser, setBlockTargetUser] = useState<{ user_id: string; name: string } | null>(null);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
@@ -593,6 +594,11 @@ export default function ChatRoom() {
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToastMsg = (msg: string) => {
+    setSimpleToast(msg);
+    setTimeout(() => setSimpleToast(null), 2500);
+  };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
@@ -1371,7 +1377,7 @@ export default function ChatRoom() {
       return;
     }
     if (otherUser && blockedUserIds.includes(otherUser.user_id || otherUser.id)) {
-      setToast('차단된 유저는 매칭 확정이 불가합니다.');
+      showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
       return;
     }
     if (courtId && otherUser) {
@@ -1534,7 +1540,7 @@ export default function ChatRoom() {
   const handleParticipantConfirm = async (participantId: string, participantName: string) => {
     if (confirmingId) return;
     if (blockedUserIds.includes(participantId)) {
-      setToast('차단된 유저는 매칭 확정이 불가합니다.');
+      showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
       return;
     }
     setConfirmingId(participantId);
@@ -2427,7 +2433,7 @@ export default function ChatRoom() {
                     key={av.user_id}
                     onClick={async () => {
                       if (avIsBlocked) {
-                        setToast('차단된 유저는 매칭 확정이 불가합니다.');
+                        showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
                         return;
                       }
                       await handleParticipantConfirm(av.user_id, av.name);
