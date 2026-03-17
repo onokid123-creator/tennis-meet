@@ -288,28 +288,50 @@ export default function Applications() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data: received } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          applicant:applicant_id (*),
-          court:court_id (*)
-        `)
-        .eq('owner_id', user.id)
-        .order('created_at', { ascending: false });
+      const [receivedRes, sentRes] = await Promise.all([
+        supabase.from('applications').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('applications').select('*').eq('applicant_id', user.id).order('created_at', { ascending: false }),
+      ]);
 
-      const { data: sent } = await supabase
-        .from('applications')
-        .select(`
-          *,
-          owner:owner_id (*),
-          court:court_id (*)
-        `)
-        .eq('applicant_id', user.id)
-        .order('created_at', { ascending: false });
+      const receivedRaw = receivedRes.data ?? [];
+      const sentRaw = sentRes.data ?? [];
 
-      setReceivedApps(received || []);
-      setSentApps(sent || []);
+      const allApplicantIds = Array.from(new Set(receivedRaw.map((a) => a.applicant_id).filter(Boolean)));
+      const allOwnerIds = Array.from(new Set(sentRaw.map((a) => a.owner_id).filter(Boolean)));
+      const allCourtIds = Array.from(new Set([...receivedRaw, ...sentRaw].map((a) => a.court_id).filter(Boolean)));
+
+      const [applicantProfiles, ownerProfiles, courts] = await Promise.all([
+        allApplicantIds.length > 0
+          ? supabase.from('profiles').select('*').in('user_id', allApplicantIds)
+          : Promise.resolve({ data: [] }),
+        allOwnerIds.length > 0
+          ? supabase.from('profiles').select('*').in('user_id', allOwnerIds)
+          : Promise.resolve({ data: [] }),
+        allCourtIds.length > 0
+          ? supabase.from('courts').select('*').in('id', allCourtIds)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const applicantMap: Record<string, Profile> = {};
+      (applicantProfiles.data ?? []).forEach((p) => { applicantMap[p.user_id] = p as Profile; });
+      const ownerMap: Record<string, Profile> = {};
+      (ownerProfiles.data ?? []).forEach((p) => { ownerMap[p.user_id] = p as Profile; });
+      const courtMap: Record<string, unknown> = {};
+      (courts.data ?? []).forEach((c) => { courtMap[c.id] = c; });
+
+      const receivedWithProfiles = receivedRaw.map((a) => ({
+        ...a,
+        applicant: applicantMap[a.applicant_id] ?? null,
+        court: courtMap[a.court_id] ?? null,
+      }));
+      const sentWithProfiles = sentRaw.map((a) => ({
+        ...a,
+        owner: ownerMap[a.owner_id] ?? null,
+        court: courtMap[a.court_id] ?? null,
+      }));
+
+      setReceivedApps(receivedWithProfiles as Application[]);
+      setSentApps(sentWithProfiles as Application[]);
     } catch (err) {
       console.error('신청 목록 가져오기 실패:', err);
     } finally {

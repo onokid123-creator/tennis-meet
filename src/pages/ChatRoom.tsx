@@ -1285,13 +1285,13 @@ export default function ChatRoom() {
 
       if (courtId) {
         const { data: gcData } = await supabase
-          .from('court_group_chats')
+          .from('group_chats')
           .select('id')
           .eq('court_id', courtId)
           .maybeSingle();
         if (gcData?.id) {
           await supabase
-            .from('court_group_chat_participants')
+            .from('group_chat_members')
             .delete()
             .eq('group_chat_id', gcData.id)
             .eq('user_id', targetId);
