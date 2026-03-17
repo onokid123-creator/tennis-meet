@@ -60,13 +60,13 @@ function TennisProfilePopup({
 
       <div
         className="w-full max-w-md rounded-t-3xl overflow-hidden shadow-2xl"
-        style={{ background: '#F0FAFB', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}
+        style={{ background: '#F4FAF6', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
           className="flex-shrink-0 relative"
           style={{
-            background: 'linear-gradient(135deg, #38BDF8 0%, #6EE7B7 60%, #86EFAC 100%)',
+            background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
             paddingTop: 20,
             paddingBottom: 24,
             paddingLeft: 24,
@@ -135,7 +135,7 @@ function TennisProfilePopup({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto" style={{ background: '#F0FAFB' }}>
+        <div className="flex-1 overflow-y-auto" style={{ background: '#F4FAF6' }}>
           {photo && (
             <div
               className="mx-5 mt-5 rounded-2xl overflow-hidden cursor-pointer"
@@ -150,42 +150,42 @@ function TennisProfilePopup({
             {profile.experience && (
               <div
                 className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl"
-                style={{ background: '#fff', border: '1.5px solid rgba(56,189,248,0.2)', boxShadow: '0 2px 8px rgba(56,189,248,0.07)' }}
+                style={{ background: '#fff', border: '1.5px solid rgba(45,106,79,0.2)', boxShadow: '0 2px 8px rgba(45,106,79,0.07)' }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="1.8">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
                   <ellipse cx="12" cy="12" rx="10" ry="10" />
                   <path d="M2 12 Q12 4 22 12" />
                   <path d="M2 12 Q12 20 22 12" />
                 </svg>
-                <span style={{ color: '#0EA5E9', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>구력</span>
-                <span style={{ color: '#0c4a6e', fontSize: 12, fontWeight: 800 }}>{profile.experience}</span>
+                <span style={{ color: '#2D6A4F', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>구력</span>
+                <span style={{ color: '#1B4332', fontSize: 12, fontWeight: 800 }}>{profile.experience}</span>
               </div>
             )}
             {profile.tennis_style && (
               <div
                 className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl"
-                style={{ background: '#fff', border: '1.5px solid rgba(56,189,248,0.2)', boxShadow: '0 2px 8px rgba(56,189,248,0.07)' }}
+                style={{ background: '#fff', border: '1.5px solid rgba(45,106,79,0.2)', boxShadow: '0 2px 8px rgba(45,106,79,0.07)' }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="1.8">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
                   <path d="M5.5 19L19 5.5" strokeLinecap="round" />
                   <path d="M4 7a3 3 0 006 0 3 3 0 00-6 0z" />
                   <path d="M14 17a3 3 0 006 0 3 3 0 00-6 0z" />
-                  <circle cx="8" cy="20" r="1.5" fill="#38BDF8" />
+                  <circle cx="8" cy="20" r="1.5" fill="#2D6A4F" />
                 </svg>
-                <span style={{ color: '#0EA5E9', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>스타일</span>
-                <span style={{ color: '#0c4a6e', fontSize: 11, fontWeight: 800, textAlign: 'center', lineHeight: 1.3 }}>{profile.tennis_style}</span>
+                <span style={{ color: '#2D6A4F', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>스타일</span>
+                <span style={{ color: '#1B4332', fontSize: 11, fontWeight: 800, textAlign: 'center', lineHeight: 1.3 }}>{profile.tennis_style}</span>
               </div>
             )}
             {profile.height && (
               <div
                 className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl"
-                style={{ background: '#fff', border: '1.5px solid rgba(56,189,248,0.2)', boxShadow: '0 2px 8px rgba(56,189,248,0.07)' }}
+                style={{ background: '#fff', border: '1.5px solid rgba(45,106,79,0.2)', boxShadow: '0 2px 8px rgba(45,106,79,0.07)' }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" strokeWidth="1.8">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.8">
                   <path d="M12 3v18M8 6h8M8 12h8M8 18h8" strokeLinecap="round" />
                 </svg>
-                <span style={{ color: '#0EA5E9', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>키</span>
-                <span style={{ color: '#0c4a6e', fontSize: 12, fontWeight: 800 }}>{profile.height}cm</span>
+                <span style={{ color: '#2D6A4F', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>키</span>
+                <span style={{ color: '#1B4332', fontSize: 12, fontWeight: 800 }}>{profile.height}cm</span>
               </div>
             )}
           </div>
@@ -193,12 +193,12 @@ function TennisProfilePopup({
           {profile.bio && (
             <div
               className="mx-5 mt-4 p-4 rounded-2xl"
-              style={{ background: '#fff', border: '1.5px solid rgba(56,189,248,0.18)', boxShadow: '0 2px 8px rgba(56,189,248,0.06)' }}
+              style={{ background: '#fff', border: '1.5px solid rgba(45,106,79,0.18)', boxShadow: '0 2px 8px rgba(45,106,79,0.06)' }}
             >
-              <p style={{ color: '#0EA5E9', fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>
+              <p style={{ color: '#2D6A4F', fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>
                 자기소개
               </p>
-              <p style={{ color: '#0c4a6e', fontSize: 13, lineHeight: 1.7, fontStyle: 'italic' }}>
+              <p style={{ color: '#1B4332', fontSize: 13, lineHeight: 1.7, fontStyle: 'italic' }}>
                 "{profile.bio}"
               </p>
             </div>
@@ -209,7 +209,7 @@ function TennisProfilePopup({
               <button
                 onClick={() => { onClose(); onUnblock(); }}
                 className="flex-1 py-3 rounded-2xl text-sm font-bold transition active:scale-95"
-                style={{ background: '#38BDF8', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', color: '#fff' }}
               >
                 차단 해제
               </button>
@@ -1710,16 +1710,16 @@ export default function ChatRoom() {
   };
 
   const bgStyle = isDating
-    ? { background: 'linear-gradient(180deg, #FFF4F7 0%, #FFF8F0 60%, #FFF4EC 100%)' }
-    : { background: '#F0F4F1' };
+    ? { background: 'linear-gradient(160deg, #FFF4F7 0%, #FFF8F2 50%, #FFF5EC 100%)' }
+    : { background: '#F0F7F2' };
 
   const myBubbleStyle = isDating
     ? { background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)', color: '#fff' }
     : { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', color: '#fff' };
 
   const otherBubbleStyle = isDating
-    ? { background: '#FFFFFF', color: '#2D1820', border: '1px solid rgba(183,110,121,0.18)', boxShadow: '0 1px 4px rgba(183,110,121,0.08)' }
-    : { background: '#FFFFFF', color: '#1a1a1a', border: '1px solid rgba(0,100,0,0.1)', boxShadow: '0 1px 4px rgba(0,100,0,0.06)' };
+    ? { background: '#FFF5F8', color: '#2D1820', border: '1px solid rgba(183,110,121,0.15)', boxShadow: '0 1px 3px rgba(183,110,121,0.07)' }
+    : { background: '#FFFFFF', color: '#1a1a1a', border: '1px solid rgba(0,100,0,0.08)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' };
 
   const inputAreaStyle = isDating
     ? { background: '#FFF8F2', borderTop: '1px solid rgba(201,100,120,0.12)' }
@@ -1730,8 +1730,18 @@ export default function ChatRoom() {
     : { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' };
 
   const systemMsgStyle = isDating
-    ? { background: 'rgba(201,100,120,0.1)', color: '#8B4060', border: '1px solid rgba(201,100,120,0.2)' }
-    : { background: 'rgba(45,106,79,0.1)', color: '#1B4332', border: '1px solid rgba(45,106,79,0.18)' };
+    ? { background: 'rgba(255,220,230,0.55)', color: '#9B4060', border: '1px solid rgba(201,100,120,0.18)' }
+    : { background: 'rgba(200,230,215,0.6)', color: '#1B4332', border: '1px solid rgba(45,106,79,0.2)' };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
+  };
+
+  const formatTime = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
 
   return (
     <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden', ...bgStyle }}>
@@ -1799,16 +1809,16 @@ export default function ChatRoom() {
       <header
         className="px-3 flex items-center gap-2.5 sticky top-0 z-10 flex-shrink-0"
         style={{
-          height: 56,
+          height: 60,
           background: isDating
-            ? 'linear-gradient(135deg, #2D1820 0%, #3D2230 100%)'
-            : '#0F2118',
+            ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)'
+            : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
           borderBottom: isDating
-            ? '1px solid rgba(201,84,122,0.25)'
-            : '1px solid rgba(255,255,255,0.08)',
+            ? '1px solid rgba(139,34,82,0.4)'
+            : '1px solid rgba(27,67,50,0.4)',
           boxShadow: isDating
-            ? '0 2px 12px rgba(45,24,32,0.35)'
-            : '0 2px 12px rgba(0,0,0,0.3)',
+            ? '0 2px 16px rgba(139,34,82,0.35)'
+            : '0 2px 16px rgba(27,67,50,0.35)',
         }}
       >
         <button
@@ -1951,28 +1961,33 @@ export default function ChatRoom() {
           className="px-3 py-2.5 flex-shrink-0 z-10 relative"
           style={{
             background: isDating
-              ? 'linear-gradient(135deg, rgba(255,240,248,0.97) 0%, rgba(255,248,252,0.97) 100%)'
-              : 'linear-gradient(135deg, rgba(237,248,242,0.97) 0%, rgba(240,248,244,0.97) 100%)',
-            borderBottom: isDating ? '1px solid rgba(201,84,122,0.18)' : '1px solid rgba(45,106,79,0.18)',
+              ? 'rgba(255,245,250,0.98)'
+              : 'rgba(240,247,242,0.98)',
+            borderBottom: isDating ? '1px solid rgba(201,84,122,0.15)' : '1px solid rgba(45,106,79,0.15)',
           }}
         >
           <div className="flex gap-2">
             <button
               onClick={handleMatchConfirm}
               className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white shadow-sm"
-              style={myBubbleStyle}
+              style={{
+                background: isDating
+                  ? 'linear-gradient(135deg, #C9A84C 0%, #E0B856 100%)'
+                  : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+              }}
             >
-              {isDating ? '💕 매칭 확정하기' : '🎾 라인업 확정'}
+              {isDating ? '매칭 확정하기' : '라인업 확정'}
             </button>
             <button
               onClick={handleMatchCancel}
               className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
               style={{
-                background: isDating ? 'rgba(255,210,225,0.6)' : 'rgba(200,215,205,0.6)',
-                color: isDating ? '#8B3060' : '#3D5C48',
+                background: isDating ? 'rgba(255,200,215,0.5)' : 'rgba(210,225,215,0.6)',
+                color: isDating ? '#9B3060' : '#3D5C48',
+                border: isDating ? '1px solid rgba(201,84,122,0.2)' : '1px solid rgba(45,106,79,0.18)',
               }}
             >
-              매칭 취소하기
+              매칭 취소
             </button>
           </div>
         </div>
@@ -2069,7 +2084,7 @@ export default function ChatRoom() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 relative z-[1]" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto px-3 py-3 relative z-[1]" style={{ WebkitOverflowScrolling: 'touch' }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div
@@ -2078,7 +2093,7 @@ export default function ChatRoom() {
             />
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {messages.map((msg, idx) => {
               if (msg.type === 'system') {
                 return (
@@ -2137,7 +2152,7 @@ export default function ChatRoom() {
                         <div className="px-4 py-3" style={{ background: 'linear-gradient(135deg, #FFF8EC 0%, #FFF0D4 100%)' }}>
                           <p className="text-sm font-medium leading-relaxed" style={{ color: '#8B6914' }}>{msg.content}</p>
                           <p className="text-xs mt-1" style={{ color: 'rgba(201,168,76,0.65)' }}>
-                            {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                            {formatTime(msg.created_at)}
                           </p>
                         </div>
                         {!isMe && status === 'pending' && (
@@ -2164,20 +2179,27 @@ export default function ChatRoom() {
               if (msg.sender_id !== user?.id && msg.sender_id && blockedUserIds.includes(msg.sender_id)) {
                 const blockedSenderId = msg.sender_id;
                 return (
-                  <div key={msg.id} className="flex items-center gap-2 py-0.5 px-1">
+                  <div key={msg.id} className="flex items-start gap-2 py-[1px] pr-10">
+                    <div className="w-9 flex-shrink-0 mt-0.5" style={{ minWidth: 36 }}>
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#E5E7EB' }}>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    </div>
                     <button
-                      className="flex items-center gap-2 focus:outline-none"
+                      className="flex flex-col items-start focus:outline-none"
                       onClick={() => {
                         setUnblockMessageTarget({ user_id: blockedSenderId, name: '알 수 없음' });
                         setShowUnblockMessagePopup(true);
                       }}
                     >
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#E5E7EB' }}>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                      <div
+                        className="px-3 py-2 rounded-2xl rounded-tl-sm"
+                        style={{ background: '#F3F4F6', color: '#9CA3AF', border: '1px solid rgba(0,0,0,0.07)' }}
+                      >
+                        <p className="text-[13px]">차단한 유저의 메시지입니다</p>
                       </div>
-                      <span className="text-sm font-medium" style={{ color: '#9CA3AF' }}>알 수 없음</span>
                     </button>
                   </div>
                 );
@@ -2212,16 +2234,18 @@ export default function ChatRoom() {
               return (
                 <div key={msg.id}>
                   {showDate && (
-                    <div className="flex justify-center py-3">
-                      <span className="text-xs px-3 py-1 rounded-full font-medium" style={{ background: isDating ? 'rgba(183,110,121,0.1)' : 'rgba(0,100,0,0.08)', color: isDating ? '#8B4060' : '#2D6A4F' }}>
-                        {new Date(msg.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
+                    <div className="flex items-center gap-3 py-4">
+                      <div className="flex-1 h-px" style={{ background: isDating ? 'rgba(183,110,121,0.15)' : 'rgba(45,106,79,0.15)' }} />
+                      <span className="text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap" style={{ background: isDating ? 'rgba(255,220,230,0.55)' : 'rgba(200,230,215,0.6)', color: isDating ? '#9B4060' : '#2D6A4F', border: isDating ? '1px solid rgba(201,100,120,0.18)' : '1px solid rgba(45,106,79,0.2)' }}>
+                        {formatDate(msg.created_at)}
                       </span>
+                      <div className="flex-1 h-px" style={{ background: isDating ? 'rgba(183,110,121,0.15)' : 'rgba(45,106,79,0.15)' }} />
                     </div>
                   )}
 
                   {isMe ? (
-                    <div className="flex justify-end items-end gap-1.5 py-[2px] pl-12">
-                      <div className="flex flex-col items-end flex-shrink-0 gap-0.5 mb-0.5">
+                    <div className="flex justify-end items-end gap-1 py-[1px] pl-14">
+                      <div className="flex flex-col items-end flex-shrink-0 gap-0.5 self-end pb-0.5">
                         {isFailed && (
                           <button
                             onClick={() => {
@@ -2236,29 +2260,29 @@ export default function ChatRoom() {
                           </button>
                         )}
                         {!isFailed && isGroupChat && groupUnread > 0 && (
-                          <span className="text-xs font-bold leading-none" style={{ color: isDating ? '#B76E79' : '#C9A84C' }}>{groupUnread}</span>
+                          <span className="text-[11px] font-bold leading-none" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>{groupUnread}</span>
                         )}
                         {!isFailed && !isGroupChat && showBadge && (
-                          <span className="text-xs font-bold leading-none" style={{ color: avatarAccent }}>1</span>
+                          <span className="text-[11px] font-bold leading-none" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>1</span>
                         )}
-                        <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(139,48,96,0.45)' : 'rgba(27,67,50,0.45)' }}>
-                          {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                        <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(100,40,70,0.5)' : 'rgba(27,67,50,0.5)' }}>
+                          {formatTime(msg.created_at)}
                         </span>
                       </div>
                       <div
-                        className="px-3.5 py-2.5 rounded-2xl rounded-br-sm max-w-[68%]"
-                        style={{ ...myBubbleStyle, opacity: isPending ? 0.65 : 1 }}
+                        className="px-3 py-2 rounded-2xl rounded-br-sm max-w-[68%]"
+                        style={{ ...myBubbleStyle, opacity: isPending ? 0.65 : 1, boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}
                       >
-                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>
+                        <p className="text-[14px] leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2 py-[2px] pr-12">
-                      <div className="w-9 flex-shrink-0 flex flex-col items-center" style={{ minWidth: 36 }}>
+                    <div className="flex items-start gap-2 py-[1px] pr-10">
+                      <div className="w-9 flex-shrink-0 mt-0.5" style={{ minWidth: 36 }}>
                         {showAvatar ? (
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold overflow-hidden cursor-pointer active:opacity-80"
-                            style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #B76E79 100%)' : 'linear-gradient(135deg, #004d20 0%, #006400 100%)', boxShadow: `0 0 0 2px ${isDating ? 'rgba(183,110,121,0.25)' : 'rgba(0,100,0,0.18)'}` }}
+                            style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: `0 1px 4px rgba(0,0,0,0.15)` }}
                             onClick={senderProf ? () => {
                               setOtherUser(senderProf);
                               setShowProfilePopup(true);
@@ -2277,23 +2301,23 @@ export default function ChatRoom() {
 
                       <div className="flex flex-col items-start max-w-[68%]">
                         {isFirstInGroup && showSenderName && (
-                          <span className="text-xs font-semibold mb-1 ml-0.5" style={{ color: avatarAccent }}>
+                          <span className="text-[12px] font-semibold mb-1" style={{ color: isDating ? '#8B2252' : '#1B4332' }}>
                             {senderName}
                           </span>
                         )}
-                        <div className="flex items-end gap-1.5">
+                        <div className="flex items-end gap-1">
                           <div
-                            className="px-3.5 py-2.5 rounded-2xl rounded-tl-sm shadow-sm"
+                            className="px-3 py-2 rounded-2xl rounded-tl-sm"
                             style={otherBubbleStyle}
                           >
-                            <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>
+                            <p className="text-[14px] leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>
                           </div>
-                          <div className="flex flex-col items-start flex-shrink-0 mb-0.5 gap-0.5">
+                          <div className="flex flex-col items-start flex-shrink-0 self-end pb-0.5 gap-0.5">
                             {isGroupChat && groupUnread > 0 && (
-                              <span className="text-xs font-bold leading-none" style={{ color: isDating ? '#B76E79' : '#C9A84C' }}>{groupUnread}</span>
+                              <span className="text-[11px] font-bold leading-none" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>{groupUnread}</span>
                             )}
-                            <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(139,48,96,0.45)' : 'rgba(27,67,50,0.45)' }}>
-                              {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                            <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(100,40,70,0.5)' : 'rgba(27,67,50,0.5)' }}>
+                              {formatTime(msg.created_at)}
                             </span>
                           </div>
                         </div>
@@ -2307,11 +2331,11 @@ export default function ChatRoom() {
             {typingUsers.map((tu) => {
               const tuPhoto = isDating ? tu.photo_url : (tu.tennis_photo_url || tu.photo_url);
               return (
-                <div key={tu.user_id} className="flex items-start gap-2 py-[2px] pr-12">
-                  <div className="w-9 flex-shrink-0 flex flex-col items-center">
+                <div key={tu.user_id} className="flex items-start gap-2 py-[1px] pr-10">
+                  <div className="w-9 flex-shrink-0 mt-0.5" style={{ minWidth: 36 }}>
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
-                      style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #B76E79 100%)' : 'linear-gradient(135deg, #004d20 0%, #006400 100%)', boxShadow: `0 0 0 2px ${isDating ? 'rgba(183,110,121,0.25)' : 'rgba(0,100,0,0.18)'}` }}
+                      style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}
                     >
                       {tuPhoto ? (
                         <img src={tuPhoto} alt={tu.name} className="w-full h-full object-cover" />
@@ -2321,11 +2345,11 @@ export default function ChatRoom() {
                     </div>
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-xs font-semibold mb-1 ml-0.5" style={{ color: isDating ? '#B76E79' : '#006400' }}>{tu.name}</span>
-                    <div className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm" style={otherBubbleStyle}>
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
+                    <span className="text-[12px] font-semibold mb-1" style={{ color: isDating ? '#8B2252' : '#1B4332' }}>{tu.name}</span>
+                    <div className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5" style={otherBubbleStyle}>
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
                     </div>
                   </div>
                 </div>
