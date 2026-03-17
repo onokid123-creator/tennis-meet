@@ -556,6 +556,9 @@ export default function ChatRoom() {
   const [matchConfirmed, setMatchConfirmed] = useState(false);
   const [hostBarDismissed, setHostBarDismissed] = useState(false);
   const [showDatingLeavePopup, setShowDatingLeavePopup] = useState(false);
+  const [showLeaveRequestPopup, setShowLeaveRequestPopup] = useState(false);
+  const [leaveRequestReason, setLeaveRequestReason] = useState('');
+  const [leaveRequestSubmitting, setLeaveRequestSubmitting] = useState(false);
   const [participantCount, setParticipantCount] = useState<number | null>(null);
   const [groupAvatars, setGroupAvatars] = useState<Array<{ user_id: string; name: string; photo_url?: string; tennis_photo_url?: string; is_confirmed?: boolean }>>([]);
   const [showParticipantMgmt, setShowParticipantMgmt] = useState(false);
@@ -1181,7 +1184,38 @@ export default function ChatRoom() {
   };
 
   const handleLeaveChat = () => {
-    setShowDatingLeavePopup(true);
+    if (isGroupChat && !isHost) {
+      setLeaveRequestReason('');
+      setShowLeaveRequestPopup(true);
+    } else {
+      setShowDatingLeavePopup(true);
+    }
+  };
+
+  const handleLeaveRequestSubmit = async () => {
+    if (!chatId || !user || leaveRequestSubmitting) return;
+    setLeaveRequestSubmitting(true);
+    try {
+      const { data: myProf } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const leaverName = myProf?.name ?? '누군가';
+      const content = chatPurpose === 'dating'
+        ? `💌 ${leaverName}님이 나가기를 요청했습니다`
+        : `🎾 ${leaverName}님이 나가기를 요청했습니다`;
+      await supabase.from('messages').insert({
+        chat_id: chatId,
+        sender_id: user.id,
+        content,
+        is_read: false,
+        type: 'leave_request',
+        payload: { reason: leaveRequestReason.trim(), requester_id: user.id, status: 'pending' },
+      });
+    } catch (e) { console.error(e); }
+    setLeaveRequestSubmitting(false);
+    setShowLeaveRequestPopup(false);
   };
 
   const getOtherParticipantIds = (): string[] => {
@@ -1308,7 +1342,9 @@ export default function ChatRoom() {
     const targetName = kickTargetUser.name;
     setKickingId(targetId);
     try {
-      const kickMsg = `${targetName}님이 퇴장되었습니다`;
+      const kickMsg = chatPurpose === 'dating'
+        ? `${targetName}님이 자리를 떠났습니다 💌`
+        : `${targetName}님이 퇴장되었습니다 🎾`;
 
       if (courtId) {
         const { data: gcData } = await supabase
@@ -2389,6 +2425,56 @@ export default function ChatRoom() {
         </form>
       </div>
 
+      {showLeaveRequestPopup && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowLeaveRequestPopup(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
+            style={{
+              background: isDating ? '#FFF8F2' : '#F4F8F5',
+              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }} />
+            <p className="font-bold text-gray-900 text-base mb-1">나가기 요청</p>
+            <p className="text-xs text-gray-400 mb-4">나가기 사유를 입력해주세요. 호스트가 승인하면 나가집니다.</p>
+            <textarea
+              value={leaveRequestReason}
+              onChange={(e) => setLeaveRequestReason(e.target.value)}
+              placeholder="나가기 사유를 입력하세요..."
+              rows={3}
+              className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none mb-3"
+              style={{
+                background: '#fff',
+                border: `1.5px solid ${isDating ? 'rgba(183,110,121,0.25)' : 'rgba(27,67,50,0.18)'}`,
+                color: '#1a1a1a',
+              }}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowLeaveRequestPopup(false)}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleLeaveRequestSubmit}
+                disabled={leaveRequestSubmitting}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
+                style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+              >
+                {leaveRequestSubmitting ? '전송 중...' : '요청 보내기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showDatingLeavePopup && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
@@ -2497,8 +2583,17 @@ export default function ChatRoom() {
                     }}
                   >
                     <div
-                      className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
+                      className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm cursor-pointer active:opacity-75"
                       style={{ background: avIsBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (avIsBlocked) return;
+                        const prof = senderProfiles[av.user_id];
+                        if (prof) { setOtherUser(prof); setShowConfirmPicker(false); setShowProfilePopup(true); return; }
+                        supabase.from('profiles').select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height').eq('user_id', av.user_id).maybeSingle().then(({ data }) => {
+                          if (data) { setSenderProfiles((p) => ({ ...p, [data.user_id]: data as Profile })); setOtherUser(data as Profile); setShowConfirmPicker(false); setShowProfilePopup(true); }
+                        });
+                      }}
                     >
                       {avIsBlocked ? (
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>

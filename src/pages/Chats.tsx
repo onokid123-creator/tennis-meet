@@ -66,7 +66,10 @@ export default function Chats() {
       const allDirectChatIds = [...participantChatIds];
 
       const buildChatRow = async (chat: Record<string, unknown>) => {
-        const opponentId = chat.user1_id === user.id ? chat.user2_id as string : chat.user1_id as string;
+        const isGroup = !!chat.is_group;
+        const opponentId = !isGroup
+          ? (chat.user1_id === user.id ? chat.user2_id as string : chat.user1_id as string)
+          : null;
 
         const [lastMsgResult, unreadResult] = await Promise.all([
           supabase
@@ -146,11 +149,11 @@ export default function Chats() {
           const chatRows = await Promise.all(chatsData.map((chat) => buildChatRow(chat)));
 
           const chatsWithMessages = chatRows.map(({ chat, opponentId, lastMsg, unreadCount, groupTitle, groupParticipantPhotos }) => {
-            const opponentProfile = profileMap[opponentId] ?? null;
+            const opponentProfile = opponentId ? (profileMap[opponentId] ?? null) : null;
             return {
               ...chat,
-              user1: (chat.user1_id as string) !== user.id ? opponentProfile : null,
-              user2: (chat.user2_id as string) !== user.id ? opponentProfile : null,
+              user1: !chat.is_group && (chat.user1_id as string) !== user.id ? opponentProfile : null,
+              user2: !chat.is_group && chat.user2_id && (chat.user2_id as string) !== user.id ? opponentProfile : null,
               last_message: lastMsg || undefined,
               unread_count: unreadCount,
               group_title: groupTitle,
