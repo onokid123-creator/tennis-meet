@@ -90,6 +90,8 @@ export default function Home() {
   const [applyMessage, setApplyMessage] = useState('');
   const [applyLoading, setApplyLoading] = useState(false);
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const userRef = useRef(user);
   const profileRef = useRef(profile);
@@ -302,17 +304,17 @@ export default function Home() {
     setApplyTargetCourt(null);
   };
 
-  const handleDelete = async (courtId: string) => {
-    if (!confirm('이 게시글을 삭제할까요?')) return;
+  const handleDelete = (courtId: string) => {
+    setDeleteConfirmId(courtId);
+  };
 
-    const { error } = await supabase.from('courts').delete().eq('id', courtId);
-
-    if (error) {
-      alert('삭제에 실패했습니다.');
-      return;
-    }
-
-    triggerRefresh();
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmId) return;
+    setDeleteLoading(true);
+    const { error } = await supabase.from('courts').delete().eq('id', deleteConfirmId);
+    setDeleteLoading(false);
+    setDeleteConfirmId(null);
+    if (!error) triggerRefresh();
   };
 
   const handleEdit = (court: Court) => {
@@ -492,6 +494,41 @@ export default function Home() {
           onCreateNew={() => { setShowTennisProfilePopup(false); navigate('/tennis-profile-setup'); }}
           onClose={() => setShowTennisProfilePopup(false)}
         />
+      )}
+
+      {deleteConfirmId && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setDeleteConfirmId(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
+            style={{ background: '#fff', paddingBottom: 'max(env(safe-area-inset-bottom), 24px)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
+            <p className="font-bold text-gray-900 text-base mb-1">게시글 삭제</p>
+            <p className="text-sm text-gray-400 mb-5">이 게시글을 삭제하시겠어요? 삭제 후에는 복구할 수 없습니다.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
+              >
+                {deleteLoading ? '삭제 중...' : '삭제하기'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {applyTargetCourt && (() => {

@@ -767,6 +767,29 @@ export default function ChatRoom() {
       } else if (chat) {
         opponentId = chat.user1_id === user.id ? chat.user2_id : chat.user1_id;
       }
+
+      if (!opponentId && !isGroup) {
+        const retryFetch = async (attempt = 0) => {
+          const { data: retryParts } = await supabase
+            .from('chat_participants')
+            .select('user_id')
+            .eq('chat_id', chatId!);
+          const opp = (retryParts ?? []).find((p) => p.user_id !== user.id);
+          if (opp) {
+            const { data: profData } = await supabase
+              .from('profiles')
+              .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height')
+              .eq('user_id', opp.user_id)
+              .maybeSingle();
+            if (profData) setOtherUser(profData as Profile);
+          } else if (attempt < 6) {
+            setTimeout(() => retryFetch(attempt + 1), 800);
+          }
+        };
+        retryFetch();
+        return;
+      }
+
       if (!opponentId) return;
 
       const [profRes, oppPartRes] = await Promise.all([
@@ -1691,7 +1714,7 @@ export default function ChatRoom() {
     : { background: '#F0F4F1' };
 
   const myBubbleStyle = isDating
-    ? { background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)', color: '#fff' }
+    ? { background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)', color: '#fff' }
     : { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', color: '#fff' };
 
   const otherBubbleStyle = isDating
@@ -1703,7 +1726,7 @@ export default function ChatRoom() {
     : { background: '#fff', borderTop: '1px solid #E8ECE9' };
 
   const sendBtnStyle = isDating
-    ? { background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }
+    ? { background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' }
     : { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' };
 
   const systemMsgStyle = isDating
@@ -1778,22 +1801,21 @@ export default function ChatRoom() {
         style={{
           height: 56,
           background: isDating
-            ? 'rgba(255,245,248,0.97)'
-            : 'rgba(240,248,244,0.97)',
-          backdropFilter: 'blur(16px)',
+            ? 'linear-gradient(135deg, #2D1820 0%, #3D2230 100%)'
+            : '#0F2118',
           borderBottom: isDating
-            ? '1px solid rgba(183,110,121,0.14)'
-            : '1px solid rgba(0,100,0,0.1)',
+            ? '1px solid rgba(201,84,122,0.25)'
+            : '1px solid rgba(255,255,255,0.08)',
           boxShadow: isDating
-            ? '0 1px 8px rgba(183,110,121,0.07)'
-            : '0 1px 8px rgba(0,100,0,0.05)',
+            ? '0 2px 12px rgba(45,24,32,0.35)'
+            : '0 2px 12px rgba(0,0,0,0.3)',
         }}
       >
         <button
           onClick={() => navigate(-1)}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-black/5 transition"
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-white/10 transition"
         >
-          <ArrowLeft className="w-5 h-5" style={{ color: isDating ? '#8B3060' : '#004d20' }} />
+          <ArrowLeft className="w-5 h-5 text-white" />
         </button>
 
         <div className="flex-shrink-0">
@@ -1842,12 +1864,11 @@ export default function ChatRoom() {
             <>
               <div className="flex items-center gap-1.5">
                 <p
-                  className="font-bold text-[15px] leading-tight truncate"
-                  style={{ color: isDating ? '#2D1820' : '#0F2118' }}
+                  className="font-bold text-[15px] leading-tight truncate text-white"
                 >
                   {isGroupChat ? (groupChatTitle ?? '단체방') : opponentName}
                   {!isGroupChat && !isDeletedUser && isDating && otherUser?.age ? (
-                    <span className="font-normal text-xs ml-1" style={{ color: 'rgba(139,48,96,0.5)' }}>
+                    <span className="font-normal text-xs ml-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
                       {otherUser!.age}세
                     </span>
                   ) : null}
@@ -1855,7 +1876,7 @@ export default function ChatRoom() {
                 {isGroupChat && (
                   <span
                     className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 tracking-wide"
-                    style={{ background: isDating ? 'rgba(183,110,121,0.13)' : 'rgba(0,100,0,0.1)', color: isDating ? '#B76E79' : '#006400' }}
+                    style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)' }}
                   >
                     GROUP
                   </span>
@@ -1863,24 +1884,24 @@ export default function ChatRoom() {
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 {!isGroupChat && !isDating && !isOpponentBlocked && otherUser?.experience && (
-                  <span className="text-[11px] font-medium" style={{ color: '#2D6A4F' }}>
+                  <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
                     🎾 구력 {otherUser.experience}
                   </span>
                 )}
                 {!isGroupChat && isDating && !isOpponentBlocked && otherUser?.experience && (
-                  <span className="text-[11px] font-medium" style={{ color: '#B76E79' }}>
+                  <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
                     🎾 {otherUser.experience}
                   </span>
                 )}
                 {courtName && (
-                  <span className="text-[11px] font-medium" style={{ color: isDating ? '#C9A84C' : '#2D6A4F' }}>
+                  <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
                     {courtName}
                   </span>
                 )}
                 <button
                   onClick={isGroupChat ? (e) => { e.stopPropagation(); setShowParticipantMgmt((v) => !v); } : undefined}
                   className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${isGroupChat ? 'active:scale-95 transition' : ''}`}
-                  style={{ background: isDating ? 'rgba(183,110,121,0.1)' : 'rgba(0,100,0,0.08)', color: isDating ? '#B76E79' : '#006400' }}
+                  style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}
                 >
                   {participantCount === null ? '···' : participantCount === 0 ? '찾는 중...' : `${participantCount}명`}
                   {isGroupChat && <span className="ml-0.5 opacity-60">▾</span>}
@@ -1889,8 +1910,8 @@ export default function ChatRoom() {
             </>
           ) : (
             <>
-              <div className="h-3.5 w-20 bg-gray-200 rounded animate-pulse mb-1.5" />
-              <div className="h-2.5 w-12 bg-gray-100 rounded animate-pulse" />
+              <div className="h-3.5 w-20 bg-white/20 rounded animate-pulse mb-1.5" />
+              <div className="h-2.5 w-12 bg-white/10 rounded animate-pulse" />
             </>
           )}
         </div>
@@ -1900,7 +1921,7 @@ export default function ChatRoom() {
             <button
               onClick={() => setShowGroupParticipants(true)}
               className="w-8 h-8 flex items-center justify-center rounded-full transition active:scale-95"
-              style={{ color: isDating ? 'rgba(139,48,96,0.5)' : 'rgba(0,77,32,0.45)' }}
+              style={{ color: 'rgba(255,255,255,0.7)' }}
             >
               <Users className="w-4 h-4" />
             </button>
@@ -1909,7 +1930,7 @@ export default function ChatRoom() {
             <button
               onClick={() => openDotMenu(otherUser.user_id || otherUser.id, otherUser.name)}
               className="w-8 h-8 flex items-center justify-center rounded-full transition active:scale-95"
-              style={{ color: isDating ? 'rgba(139,48,96,0.5)' : 'rgba(0,77,32,0.45)' }}
+              style={{ color: 'rgba(255,255,255,0.7)' }}
             >
               <MoreVertical className="w-4 h-4" />
             </button>
@@ -1917,7 +1938,7 @@ export default function ChatRoom() {
           <button
             onClick={handleLeaveChat}
             className="w-8 h-8 flex items-center justify-center rounded-full transition active:scale-95"
-            style={{ color: isDating ? 'rgba(139,48,96,0.5)' : 'rgba(0,77,32,0.45)' }}
+            style={{ color: 'rgba(255,255,255,0.7)' }}
             title="나가기"
           >
             <LogOut className="w-4 h-4" />

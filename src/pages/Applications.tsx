@@ -542,9 +542,9 @@ export default function Applications() {
   };
 
   const handleReject = (app: Application) => {
-    setRejectTarget(app);
-    setRejectReason('');
     setSelectedApp(null);
+    setRejectReason('');
+    setTimeout(() => setRejectTarget(app), 50);
   };
 
   const handleRejectConfirm = async () => {
