@@ -1146,8 +1146,8 @@ export default function ChatRoom() {
     if (!user || !otherUser) return;
     const purpose = chatPurpose ?? 'tennis';
     const welcomeMsg = purpose === 'dating'
-      ? '💌 매칭됐어요! 설레는 만남 기대할게요 😊'
-      : '🎾 매칭됐어요! 코트에서 만나요 😊';
+      ? '💌 설레는 만남 시작! 식사 약속도 잡아봐요 🍽️'
+      : '🎾 매칭됐어요! 코트에서 만나요!';
 
     const otherId = otherUser.user_id || otherUser.id;
     const { data: newChat, error: chatErr } = await supabase
@@ -1205,8 +1205,8 @@ export default function ChatRoom() {
       .maybeSingle();
     const leaverName = myProf?.name ?? '누군가';
     const leaveMsg = chatPurpose === 'dating'
-      ? `${leaverName}님이 자리를 떠났습니다 💌`
-      : `${leaverName}님이 코트를 떠났습니다 🎾`;
+      ? `💌 ${leaverName}님이 자리를 떠났습니다`
+      : `🎾 ${leaverName}님이 코트를 떠났습니다`;
 
     const { data: existing } = await supabase
       .from('messages')
@@ -1308,9 +1308,7 @@ export default function ChatRoom() {
     const targetName = kickTargetUser.name;
     setKickingId(targetId);
     try {
-      const kickMsg = chatPurpose === 'dating'
-        ? `${targetName}님이 자리를 떠났습니다 💌`
-        : `${targetName}님이 코트에서 퇴장되었습니다 🎾`;
+      const kickMsg = `${targetName}님이 퇴장되었습니다`;
 
       if (courtId) {
         const { data: gcData } = await supabase
@@ -1447,8 +1445,8 @@ export default function ChatRoom() {
     }
     const msg =
       chatPurpose === 'dating'
-        ? '💕 매칭이 확정됐어요! 경기 전에 미리 식사 약속도 잡아보세요 🍱✨'
-        : '🎾 라인업이 확정됐어요! 코트 위에서 멋진 경기 기대할게요 🔥';
+        ? '💕 매칭 확정! 설레는 만남 기대해요 🥂'
+        : '🎾 라인업 확정!';
     const ok = await sendMessage(msg, 'system');
     if (ok) setMatchConfirmed(true);
   };
@@ -1551,8 +1549,8 @@ export default function ChatRoom() {
 
       const cancelMsg =
         chatPurpose === 'dating'
-          ? `${participantName}님의 매칭이 취소되었습니다.`
-          : `${participantName}님의 라인업 확정이 취소되었습니다.`;
+          ? `😢 ${participantName}님의 매칭이 취소됐어요.`
+          : `😢 ${participantName}님의 라인업 확정이 취소됐어요.`;
       await sendMessage(cancelMsg, 'system');
     } finally {
       setCancellingId(null);
@@ -1634,8 +1632,8 @@ export default function ChatRoom() {
 
       const confirmMsg =
         chatPurpose === 'dating'
-          ? `💕 ${participantName}님이 매칭 확정되었습니다!`
-          : `🎾 ${participantName}님이 라인업에 확정되었습니다!`;
+          ? `💕 매칭 확정! 설레는 만남 기대해요 🥂`
+          : `🎾 라인업 확정!`;
       await sendMessage(confirmMsg, 'system');
     } finally {
       setConfirmingId(null);
@@ -1811,14 +1809,14 @@ export default function ChatRoom() {
         style={{
           height: 60,
           background: isDating
-            ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)'
-            : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+            ? 'linear-gradient(135deg, #C9547A 0%, #E8A0BF 100%)'
+            : 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)',
           borderBottom: isDating
-            ? '1px solid rgba(139,34,82,0.4)'
-            : '1px solid rgba(27,67,50,0.4)',
+            ? '1px solid rgba(201,84,122,0.3)'
+            : '1px solid rgba(45,106,79,0.3)',
           boxShadow: isDating
-            ? '0 2px 16px rgba(139,34,82,0.35)'
-            : '0 2px 16px rgba(27,67,50,0.35)',
+            ? '0 2px 16px rgba(201,84,122,0.25)'
+            : '0 2px 16px rgba(45,106,79,0.25)',
         }}
       >
         <button
@@ -1969,11 +1967,14 @@ export default function ChatRoom() {
           <div className="flex gap-2">
             <button
               onClick={handleMatchConfirm}
-              className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white shadow-sm"
+              className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white"
               style={{
                 background: isDating
-                  ? 'linear-gradient(135deg, #C9A84C 0%, #E0B856 100%)'
-                  : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+                  ? 'linear-gradient(135deg, #C9A84C 0%, #E8C66A 100%)'
+                  : 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)',
+                boxShadow: isDating
+                  ? '0 2px 12px rgba(201,168,76,0.35)'
+                  : '0 2px 12px rgba(45,106,79,0.3)',
               }}
             >
               {isDating ? '매칭 확정하기' : '라인업 확정'}
@@ -1982,9 +1983,9 @@ export default function ChatRoom() {
               onClick={handleMatchCancel}
               className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
               style={{
-                background: isDating ? 'rgba(255,200,215,0.5)' : 'rgba(210,225,215,0.6)',
-                color: isDating ? '#9B3060' : '#3D5C48',
-                border: isDating ? '1px solid rgba(201,84,122,0.2)' : '1px solid rgba(45,106,79,0.18)',
+                background: isDating ? 'rgba(255,220,230,0.6)' : 'rgba(210,230,220,0.65)',
+                color: isDating ? '#A83060' : '#2D6A4F',
+                border: isDating ? '1px solid rgba(201,84,122,0.18)' : '1px solid rgba(45,106,79,0.18)',
               }}
             >
               매칭 취소

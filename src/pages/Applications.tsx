@@ -507,7 +507,7 @@ export default function Applications() {
         const entryMsg =
           courtPurpose === 'dating'
             ? `💌 ${applicantName}님이 입장했습니다. 설레는 만남이 시작돼요!`
-            : `🎾 ${applicantName}님이 코트에 합류했습니다!`;
+            : `🎾 ${applicantName}님이 코트에 입장했습니다!`;
         await supabase.from('court_group_chat_messages').insert({
           group_chat_id: targetChatId,
           sender_id: null,
@@ -518,8 +518,8 @@ export default function Applications() {
       } else if (!useGroupChat && isNewChat && targetChatId) {
         const welcomeMsg =
           courtPurpose === 'dating'
-            ? '채팅방이 생성되었어요. 경기 전에 식사 약속도 미리 잡아보세요! 🍱✨'
-            : '매칭 완료! 코트 위에서 즐거운 경기 되세요 🎾🔥';
+            ? '💌 설레는 만남 시작! 식사 약속도 잡아봐요 🍽️'
+            : '🎾 매칭됐어요! 코트에서 만나요!';
         await supabase.from('messages').insert({
           chat_id: targetChatId,
           sender_id: user!.id,

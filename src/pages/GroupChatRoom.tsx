@@ -355,7 +355,7 @@ export default function GroupChatRoom() {
     await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
-      content: isDating ? `💌 ${participant.profile.name}님 참가 확정됐어요! 설레는 만남이 기대돼요!` : `🎾 ${participant.profile.name}님 참가 확정됐어요! 코트에서 만나요!`,
+      content: isDating ? `💕 매칭 확정! 설레는 만남 기대해요 🥂` : `🎾 라인업 확정!`,
       type: 'system',
       is_read: false,
     });
@@ -428,7 +428,7 @@ export default function GroupChatRoom() {
       .from('court_group_chats')
       .update({ confirmed_user_ids: confirmedIds })
       .eq('id', groupChatId!);
-    const msg = isDating ? '💌 매칭이 확정됐어요! 설레는 만남이 기대돼요!' : '🎾 매칭이 확정됐어요! 코트에서 만나요!';
+    const msg = isDating ? '💕 매칭 확정! 설레는 만남 기대해요 🥂' : '🎾 라인업 확정!';
     const ok = await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
@@ -470,7 +470,7 @@ export default function GroupChatRoom() {
     await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
-      content: isDating ? '😢 아쉽지만 매칭이 취소됐어요.' : '😢 아쉽지만 매칭이 취소됐어요.',
+      content: isDating ? '😢 아쉽게도 매칭이 취소됐어요.' : '😢 아쉽게도 매칭이 취소됐어요.',
       type: 'system',
       is_read: false,
     });
@@ -543,7 +543,7 @@ export default function GroupChatRoom() {
     const { user_id: targetId, name: targetName } = kickTarget;
     setKickingId(targetId);
     try {
-      const kickMsg = isDating ? `${targetName}님이 자리를 떠났습니다 💌` : `${targetName}님이 코트에서 퇴장되었습니다 🎾`;
+      const kickMsg = `${targetName}님이 퇴장되었습니다`;
       await supabase.from('court_group_chat_participants').delete().eq('group_chat_id', groupChatId).eq('user_id', targetId);
       await supabase.from('court_group_chat_messages').insert({
         group_chat_id: groupChatId,
@@ -618,7 +618,7 @@ export default function GroupChatRoom() {
 
   const accentColor = isDating ? '#C9A84C' : '#C9A84C';
   const hostAccentColor = isDating ? '#C9A84C' : '#C9A84C';
-  const headerBg = isDating ? 'linear-gradient(135deg, #2D1820 0%, #3D2230 100%)' : '#0F2118';
+  const headerBg = isDating ? 'linear-gradient(135deg, #C9547A 0%, #E8A0BF 100%)' : 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)';
   const chatBg = isDating
     ? 'linear-gradient(160deg, #FFF4F7 0%, #FFF8F2 50%, #FFF5EC 100%)'
     : '#F0F4F1';
@@ -642,7 +642,7 @@ export default function GroupChatRoom() {
       )}
       <header
         className="px-4 py-3 flex items-center gap-3 sticky top-0 z-10 flex-shrink-0"
-        style={{ background: headerBg, borderBottom: `1px solid ${isDating ? 'rgba(201,168,76,0.2)' : 'rgba(201,168,76,0.15)'}` }}
+        style={{ background: headerBg, borderBottom: `1px solid ${isDating ? 'rgba(201,84,122,0.25)' : 'rgba(45,106,79,0.25)'}`, boxShadow: isDating ? '0 2px 16px rgba(201,84,122,0.2)' : '0 2px 16px rgba(45,106,79,0.2)' }}
       >
         <button onClick={() => navigate(-1)} className="p-1.5 rounded-full transition active:scale-90" style={{ background: 'rgba(255,255,255,0.08)' }}>
           <ArrowLeft className="w-5 h-5 text-white" />
@@ -779,14 +779,14 @@ export default function GroupChatRoom() {
               <button
                 onClick={handleMatchConfirm}
                 className="flex-1 py-2 rounded-xl text-sm font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1"
-                style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : '#1B4332', color: '#fff' }}
+                style={{ background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #E8C66A 100%)' : 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)', boxShadow: isDating ? '0 2px 12px rgba(201,168,76,0.3)' : '0 2px 12px rgba(45,106,79,0.25)', color: '#fff' }}
               >
                 ✅ 매칭 확정하기
               </button>
               <button
                 onClick={handleMatchCancel}
                 className="flex-1 py-2 rounded-xl text-sm font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1"
-                style={{ background: '#F3F4F6', color: '#6B7280' }}
+                style={{ background: isDating ? 'rgba(255,220,230,0.6)' : 'rgba(210,230,220,0.65)', color: isDating ? '#A83060' : '#2D6A4F', border: `1px solid ${isDating ? 'rgba(168,48,96,0.2)' : 'rgba(45,106,79,0.2)'}` }}
               >
                 ❌ 매칭 취소하기
               </button>

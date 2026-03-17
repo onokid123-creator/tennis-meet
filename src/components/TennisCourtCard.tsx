@@ -126,7 +126,7 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
                 src={photos[photoIndex]}
                 alt={profile?.name}
                 className="w-full h-full"
-                style={{ objectFit: 'contain', objectPosition: 'center', display: 'block', background: '#0d2218' }}
+                style={{ objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
               />
             </button>
 
