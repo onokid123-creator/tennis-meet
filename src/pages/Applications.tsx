@@ -288,28 +288,39 @@ export default function Applications() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data: received } = await supabase
+      const { data: receivedRaw } = await supabase
         .from('applications')
-        .select(`
-          *,
-          applicant:applicant_id (*),
-          court:court_id (*)
-        `)
+        .select(`*, court:court_id (*)`)
         .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
-      const { data: sent } = await supabase
+      const { data: sentRaw } = await supabase
         .from('applications')
-        .select(`
-          *,
-          owner:owner_id (*),
-          court:court_id (*)
-        `)
+        .select(`*, owner:owner_id (*), court:court_id (*)`)
         .eq('applicant_id', user.id)
         .order('created_at', { ascending: false });
 
-      setReceivedApps(received || []);
-      setSentApps(sent || []);
+      const receivedList = receivedRaw || [];
+      const applicantIds = [...new Set(receivedList.map((a) => a.applicant_id).filter(Boolean))];
+
+      let applicantMap: Record<string, Profile> = {};
+      if (applicantIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', applicantIds);
+        if (profiles) {
+          applicantMap = Object.fromEntries(profiles.map((p) => [p.user_id, p]));
+        }
+      }
+
+      const received = receivedList.map((a) => ({
+        ...a,
+        applicant: applicantMap[a.applicant_id] ?? null,
+      }));
+
+      setReceivedApps(received);
+      setSentApps(sentRaw || []);
     } catch (err) {
       console.error('신청 목록 가져오기 실패:', err);
     } finally {
