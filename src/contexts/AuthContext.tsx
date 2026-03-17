@@ -127,7 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, name: string, age: number, gender: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name, age, gender } },
+    });
 
     if (error) {
       if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
@@ -137,14 +141,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').insert({
+      const { error: profileError } = await supabase.from('profiles').upsert({
         user_id: data.user.id,
         name,
         age,
         gender,
         profile_completed: false,
-      });
-      if (profileError && !profileError.message.includes('duplicate')) {
+      }, { onConflict: 'user_id', ignoreDuplicates: true });
+      if (profileError) {
         console.error('프로필 생성 실패:', profileError);
       }
     }
