@@ -1149,7 +1149,7 @@ export default function ChatRoom() {
     if (!user || !otherUser) return;
     const purpose = chatPurpose ?? 'tennis';
     const welcomeMsg = purpose === 'dating'
-      ? '💌 설레는 만남 시작! 식사 약속도 잡아봐요 🍽️'
+      ? '💌 설레는 만남 시작! 식사도 같이해요 🍽️'
       : '🎾 매칭됐어요! 코트에서 만나요!';
 
     const otherId = otherUser.user_id || otherUser.id;
@@ -2006,25 +2006,26 @@ export default function ChatRoom() {
               className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white"
               style={{
                 background: isDating
-                  ? 'linear-gradient(135deg, #C9A84C 0%, #E8C66A 100%)'
-                  : 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)',
+                  ? 'linear-gradient(135deg, #C9A84C 0%, #E8C97A 100%)'
+                  : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
                 boxShadow: isDating
-                  ? '0 2px 12px rgba(201,168,76,0.35)'
-                  : '0 2px 12px rgba(45,106,79,0.3)',
+                  ? '0 2px 14px rgba(201,168,76,0.45)'
+                  : '0 2px 14px rgba(27,67,50,0.35)',
+                letterSpacing: '0.02em',
               }}
             >
-              {isDating ? '매칭 확정하기' : '라인업 확정'}
+              {isDating ? '매칭 확정' : '라인업 확정'}
             </button>
             <button
               onClick={handleMatchCancel}
-              className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
+              className="px-5 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
               style={{
-                background: isDating ? 'rgba(255,220,230,0.6)' : 'rgba(210,230,220,0.65)',
-                color: isDating ? '#A83060' : '#2D6A4F',
-                border: isDating ? '1px solid rgba(201,84,122,0.18)' : '1px solid rgba(45,106,79,0.18)',
+                background: isDating ? 'rgba(252,231,231,0.85)' : 'rgba(226,232,240,0.85)',
+                color: isDating ? '#9B2040' : '#374151',
+                border: isDating ? '1px solid rgba(201,84,122,0.15)' : '1px solid rgba(100,116,139,0.2)',
               }}
             >
-              매칭 취소
+              취소
             </button>
           </div>
         </div>
@@ -2535,7 +2536,7 @@ export default function ChatRoom() {
 
       {showConfirmPicker && isHost && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
+          className="fixed inset-0 z-[70] flex items-end justify-center"
           style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={() => setShowConfirmPicker(false)}
         >

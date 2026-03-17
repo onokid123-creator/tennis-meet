@@ -309,9 +309,9 @@ export default function Home() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteConfirmId) return;
+    if (!deleteConfirmId || !user) return;
     setDeleteLoading(true);
-    const { error } = await supabase.from('courts').delete().eq('id', deleteConfirmId);
+    const { error } = await supabase.from('courts').delete().eq('id', deleteConfirmId).eq('user_id', user.id);
     setDeleteLoading(false);
     setDeleteConfirmId(null);
     if (!error) triggerRefresh();

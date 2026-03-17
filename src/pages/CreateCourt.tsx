@@ -328,7 +328,7 @@ export default function CreateCourt() {
       }
 
       if (isEditing) {
-        const { error } = await supabase.from('courts').update(courtData).eq('id', editCourt!.id);
+        const { error } = await supabase.from('courts').update(courtData).eq('id', editCourt!.id).eq('user_id', user!.id);
         if (error) { console.error('[CreateCourt] update error:', error); throw new Error(error.message || '수정에 실패했습니다.'); }
       } else {
         const { error } = await supabase.from('courts').insert(courtData).select().single();
