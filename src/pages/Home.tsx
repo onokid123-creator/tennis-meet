@@ -286,6 +286,7 @@ export default function Home() {
     const { error } = await supabase.from('applications').insert({
       court_id: applyTargetCourt.id,
       owner_id: applyTargetCourt.user_id,
+      host_id: applyTargetCourt.user_id,
       applicant_id: user.id,
       purpose: applyTargetCourt.purpose,
       status: 'pending',
