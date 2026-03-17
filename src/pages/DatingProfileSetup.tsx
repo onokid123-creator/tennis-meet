@@ -133,9 +133,9 @@ export default function DatingProfileSetup() {
   const uploadPhoto = async (file: File): Promise<string> => {
     const compressed = await compressFile(file);
     const path = `${user!.id}/dating-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const { error: uploadError } = await supabase.storage.from('profile_images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+    const { error: uploadError } = await supabase.storage.from('profile-images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
     if (uploadError) throw new Error(`사진 업로드 실패: ${uploadError.message}`);
-    const { data: { publicUrl } } = supabase.storage.from('profile_images').getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from('profile-images').getPublicUrl(path);
     return publicUrl;
   };
 
@@ -186,8 +186,9 @@ export default function DatingProfileSetup() {
 
       localStorage.setItem('dating_profile', JSON.stringify(datingProfileData));
 
-      const { error: upsertError } = await supabase.from('profiles').upsert(
+      await supabase.from('profiles').upsert(
         {
+          id: user!.id,
           user_id: user!.id,
           name: formData.name || profile?.name || '',
           age: Number(formData.age) || profile?.age || 0,
@@ -203,7 +204,6 @@ export default function DatingProfileSetup() {
         },
         { onConflict: 'user_id' }
       );
-      if (upsertError) throw new Error(upsertError.message);
 
       updateProfile({
         name: formData.name || profile?.name || '',

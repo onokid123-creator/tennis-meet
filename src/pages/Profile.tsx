@@ -120,9 +120,9 @@ export default function Profile() {
   const uploadPhoto = async (file: File): Promise<string> => {
     const compressed = await compressFile(file);
     const path = `${profile!.user_id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const { error } = await supabase.storage.from('profile_images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+    const { error } = await supabase.storage.from('profile-images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
     if (error) throw new Error(`사진 업로드 실패: ${error.message}`);
-    const { data: { publicUrl } } = supabase.storage.from('profile_images').getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from('profile-images').getPublicUrl(path);
     return publicUrl;
   };
 

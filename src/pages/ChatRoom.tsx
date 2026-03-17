@@ -1285,13 +1285,13 @@ export default function ChatRoom() {
 
       if (courtId) {
         const { data: gcData } = await supabase
-          .from('group_chats')
+          .from('court_group_chats')
           .select('id')
           .eq('court_id', courtId)
           .maybeSingle();
         if (gcData?.id) {
           await supabase
-            .from('group_chat_members')
+            .from('court_group_chat_participants')
             .delete()
             .eq('group_chat_id', gcData.id)
             .eq('user_id', targetId);
@@ -1685,12 +1685,12 @@ export default function ChatRoom() {
     : { background: '#F0F4F1' };
 
   const myBubbleStyle = isDating
-    ? { background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)', color: '#fff' }
+    ? { background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)', color: '#fff' }
     : { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', color: '#fff' };
 
   const otherBubbleStyle = isDating
-    ? { background: '#FFF5F8', color: '#2D1820', border: '1px solid rgba(201,84,122,0.15)', boxShadow: '0 1px 4px rgba(201,84,122,0.08)' }
-    : { background: '#FFFFFF', color: '#1a1a1a', border: '1px solid rgba(45,106,79,0.12)', boxShadow: '0 1px 4px rgba(45,106,79,0.06)' };
+    ? { background: '#FFFFFF', color: '#2D1820', border: '1px solid rgba(183,110,121,0.18)', boxShadow: '0 1px 4px rgba(183,110,121,0.08)' }
+    : { background: '#FFFFFF', color: '#1a1a1a', border: '1px solid rgba(0,100,0,0.1)', boxShadow: '0 1px 4px rgba(0,100,0,0.06)' };
 
   const inputAreaStyle = isDating
     ? { background: '#FFF8F2', borderTop: '1px solid rgba(201,100,120,0.12)' }
@@ -1772,18 +1772,22 @@ export default function ChatRoom() {
         style={{
           height: 56,
           background: isDating
-            ? 'linear-gradient(135deg, #2D1820 0%, #3D2230 100%)'
-            : '#0F2118',
+            ? 'rgba(255,245,248,0.97)'
+            : 'rgba(240,248,244,0.97)',
+          backdropFilter: 'blur(16px)',
           borderBottom: isDating
-            ? '1px solid rgba(201,168,76,0.2)'
-            : '1px solid rgba(201,168,76,0.15)',
+            ? '1px solid rgba(183,110,121,0.14)'
+            : '1px solid rgba(0,100,0,0.1)',
+          boxShadow: isDating
+            ? '0 1px 8px rgba(183,110,121,0.07)'
+            : '0 1px 8px rgba(0,100,0,0.05)',
         }}
       >
         <button
           onClick={() => navigate(-1)}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-white/10 transition"
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-black/5 transition"
         >
-          <ArrowLeft className="w-5 h-5 text-white" />
+          <ArrowLeft className="w-5 h-5" style={{ color: isDating ? '#8B3060' : '#004d20' }} />
         </button>
 
         <div className="flex-shrink-0">
@@ -1801,8 +1805,8 @@ export default function ChatRoom() {
                       top: i === 2 ? 16 : 0,
                       left: i === 0 ? 0 : i === 1 ? 12 : 6,
                       zIndex: 3 - i,
-                      background: avBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)'),
-                      borderColor: isDating ? '#3D2230' : '#0F2118',
+                      background: avBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #B76E79 100%)' : 'linear-gradient(135deg, #004d20 0%, #006400 100%)'),
+                      borderColor: isDating ? '#FFF5F8' : '#F0F8F4',
                       fontSize: 8,
                     }}
                   >
@@ -1832,11 +1836,12 @@ export default function ChatRoom() {
             <>
               <div className="flex items-center gap-1.5">
                 <p
-                  className="font-bold text-[15px] leading-tight truncate text-white"
+                  className="font-bold text-[15px] leading-tight truncate"
+                  style={{ color: isDating ? '#2D1820' : '#0F2118' }}
                 >
                   {isGroupChat ? (groupChatTitle ?? '단체방') : opponentName}
                   {!isGroupChat && !isDeletedUser && isDating && otherUser?.age ? (
-                    <span className="font-normal text-xs ml-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                    <span className="font-normal text-xs ml-1" style={{ color: 'rgba(139,48,96,0.5)' }}>
                       {otherUser!.age}세
                     </span>
                   ) : null}
@@ -1844,27 +1849,32 @@ export default function ChatRoom() {
                 {isGroupChat && (
                   <span
                     className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 tracking-wide"
-                    style={{ background: 'rgba(201,168,76,0.2)', color: '#C9A84C' }}
+                    style={{ background: isDating ? 'rgba(183,110,121,0.13)' : 'rgba(0,100,0,0.1)', color: isDating ? '#B76E79' : '#006400' }}
                   >
                     GROUP
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                {!isGroupChat && !isOpponentBlocked && otherUser?.experience && (
-                  <span className="text-[11px] font-medium" style={{ color: '#C9A84C' }}>
+                {!isGroupChat && !isDating && !isOpponentBlocked && otherUser?.experience && (
+                  <span className="text-[11px] font-medium" style={{ color: '#2D6A4F' }}>
                     🎾 구력 {otherUser.experience}
                   </span>
                 )}
+                {!isGroupChat && isDating && !isOpponentBlocked && otherUser?.experience && (
+                  <span className="text-[11px] font-medium" style={{ color: '#B76E79' }}>
+                    🎾 {otherUser.experience}
+                  </span>
+                )}
                 {courtName && (
-                  <span className="text-[11px] font-medium" style={{ color: '#C9A84C' }}>
+                  <span className="text-[11px] font-medium" style={{ color: isDating ? '#C9A84C' : '#2D6A4F' }}>
                     {courtName}
                   </span>
                 )}
                 <button
                   onClick={isGroupChat ? (e) => { e.stopPropagation(); setShowParticipantMgmt((v) => !v); } : undefined}
                   className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${isGroupChat ? 'active:scale-95 transition' : ''}`}
-                  style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C' }}
+                  style={{ background: isDating ? 'rgba(183,110,121,0.1)' : 'rgba(0,100,0,0.08)', color: isDating ? '#B76E79' : '#006400' }}
                 >
                   {participantCount === null ? '···' : participantCount === 0 ? '찾는 중...' : `${participantCount}명`}
                   {isGroupChat && <span className="ml-0.5 opacity-60">▾</span>}
@@ -1884,7 +1894,7 @@ export default function ChatRoom() {
             <button
               onClick={() => setShowGroupParticipants(true)}
               className="w-8 h-8 flex items-center justify-center rounded-full transition active:scale-95"
-              style={{ color: 'rgba(255,255,255,0.7)' }}
+              style={{ color: isDating ? 'rgba(139,48,96,0.5)' : 'rgba(0,77,32,0.45)' }}
             >
               <Users className="w-4 h-4" />
             </button>
@@ -1893,7 +1903,7 @@ export default function ChatRoom() {
             <button
               onClick={() => openDotMenu(otherUser.user_id || otherUser.id, otherUser.name)}
               className="w-8 h-8 flex items-center justify-center rounded-full transition active:scale-95"
-              style={{ color: 'rgba(255,255,255,0.7)' }}
+              style={{ color: isDating ? 'rgba(139,48,96,0.5)' : 'rgba(0,77,32,0.45)' }}
             >
               <MoreVertical className="w-4 h-4" />
             </button>
@@ -1901,7 +1911,7 @@ export default function ChatRoom() {
           <button
             onClick={handleLeaveChat}
             className="w-8 h-8 flex items-center justify-center rounded-full transition active:scale-95"
-            style={{ color: 'rgba(255,255,255,0.7)' }}
+            style={{ color: isDating ? 'rgba(139,48,96,0.5)' : 'rgba(0,77,32,0.45)' }}
             title="나가기"
           >
             <LogOut className="w-4 h-4" />
@@ -1913,24 +1923,29 @@ export default function ChatRoom() {
         <div
           className="px-3 py-2.5 flex-shrink-0 z-10 relative"
           style={{
-            background: isDating ? 'rgba(255,245,250,0.95)' : '#fff',
-            borderBottom: isDating ? '1px solid rgba(201,84,122,0.12)' : '1px solid rgba(45,106,79,0.1)',
+            background: isDating
+              ? 'linear-gradient(135deg, rgba(255,240,248,0.97) 0%, rgba(255,248,252,0.97) 100%)'
+              : 'linear-gradient(135deg, rgba(237,248,242,0.97) 0%, rgba(240,248,244,0.97) 100%)',
+            borderBottom: isDating ? '1px solid rgba(201,84,122,0.18)' : '1px solid rgba(45,106,79,0.18)',
           }}
         >
           <div className="flex gap-2">
             <button
               onClick={handleMatchConfirm}
-              className="flex-1 py-2 rounded-xl text-sm font-semibold transition active:scale-95 text-white"
-              style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : '#1B4332' }}
+              className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white shadow-sm"
+              style={myBubbleStyle}
             >
-              ✅ 매칭 확정하기
+              {isDating ? '💕 매칭 확정하기' : '🎾 라인업 확정'}
             </button>
             <button
               onClick={handleMatchCancel}
-              className="flex-1 py-2 rounded-xl text-sm font-semibold transition active:scale-95"
-              style={{ background: '#F3F4F6', color: '#6B7280' }}
+              className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
+              style={{
+                background: isDating ? 'rgba(255,210,225,0.6)' : 'rgba(200,215,205,0.6)',
+                color: isDating ? '#8B3060' : '#3D5C48',
+              }}
             >
-              ❌ 매칭 취소하기
+              매칭 취소하기
             </button>
           </div>
         </div>
@@ -2165,7 +2180,7 @@ export default function ChatRoom() {
               const nextMsg = idx < messages.length - 1 ? messages[idx + 1] : null;
               const isLastInSenderGroup = !nextMsg || nextMsg.sender_id !== msg.sender_id || nextMsg.type === 'system';
               const showAvatar = !isMe && isLastInSenderGroup;
-              const avatarAccent = isDating ? '#C9547A' : '#2D6A4F';
+              const avatarAccent = isDating ? '#B76E79' : '#006400';
 
               return (
                 <div key={msg.id}>
@@ -2194,7 +2209,7 @@ export default function ChatRoom() {
                           </button>
                         )}
                         {!isFailed && isGroupChat && groupUnread > 0 && (
-                          <span className="text-xs font-bold leading-none" style={{ color: isDating ? '#C9547A' : '#C9A84C' }}>{groupUnread}</span>
+                          <span className="text-xs font-bold leading-none" style={{ color: isDating ? '#B76E79' : '#C9A84C' }}>{groupUnread}</span>
                         )}
                         {!isFailed && !isGroupChat && showBadge && (
                           <span className="text-xs font-bold leading-none" style={{ color: avatarAccent }}>1</span>
@@ -2216,7 +2231,7 @@ export default function ChatRoom() {
                         {showAvatar ? (
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold overflow-hidden cursor-pointer active:opacity-80"
-                            style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: `0 0 0 2px ${isDating ? 'rgba(201,84,122,0.25)' : 'rgba(45,106,79,0.2)'}` }}
+                            style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #B76E79 100%)' : 'linear-gradient(135deg, #004d20 0%, #006400 100%)', boxShadow: `0 0 0 2px ${isDating ? 'rgba(183,110,121,0.25)' : 'rgba(0,100,0,0.18)'}` }}
                             onClick={senderProf ? () => {
                               setOtherUser(senderProf);
                               setShowProfilePopup(true);
@@ -2248,7 +2263,7 @@ export default function ChatRoom() {
                           </div>
                           <div className="flex flex-col items-start flex-shrink-0 mb-0.5 gap-0.5">
                             {isGroupChat && groupUnread > 0 && (
-                              <span className="text-xs font-bold leading-none" style={{ color: isDating ? '#C9547A' : '#C9A84C' }}>{groupUnread}</span>
+                              <span className="text-xs font-bold leading-none" style={{ color: isDating ? '#B76E79' : '#C9A84C' }}>{groupUnread}</span>
                             )}
                             <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(139,48,96,0.45)' : 'rgba(27,67,50,0.45)' }}>
                               {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
@@ -2269,7 +2284,7 @@ export default function ChatRoom() {
                   <div className="w-9 flex-shrink-0 flex flex-col items-center">
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
-                      style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: `0 0 0 2px ${isDating ? 'rgba(201,84,122,0.25)' : 'rgba(45,106,79,0.2)'}` }}
+                      style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #B76E79 100%)' : 'linear-gradient(135deg, #004d20 0%, #006400 100%)', boxShadow: `0 0 0 2px ${isDating ? 'rgba(183,110,121,0.25)' : 'rgba(0,100,0,0.18)'}` }}
                     >
                       {tuPhoto ? (
                         <img src={tuPhoto} alt={tu.name} className="w-full h-full object-cover" />
@@ -2279,11 +2294,11 @@ export default function ChatRoom() {
                     </div>
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-xs font-semibold mb-1 ml-0.5" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>{tu.name}</span>
+                    <span className="text-xs font-semibold mb-1 ml-0.5" style={{ color: isDating ? '#B76E79' : '#006400' }}>{tu.name}</span>
                     <div className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm" style={otherBubbleStyle}>
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
-                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: isDating ? '#B76E79' : '#006400' }} />
                     </div>
                   </div>
                 </div>
@@ -2460,7 +2475,7 @@ export default function ChatRoom() {
                     ) : (
                       <span
                         className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white"
-                        style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+                        style={{ background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
                       >
                         {confirmingId === av.user_id ? '처리 중...' : '확정하기'}
                       </span>

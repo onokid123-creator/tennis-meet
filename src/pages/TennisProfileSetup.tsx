@@ -62,9 +62,9 @@ export default function TennisProfileSetup() {
   const uploadPhoto = async (file: File): Promise<string> => {
     const compressed = await compressFile(file);
     const path = `${user!.id}/tennis-${Date.now()}.jpg`;
-    const { error: uploadError } = await supabase.storage.from('profile_images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+    const { error: uploadError } = await supabase.storage.from('profile-images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
     if (uploadError) throw new Error(`사진 업로드 실패: ${uploadError.message}`);
-    const { data: { publicUrl } } = supabase.storage.from('profile_images').getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from('profile-images').getPublicUrl(path);
     return publicUrl;
   };
 
@@ -82,8 +82,9 @@ export default function TennisProfileSetup() {
         photoUrl = await uploadPhoto(photoFile);
       }
 
-      const { error: upsertError } = await supabase.from('profiles').upsert(
+      await supabase.from('profiles').upsert(
         {
+          id: user!.id,
           user_id: user!.id,
           name: name.trim(),
           age: Number(age),
@@ -96,7 +97,6 @@ export default function TennisProfileSetup() {
         },
         { onConflict: 'user_id' }
       );
-      if (upsertError) throw new Error(upsertError.message);
 
       const tennisProfile = {
         photo_url: photoUrl || undefined,
@@ -124,9 +124,8 @@ export default function TennisProfileSetup() {
       } else {
         navigate('/home', { replace: true });
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : '저장에 실패했습니다.';
-      setError(msg);
+    } catch {
+      setError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }

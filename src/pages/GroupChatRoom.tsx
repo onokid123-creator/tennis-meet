@@ -113,21 +113,13 @@ export default function GroupChatRoom() {
 
       let query = supabase
         .from('messages')
-        .select('*')
+        .select(`*, sender:sender_id (*)`)
         .eq('group_chat_id', groupChatId)
         .order('created_at', { ascending: true });
       if (joinedAt) query = query.gte('created_at', joinedAt);
 
-      const { data: rawMsgs } = await query;
-      const msgs = rawMsgs ?? [];
-
-      const senderIds = Array.from(new Set(msgs.map((m) => m.sender_id).filter(Boolean)));
-      let senderMap: Record<string, unknown> = {};
-      if (senderIds.length > 0) {
-        const { data: senders } = await supabase.from('profiles').select('*').in('user_id', senderIds);
-        (senders ?? []).forEach((p) => { senderMap[p.user_id] = p; });
-      }
-      setMessages(msgs.map((m) => ({ ...m, sender: m.sender_id ? senderMap[m.sender_id] ?? null : null })) as GroupChatMessage[]);
+      const { data } = await query;
+      setMessages(data || []);
     } catch (err) {
       console.error('메시지 가져오기 실패:', err);
     } finally {
@@ -136,20 +128,13 @@ export default function GroupChatRoom() {
   }, [groupChatId, user]);
 
   const fetchParticipants = useCallback(async () => {
-    const { data: memberRows } = await supabase
+    const { data } = await supabase
       .from('group_chat_members')
-      .select('*')
+      .select(`*, profile:user_id (*)`)
       .eq('group_chat_id', groupChatId)
       .neq('status', 'rejected');
 
-    const members = memberRows ?? [];
-    const memberUserIds = members.map((m) => m.user_id).filter(Boolean);
-    let profileMap: Record<string, unknown> = {};
-    if (memberUserIds.length > 0) {
-      const { data: profs } = await supabase.from('profiles').select('*').in('user_id', memberUserIds);
-      (profs ?? []).forEach((p) => { profileMap[p.user_id] = p; });
-    }
-    const rows = members.map((m) => ({ ...m, profile: profileMap[m.user_id] ?? null })) as ParticipantWithRead[];
+    const rows = (data || []) as ParticipantWithRead[];
     setParticipants(rows);
     const reads: Record<string, string | null> = {};
     rows.forEach((p) => { reads[p.user_id] = (p as never as { last_read_at?: string | null }).last_read_at ?? null; });
@@ -184,32 +169,18 @@ export default function GroupChatRoom() {
   const fetchGroupChatData = useCallback(async () => {
     const { data } = await supabase
       .from('group_chats')
-      .select('*')
+      .select(`*, court:court_id (*), host:host_id (*), confirmed_user_ids`)
       .eq('id', groupChatId)
       .maybeSingle();
 
     if (data) {
       setHostId(data.host_id);
+      setCourt(data.court || null);
+      if (data.host) {
+        setHostProfile({ name: data.host.name, photo_url: data.host.photo_url || null, tennis_photo_url: data.host.tennis_photo_url || null });
+      }
       if (data.purpose) setPurpose(data.purpose as 'tennis' | 'dating');
       if (data.matched) setMatchConfirmed(true);
-
-      const [courtRes, hostRes] = await Promise.all([
-        data.court_id
-          ? supabase.from('courts').select('*').eq('id', data.court_id).maybeSingle()
-          : Promise.resolve({ data: null }),
-        data.host_id
-          ? supabase.from('profiles').select('name, photo_url, tennis_photo_url').eq('user_id', data.host_id).maybeSingle()
-          : Promise.resolve({ data: null }),
-      ]);
-
-      setCourt(courtRes.data || null);
-      if (hostRes.data) {
-        setHostProfile({
-          name: (hostRes.data as { name: string }).name,
-          photo_url: (hostRes.data as { photo_url: string | null }).photo_url || null,
-          tennis_photo_url: (hostRes.data as { tennis_photo_url?: string | null }).tennis_photo_url || null,
-        });
-      }
       fetchConfirmedParticipants();
     }
   }, [groupChatId, fetchConfirmedParticipants]);
@@ -225,23 +196,17 @@ export default function GroupChatRoom() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `group_chat_id=eq.${groupChatId}` },
-        async (payload) => {
+        (payload) => {
           const newMsg = payload.new as GroupChatMessage;
-          let senderProfile = null;
-          if (newMsg.sender_id) {
-            const { data: sp } = await supabase.from('profiles').select('*').eq('user_id', newMsg.sender_id).maybeSingle();
-            senderProfile = sp;
-          }
-          const enriched = { ...newMsg, sender: senderProfile };
           setMessages((prev) => {
-            if (prev.some((m) => m.id === enriched.id)) return prev;
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
             const matchingTemp = prev.find(
-              (m) => m.id.startsWith('temp_') && m.sender_id === enriched.sender_id && m.content === enriched.content
+              (m) => m.id.startsWith('temp_') && m.sender_id === newMsg.sender_id && m.content === newMsg.content
             );
             if (matchingTemp) {
-              return prev.map((m) => (m.id === matchingTemp.id ? enriched : m));
+              return prev.map((m) => (m.id === matchingTemp.id ? newMsg : m));
             }
-            return [...prev, enriched];
+            return [...prev, newMsg];
           });
           scrollToBottom();
         }
@@ -321,7 +286,7 @@ export default function GroupChatRoom() {
         type,
         is_read: false,
       })
-      .select('*')
+      .select(`*, sender:sender_id (*)`)
       .maybeSingle();
 
     if (error) {

@@ -134,12 +134,15 @@ export default function Home() {
     try {
       let query = supabase
         .from('courts')
-        .select('*')
+        .select(`
+          *,
+          profile:user_id (*)
+        `)
         .eq('purpose', purpose)
         .order('created_at', { ascending: false });
 
       if (tab === 'mine') {
-        query = query.eq('host_id', currentUser.id);
+        query = query.eq('user_id', currentUser.id);
       } else {
         query = query.neq('status', 'closed');
       }
@@ -154,22 +157,6 @@ export default function Home() {
 
       let result = data || [];
 
-      const hostIds = Array.from(new Set(result.map((c) => c.host_id ?? c.user_id).filter(Boolean)));
-      let profileMap: Record<string, unknown> = {};
-      if (hostIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('user_id', hostIds);
-        if (profiles) {
-          profiles.forEach((p) => { profileMap[p.user_id] = p; });
-        }
-      }
-      result = result.map((c) => ({
-        ...c,
-        profile: profileMap[c.host_id ?? c.user_id] ?? null,
-      }));
-
       if (tab === 'others' && purpose === 'tennis') {
         const now = new Date();
         result = result.filter((c) => {
@@ -180,7 +167,7 @@ export default function Home() {
       }
 
       if (tab === 'others' && blockedUserIds.length > 0) {
-        result = result.filter((c) => !blockedUserIds.includes(c.host_id ?? c.user_id));
+        result = result.filter((c) => !blockedUserIds.includes(c.user_id));
       }
 
       setCourts(result);
@@ -290,7 +277,7 @@ export default function Home() {
     setApplyLoading(true);
     const { error } = await supabase.from('applications').insert({
       court_id: applyTargetCourt.id,
-      owner_id: applyTargetCourt.host_id ?? applyTargetCourt.user_id,
+      owner_id: applyTargetCourt.user_id,
       applicant_id: user.id,
       purpose: applyTargetCourt.purpose,
       status: 'pending',
@@ -462,7 +449,7 @@ export default function Home() {
               <TennisCourtCard
                 key={court.id}
                 court={court}
-                isOwner={(court.host_id ?? court.user_id) === user?.id}
+                isOwner={court.user_id === user?.id}
                 onApply={activeTab === 'others' ? () => openApplyPopup(court) : undefined}
                 onEdit={() => handleEdit(court)}
                 onDelete={() => handleDelete(court.id)}

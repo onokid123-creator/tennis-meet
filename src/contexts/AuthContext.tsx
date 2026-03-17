@@ -139,17 +139,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').upsert(
-        {
-          user_id: data.user.id,
-          name,
-          age,
-          gender,
-          profile_completed: false,
-        },
-        { onConflict: 'user_id' }
-      );
-      if (profileError) {
+      const { error: profileError } = await supabase.from('profiles').insert({
+        user_id: data.user.id,
+        name,
+        age,
+        gender,
+        profile_completed: false,
+      });
+      if (profileError && !profileError.message.includes('duplicate')) {
         console.error('프로필 생성 실패:', profileError);
       }
     }

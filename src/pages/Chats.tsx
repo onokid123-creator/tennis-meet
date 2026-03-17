@@ -173,52 +173,35 @@ export default function Chats() {
         setChats([]);
       }
 
-      // ── Group chats (tennis + dating) via group_chat_members ──
-      const { data: groupMemberRows } = await supabase
-        .from('group_chat_members')
+      // ── Group chats (tennis + dating) ──
+      const { data: groupParticipantRows } = await supabase
+        .from('court_group_chat_participants')
         .select('group_chat_id')
         .eq('user_id', user.id)
         .neq('status', 'rejected');
 
-      const groupChatIds = (groupMemberRows ?? []).map((r) => r.group_chat_id);
+      const groupChatIds = (groupParticipantRows ?? []).map((r) => r.group_chat_id);
 
       if (groupChatIds.length > 0) {
-        const { data: groupChatsRaw } = await supabase
-          .from('group_chats')
-          .select('*')
+        const { data: groupChatsData } = await supabase
+          .from('court_group_chats')
+          .select('*, court:court_id (*), host:host_id (*)')
           .in('id', groupChatIds)
           .order('created_at', { ascending: false });
 
-        if (groupChatsRaw && groupChatsRaw.length > 0) {
-          const gcHostIds = Array.from(new Set(groupChatsRaw.map((gc) => gc.host_id).filter(Boolean)));
-          const gcCourtIds = Array.from(new Set(groupChatsRaw.map((gc) => gc.court_id).filter(Boolean)));
-
-          const [gcHostProfiles, gcCourts] = await Promise.all([
-            gcHostIds.length > 0
-              ? supabase.from('profiles').select('user_id, name, photo_url, tennis_photo_url').in('user_id', gcHostIds)
-              : Promise.resolve({ data: [] }),
-            gcCourtIds.length > 0
-              ? supabase.from('courts').select('id, court_name, purpose').in('id', gcCourtIds)
-              : Promise.resolve({ data: [] }),
-          ]);
-
-          const gcHostMap: Record<string, unknown> = {};
-          (gcHostProfiles.data ?? []).forEach((p) => { gcHostMap[p.user_id] = p; });
-          const gcCourtMap: Record<string, unknown> = {};
-          (gcCourts.data ?? []).forEach((c) => { gcCourtMap[c.id] = c; });
-
+        if (groupChatsData && groupChatsData.length > 0) {
           const groupChatsWithMessages = await Promise.all(
-            groupChatsRaw.map(async (gc) => {
+            groupChatsData.map(async (gc) => {
               const [lastMsgResult, unreadResult] = await Promise.all([
                 supabase
-                  .from('messages')
+                  .from('court_group_chat_messages')
                   .select('id, content, created_at, sender_id, type')
                   .eq('group_chat_id', gc.id)
                   .order('created_at', { ascending: false })
                   .limit(1)
                   .maybeSingle(),
                 supabase
-                  .from('messages')
+                  .from('court_group_chat_messages')
                   .select('id', { count: 'exact', head: true })
                   .eq('group_chat_id', gc.id)
                   .eq('is_read', false)
@@ -226,8 +209,6 @@ export default function Chats() {
               ]);
               return {
                 ...gc,
-                host: gcHostMap[gc.host_id] ?? null,
-                court: gcCourtMap[gc.court_id] ?? null,
                 last_message: lastMsgResult.data || undefined,
                 unread_count: unreadResult.count || 0,
               };
@@ -275,7 +256,8 @@ export default function Chats() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_participants' }, debouncedFetch)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_participants' }, debouncedFetch)
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_participants' }, debouncedFetch)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_chat_members' }, debouncedFetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'court_group_chat_messages' }, debouncedFetch)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'court_group_chat_participants' }, debouncedFetch)
       .subscribe();
 
     const kickChannel = supabase

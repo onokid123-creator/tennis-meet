@@ -141,10 +141,10 @@ export default function ProfileSetup() {
     const compressed = await compressFile(file);
     const path = `${user!.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
     const { error: uploadError } = await supabase.storage
-      .from('profile_images')
+      .from('profile-images')
       .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
     if (uploadError) throw new Error(`사진 업로드 실패: ${uploadError.message}`);
-    const { data: { publicUrl } } = supabase.storage.from('profile_images').getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from('profile-images').getPublicUrl(path);
     return publicUrl;
   };
 
@@ -169,7 +169,7 @@ export default function ProfileSetup() {
 
       const primaryPhoto = uploadedUrls[0] || null;
 
-      const { error: upsertError } = await supabase.from('profiles').upsert(
+      await supabase.from('profiles').upsert(
         {
           user_id: user!.id,
           name: formData.name,
@@ -187,14 +187,12 @@ export default function ProfileSetup() {
         },
         { onConflict: 'user_id' }
       );
-      if (upsertError) throw new Error(`프로필 저장 실패: ${upsertError.message}`);
 
       await refreshProfile();
       navigate('/home', { replace: true });
     } catch (err) {
       console.error('프로필 저장 실패:', err);
-      const msg = err instanceof Error ? err.message : '저장에 실패했습니다.';
-      setError(msg);
+      setError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -234,7 +232,7 @@ export default function ProfileSetup() {
 
       const primaryPhoto = uploadedUrls[0] || null;
 
-      const { error: upsertError } = await supabase.from('profiles').upsert(
+      await supabase.from('profiles').upsert(
         {
           user_id: user!.id,
           name: formData.name,
@@ -251,14 +249,12 @@ export default function ProfileSetup() {
         },
         { onConflict: 'user_id' }
       );
-      if (upsertError) throw new Error(`프로필 저장 실패: ${upsertError.message}`);
 
       await refreshProfile();
       navigate('/home', { replace: true });
     } catch (err) {
       console.error('프로필 저장 실패:', err);
-      const msg = err instanceof Error ? err.message : '저장에 실패했습니다.';
-      setError(msg);
+      setError('저장에 실패했습니다. 다시 시도해주세요.');
       setLoading(false);
     }
   };
