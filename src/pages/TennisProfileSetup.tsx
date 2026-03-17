@@ -62,9 +62,9 @@ export default function TennisProfileSetup() {
   const uploadPhoto = async (file: File): Promise<string> => {
     const compressed = await compressFile(file);
     const path = `${user!.id}/tennis-${Date.now()}.jpg`;
-    const { error: uploadError } = await supabase.storage.from('profile-images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+    const { error: uploadError } = await supabase.storage.from('profile_images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
     if (uploadError) throw new Error(`사진 업로드 실패: ${uploadError.message}`);
-    const { data: { publicUrl } } = supabase.storage.from('profile-images').getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from('profile_images').getPublicUrl(path);
     return publicUrl;
   };
 
