@@ -2074,22 +2074,13 @@ export default function ChatRoom() {
                 </span>
                 {isHost && av.user_id !== user?.id ? (
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {av.is_confirmed ? (
+                    {av.is_confirmed && (
                       <span
                         className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
                         style={{ background: isDating ? 'rgba(201,84,122,0.12)' : 'rgba(45,106,79,0.12)', color: isDating ? '#C9547A' : '#2D6A4F' }}
                       >
                         확정 {isDating ? '💕' : '🎾'}
                       </span>
-                    ) : (
-                      <button
-                        onClick={() => setShowConfirmPicker(true)}
-                        disabled={!!confirmingId}
-                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 flex-shrink-0"
-                        style={{ background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
-                      >
-                        {isDating ? '매칭 확정' : '라인업 확정'}
-                      </button>
                     )}
                     <button
                       onClick={() => handleKickUser(av.user_id, av.name)}
@@ -2634,19 +2625,25 @@ export default function ChatRoom() {
                       </span>
                     ) : (
                       <button
+                        type="button"
                         onClick={async (e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           if (avIsBlocked) { showToastMsg('차단된 유저는 확정이 불가합니다.'); return; }
-                          if (confirmingId === av.user_id) return;
+                          if (confirmingId) return;
                           await handleParticipantConfirm(av.user_id, av.name);
                           setShowConfirmPicker(false);
                         }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
                         disabled={confirmingId === av.user_id}
                         className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white active:scale-95 transition disabled:opacity-60"
                         style={{
                           background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
                           touchAction: 'manipulation',
                           pointerEvents: 'auto',
+                          position: 'relative',
+                          zIndex: 10001,
                         }}
                       >
                         {confirmingId === av.user_id ? '처리 중...' : '확정'}
@@ -2706,17 +2703,24 @@ export default function ChatRoom() {
                       </span>
                     ) : (
                       <button
+                        type="button"
                         onClick={async (e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           if (avIsBlocked) { showToastMsg('차단된 유저는 매칭 확정이 불가합니다.'); return; }
+                          if (confirmingId) return;
                           await handleMatchConfirmDirect();
                           setShowConfirmPicker(false);
                         }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
                         className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white active:scale-95 transition"
                         style={{
                           background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
                           touchAction: 'manipulation',
                           pointerEvents: 'auto',
+                          position: 'relative',
+                          zIndex: 10001,
                         }}
                       >
                         확정
@@ -2802,8 +2806,11 @@ export default function ChatRoom() {
                       {av.name}
                     </span>
                     <button
+                      type="button"
                       onClick={async (e) => {
+                        e.preventDefault();
                         e.stopPropagation();
+                        if (cancellingId) return;
                         if (isGroupChat) {
                           await handleParticipantCancel(av.user_id, av.name);
                         } else {
@@ -2811,11 +2818,16 @@ export default function ChatRoom() {
                         }
                         setShowCancelPicker(false);
                       }}
-                      disabled={!!cancellingId}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      disabled={cancellingId === av.user_id}
                       className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white active:scale-95 transition disabled:opacity-60"
                       style={{
                         background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                         touchAction: 'manipulation',
+                        pointerEvents: 'auto',
+                        position: 'relative',
+                        zIndex: 10001,
                       }}
                     >
                       {cancellingId === av.user_id ? '취소 중...' : '취소'}
