@@ -413,6 +413,7 @@ export default function Applications() {
         purpose: app.purpose ?? 'tennis',
         court_id: courtId,
         is_group: false,
+        confirmed_user_ids: [],
       })
       .select('id')
       .maybeSingle();
@@ -442,6 +443,11 @@ export default function Applications() {
       .from('chats')
       .update({ confirmed_user_ids: [] })
       .eq('id', chatId);
+
+    await supabase
+      .from('chat_participants')
+      .update({ is_confirmed: false })
+      .eq('chat_id', chatId);
 
     // ── Step 4: 코트 마감 처리 ──────────────────────────────
     await supabase.from('courts').update({ status: 'closed' }).eq('id', courtId);
