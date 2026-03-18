@@ -2084,12 +2084,12 @@ export default function ChatRoom() {
                       </span>
                     ) : (
                       <button
-                        onClick={() => handleParticipantConfirm(av.user_id, av.name)}
+                        onClick={() => setShowConfirmPicker(true)}
                         disabled={!!confirmingId}
                         className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95 disabled:opacity-50 flex-shrink-0"
                         style={{ background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
                       >
-                        {confirmingId === av.user_id ? '처리 중...' : isDating ? '매칭 확정' : '라인업 확정'}
+                        {isDating ? '매칭 확정' : '라인업 확정'}
                       </button>
                     )}
                     <button
