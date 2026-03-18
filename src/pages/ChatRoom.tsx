@@ -1589,7 +1589,6 @@ export default function ChatRoom() {
       await sendMessage(cancelMsg, 'system');
     } finally {
       setCancellingId(null);
-      setShowCancelPicker(false);
     }
   };
 
@@ -2637,15 +2636,17 @@ export default function ChatRoom() {
                       <button
                         onClick={async (e) => {
                           e.stopPropagation();
-                          if (!!confirmingId || avIsBlocked) return;
+                          if (avIsBlocked) { showToastMsg('차단된 유저는 확정이 불가합니다.'); return; }
+                          if (confirmingId === av.user_id) return;
                           await handleParticipantConfirm(av.user_id, av.name);
                           setShowConfirmPicker(false);
                         }}
-                        disabled={!!confirmingId}
+                        disabled={confirmingId === av.user_id}
                         className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white active:scale-95 transition disabled:opacity-60"
                         style={{
                           background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
                           touchAction: 'manipulation',
+                          pointerEvents: 'auto',
                         }}
                       >
                         {confirmingId === av.user_id ? '처리 중...' : '확정'}
@@ -2711,11 +2712,11 @@ export default function ChatRoom() {
                           await handleMatchConfirmDirect();
                           setShowConfirmPicker(false);
                         }}
-                        disabled={!!confirmingId}
-                        className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white active:scale-95 transition disabled:opacity-60"
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white active:scale-95 transition"
                         style={{
                           background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
                           touchAction: 'manipulation',
+                          pointerEvents: 'auto',
                         }}
                       >
                         확정
