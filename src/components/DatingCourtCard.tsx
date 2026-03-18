@@ -11,12 +11,15 @@ interface DatingCourtCardProps {
 }
 
 function isDatingClosed(court: Court): boolean {
-  const male = court.male_slots ?? 0;
-  const female = court.female_slots ?? 0;
+  const totalMale = court.male_count ?? 0;
+  const totalFemale = court.female_count ?? 0;
   const confirmedMale = court.confirmed_male_slots ?? 0;
   const confirmedFemale = court.confirmed_female_slots ?? 0;
-  const hadSlots = confirmedMale > 0 || confirmedFemale > 0;
-  return hadSlots && male <= 0 && female <= 0;
+  const hasAnySlot = totalMale > 0 || totalFemale > 0;
+  if (!hasAnySlot) return false;
+  const maleDone = totalMale === 0 || confirmedMale >= totalMale;
+  const femaleDone = totalFemale === 0 || confirmedFemale >= totalFemale;
+  return maleDone && femaleDone;
 }
 
 export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDelete }: DatingCourtCardProps) {
@@ -129,10 +132,12 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
 
   const primaryPhoto = photos[0] || null;
 
-  const totalMale = court.male_count ?? court.male_slots ?? 0;
-  const totalFemale = court.female_count ?? court.female_slots ?? 0;
-  const displayMale = Math.max(0, totalMale - (court.confirmed_male_slots ?? 0));
-  const displayFemale = Math.max(0, totalFemale - (court.confirmed_female_slots ?? 0));
+  const totalMale = court.male_count ?? 0;
+  const totalFemale = court.female_count ?? 0;
+  const confirmedMale = court.confirmed_male_slots ?? 0;
+  const confirmedFemale = court.confirmed_female_slots ?? 0;
+  const displayMale = Math.max(0, totalMale - confirmedMale);
+  const displayFemale = Math.max(0, totalFemale - confirmedFemale);
   const showRecruitment = totalMale > 0 || totalFemale > 0;
 
   return (
