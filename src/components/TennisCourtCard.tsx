@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Court } from '../types';
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Users } from 'lucide-react';
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TennisCourtCardProps {
   court: Court;
@@ -12,36 +12,30 @@ interface TennisCourtCardProps {
 
 function getCourtStatus(court: Court): 'open' | 'closing-soon' | 'closed' {
   if (court.status === 'closed') return 'closed';
-
   const totalMale = court.male_count ?? 0;
   const totalFemale = court.female_count ?? 0;
   const confirmedMale = court.confirmed_male_slots ?? 0;
   const confirmedFemale = court.confirmed_female_slots ?? 0;
-
-  const maleRemain = Math.max(0, totalMale - confirmedMale);
-  const femaleRemain = Math.max(0, totalFemale - confirmedFemale);
-
-  const hasAnySlot = totalMale > 0 || totalFemale > 0;
-  if (hasAnySlot && maleRemain === 0 && (totalFemale === 0 || femaleRemain === 0) && (totalMale === 0 || maleRemain === 0)) {
-    const maleDone = totalMale === 0 || maleRemain === 0;
-    const femaleDone = totalFemale === 0 || femaleRemain === 0;
+  if (totalMale > 0 || totalFemale > 0) {
+    const maleDone = totalMale === 0 || confirmedMale >= totalMale;
+    const femaleDone = totalFemale === 0 || confirmedFemale >= totalFemale;
     if (maleDone && femaleDone) return 'closed';
   }
-
-  if (court.male_slots !== undefined && court.female_slots !== undefined) {
-    const hadSlots = confirmedMale > 0 || confirmedFemale > 0;
-    if (hadSlots && court.male_slots <= 0 && court.female_slots <= 0) return 'closed';
-  }
-
   if (court.end_time && court.date) {
     const endDateTime = new Date(`${court.date}T${court.end_time}`);
     const oneHourBefore = new Date(endDateTime.getTime() - 60 * 60 * 1000);
     const now = new Date();
     if (now >= oneHourBefore && now < endDateTime) return 'closing-soon';
   }
-
   return 'open';
 }
+
+const SAGE = '#5B7F6E';
+const LIGHT_GREEN = '#A8C5A0';
+const MINT_BG = '#F4FAF6';
+const TEXT_PRIMARY = '#1C2B24';
+const TEXT_SECONDARY = '#6B7F74';
+const GOLD = '#C4A24A';
 
 export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDelete }: TennisCourtCardProps) {
   const profile = court.profile;
@@ -72,14 +66,8 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 
-  const prevPhoto = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPhotoIndex((i) => (i - 1 + photos.length) % photos.length);
-  };
-  const nextPhoto = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPhotoIndex((i) => (i + 1) % photos.length);
-  };
+  const prevPhoto = (e: React.MouseEvent) => { e.stopPropagation(); setPhotoIndex((i) => (i - 1 + photos.length) % photos.length); };
+  const nextPhoto = (e: React.MouseEvent) => { e.stopPropagation(); setPhotoIndex((i) => (i + 1) % photos.length); };
   const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
@@ -106,300 +94,209 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
 
   return (
     <div
-      className="overflow-hidden"
       style={{
-        borderRadius: '20px',
+        borderRadius: '24px',
         background: '#fff',
-        boxShadow: '0 2px 16px rgba(27,67,50,0.10), 0 1px 4px rgba(0,0,0,0.04)',
-        border: '1px solid rgba(27,67,50,0.07)',
+        boxShadow: '0 4px 24px rgba(91,127,110,0.10), 0 1px 4px rgba(0,0,0,0.04)',
+        border: `1px solid ${LIGHT_GREEN}55`,
+        overflow: 'hidden',
       }}
     >
-      {/* Photo Section */}
-      <div
-        className="relative select-none"
-        style={{ height: photos.length > 0 ? '200px' : '0px', overflow: 'hidden' }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {photos.length > 0 && (
-          <>
-            <button
-              className="w-full h-full block"
-              onClick={() => openModal(photoIndex)}
-              style={{ padding: 0, border: 'none', background: 'none' }}
-            >
-              <img
-                key={photoIndex}
-                src={photos[photoIndex]}
-                alt={profile?.name}
-                className="w-full h-full"
-                style={{ objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
-              />
-            </button>
-
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, transparent 80%)' }}
-            />
-
-            {photos.length > 1 && (
-              <>
-                <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
-                  {photos.map((_, i) => (
-                    <div
-                      key={i}
-                      className="rounded-full transition-all duration-300"
-                      style={{
-                        width: i === photoIndex ? '16px' : '5px',
-                        height: '5px',
-                        background: i === photoIndex ? '#C9A84C' : 'rgba(255,255,255,0.5)',
-                      }}
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={prevPhoto}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
-                  style={{ background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(4px)' }}
-                >
-                  <ChevronLeft className="w-4 h-4 text-white" />
-                </button>
-                <button
-                  onClick={nextPhoto}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
-                  style={{ background: 'rgba(0,0,0,0.28)', backdropFilter: 'blur(4px)' }}
-                >
-                  <ChevronRight className="w-4 h-4 text-white" />
-                </button>
-              </>
-            )}
-
-            {/* Top-right badges */}
-            <div className="absolute top-3 right-3 z-10 flex gap-1.5">
-              {court.format && (
-                <span
-                  className="font-bold rounded-full px-2.5 py-1"
-                  style={{
-                    background: 'rgba(201,168,76,0.85)',
-                    color: '#fff',
-                    fontSize: 11,
-                    backdropFilter: 'blur(6px)',
-                    letterSpacing: '0.03em',
-                  }}
-                >
-                  {court.format}
-                </span>
-              )}
-              {isClosingSoon && !isClosed && (
-                <span
-                  className="font-bold rounded-full px-2.5 py-1"
-                  style={{ background: 'rgba(217,119,6,0.88)', color: '#fff', fontSize: 11 }}
-                >
-                  마감 임박
-                </span>
-              )}
-              {isClosed && (
-                <span
-                  className="font-bold rounded-full px-2.5 py-1"
-                  style={{ background: 'rgba(220,38,38,0.88)', color: '#fff', fontSize: 11 }}
-                >
-                  마감
-                </span>
-              )}
-            </div>
-
-            {/* Owner controls */}
-            {isOwner && (
-              <div className="absolute top-3 left-3 z-10 flex gap-1.5">
-                <button
-                  onClick={onEdit}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95"
-                  style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
-                >
-                  <Pencil className="w-3 h-3 text-white" />
-                </button>
-                <button
-                  onClick={onDelete}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95"
-                  style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
-                >
-                  <Trash2 className="w-3 h-3 text-white" />
-                </button>
-              </div>
-            )}
-
-            {/* Bottom overlay: profile info */}
-            <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-3 pt-8">
-              <div className="flex items-end justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-bold" style={{ fontSize: 15, textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>
-                    {profile?.name}
-                  </span>
-                  {profile?.experience && (
-                    <span
-                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style={{
-                        background: 'rgba(201,168,76,0.35)',
-                        color: '#FFE8A0',
-                        border: '1px solid rgba(201,168,76,0.5)',
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      {profile.experience}
-                    </span>
-                  )}
-                  {profile?.tennis_style && (
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full"
-                      style={{
-                        background: 'rgba(255,255,255,0.15)',
-                        color: 'rgba(255,255,255,0.9)',
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      {profile.tennis_style}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* No photo: header row */}
-      {photos.length === 0 && (
+      {/* ── Photo ── */}
+      {photos.length > 0 && (
         <div
-          className="px-4 pt-4 pb-3 flex items-center justify-between"
-          style={{ borderBottom: '1px solid rgba(27,67,50,0.06)' }}
+          className="relative select-none"
+          style={{ height: '240px' }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
-            >
-              <span style={{ color: '#C9A84C', fontWeight: 800, fontSize: 16 }}>{profile?.name?.charAt(0) || 'T'}</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span style={{ fontWeight: 700, fontSize: 14, color: '#1A2E22' }}>{profile?.name}</span>
-                {profile?.experience && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(201,168,76,0.12)', color: '#A07828', border: '1px solid rgba(201,168,76,0.3)' }}>
-                    {profile.experience}
-                  </span>
-                )}
-                {profile?.tennis_style && (
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(27,67,50,0.07)', color: '#1B5E42', border: '1px solid rgba(27,67,50,0.12)' }}>
-                    {profile.tennis_style}
-                  </span>
-                )}
+          <button
+            onClick={() => openModal(photoIndex)}
+            style={{ width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', display: 'block' }}
+          >
+            <img
+              key={photoIndex}
+              src={photos[photoIndex]}
+              alt={profile?.name}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center 20%',
+                display: 'block',
+              }}
+            />
+          </button>
+
+          <div
+            style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: 'linear-gradient(to top, rgba(28,43,36,0.55) 0%, rgba(28,43,36,0.08) 45%, transparent 70%)',
+            }}
+          />
+
+          {photos.length > 1 && (
+            <>
+              <div style={{ position: 'absolute', top: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, pointerEvents: 'none' }}>
+                {photos.map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: i === photoIndex ? 18 : 5,
+                      height: 5,
+                      borderRadius: 999,
+                      background: i === photoIndex ? '#fff' : 'rgba(255,255,255,0.4)',
+                      transition: 'all 0.25s',
+                    }}
+                  />
+                ))}
               </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
+              <button onClick={prevPhoto} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: 'none', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}>
+                <ChevronLeft style={{ width: 16, height: 16, color: '#fff' }} />
+              </button>
+              <button onClick={nextPhoto} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: 'none', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2 }}>
+                <ChevronRight style={{ width: 16, height: 16, color: '#fff' }} />
+              </button>
+            </>
+          )}
+
+          {/* Status badge */}
+          <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6, zIndex: 2 }}>
             {court.format && (
-              <span
-                className="font-bold rounded-full px-2.5 py-1"
-                style={{ background: '#1B4332', color: '#C9A84C', fontSize: 11, letterSpacing: '0.03em' }}
-              >
+              <span style={{ background: 'rgba(255,255,255,0.22)', color: '#fff', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>
                 {court.format}
               </span>
             )}
             {isClosingSoon && !isClosed && (
-              <span className="font-bold rounded-full px-2 py-0.5" style={{ background: 'rgba(251,146,60,0.1)', color: '#D97706', fontSize: 11 }}>마감 임박</span>
+              <span style={{ background: 'rgba(220,150,30,0.88)', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>마감 임박</span>
             )}
             {isClosed && (
-              <span className="font-bold rounded-full px-2 py-0.5" style={{ background: 'rgba(239,68,68,0.08)', color: '#DC2626', fontSize: 11 }}>마감</span>
+              <span style={{ background: 'rgba(200,60,60,0.88)', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>마감</span>
             )}
+          </div>
+
+          {/* Owner controls */}
+          {isOwner && (
+            <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 6, zIndex: 2 }}>
+              <button onClick={onEdit} style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: 'none', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <Pencil style={{ width: 13, height: 13, color: '#fff' }} />
+              </button>
+              <button onClick={onDelete} style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: 'none', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <Trash2 style={{ width: 13, height: 13, color: '#fff' }} />
+              </button>
+            </div>
+          )}
+
+          {/* Profile name overlay */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 18px 16px', zIndex: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+              <span style={{ color: '#fff', fontWeight: 700, fontSize: 17, letterSpacing: '-0.01em', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
+                {profile?.name}
+              </span>
+              {profile?.experience && (
+                <span style={{ background: 'rgba(255,255,255,0.18)', color: '#E8F5E0', border: '1px solid rgba(255,255,255,0.28)', borderRadius: 20, padding: '2px 9px', fontSize: 11, fontWeight: 600, backdropFilter: 'blur(4px)', marginBottom: 2 }}>
+                  {profile.experience}
+                </span>
+              )}
+              {profile?.tennis_style && (
+                <span style={{ background: 'rgba(168,197,160,0.28)', color: '#D4F0C8', border: '1px solid rgba(168,197,160,0.35)', borderRadius: 20, padding: '2px 9px', fontSize: 11, backdropFilter: 'blur(4px)', marginBottom: 2 }}>
+                  {profile.tennis_style}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── No photo header ── */}
+      {photos.length === 0 && (
+        <div style={{ padding: '18px 18px 14px', borderBottom: `1px solid ${LIGHT_GREEN}40`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: MINT_BG }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: `linear-gradient(135deg, ${SAGE} 0%, ${LIGHT_GREEN} 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>{profile?.name?.charAt(0) || 'T'}</span>
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: TEXT_PRIMARY, letterSpacing: '-0.01em' }}>{profile?.name}</span>
+                {profile?.experience && (
+                  <span style={{ background: `${SAGE}18`, color: SAGE, border: `1px solid ${SAGE}35`, borderRadius: 20, padding: '2px 9px', fontSize: 11, fontWeight: 600 }}>{profile.experience}</span>
+                )}
+                {profile?.tennis_style && (
+                  <span style={{ background: `${LIGHT_GREEN}22`, color: SAGE, border: `1px solid ${LIGHT_GREEN}40`, borderRadius: 20, padding: '2px 9px', fontSize: 11 }}>{profile.tennis_style}</span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {court.format && (
+              <span style={{ background: SAGE, color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{court.format}</span>
+            )}
+            {isClosingSoon && !isClosed && <span style={{ background: `rgba(220,150,30,0.12)`, color: '#B8850A', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>마감 임박</span>}
+            {isClosed && <span style={{ background: 'rgba(200,60,60,0.1)', color: '#C03030', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>마감</span>}
             {isOwner && (
               <>
-                <button onClick={onEdit} className="p-1.5 rounded-lg transition active:scale-95" style={{ color: 'rgba(27,67,50,0.4)' }}>
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={onDelete} className="p-1.5 rounded-lg transition active:scale-95" style={{ color: 'rgba(27,67,50,0.4)' }}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                <button onClick={onEdit} style={{ padding: 6, border: 'none', background: 'none', cursor: 'pointer', color: TEXT_SECONDARY }}><Pencil style={{ width: 14, height: 14 }} /></button>
+                <button onClick={onDelete} style={{ padding: 6, border: 'none', background: 'none', cursor: 'pointer', color: TEXT_SECONDARY }}><Trash2 style={{ width: 14, height: 14 }} /></button>
               </>
             )}
           </div>
         </div>
       )}
 
-      {/* Body */}
-      <div className="px-4 pt-3.5 pb-4">
-        {/* Court name */}
-        <div className="flex items-center gap-2 mb-3">
-          <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#C9A84C' }} />
-          <span style={{ fontWeight: 700, fontSize: 14, color: '#1A2E22' }} className="truncate">{court.court_name}</span>
-        </div>
+      {/* ── Body ── */}
+      <div style={{ padding: '16px 18px 18px' }}>
 
-        {/* Date & Time row */}
-        {(court.date || court.start_time) && (
-          <div
-            className="rounded-2xl px-3.5 py-2.5 mb-3 flex items-center gap-4"
-            style={{ background: 'rgba(27,67,50,0.04)', border: '1px solid rgba(27,67,50,0.08)' }}
-          >
-            {court.date && (
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3 h-3 flex-shrink-0" style={{ color: '#2D6A4F', opacity: 0.7 }} />
-                <span style={{ fontSize: 12, color: '#1A2E22', opacity: 0.8 }}>{formatDate(court.date)}</span>
-              </div>
-            )}
-            {court.start_time && (
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3 h-3 flex-shrink-0" style={{ color: '#2D6A4F', opacity: 0.7 }} />
-                <span style={{ fontSize: 12, color: '#1A2E22', opacity: 0.8 }}>
-                  {court.start_time}{court.end_time ? ` ~ ${court.end_time}` : ''}
-                </span>
-              </div>
+        {/* Row 1: Court name + date/time */}
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 5 }}>
+            <span style={{ fontWeight: 700, fontSize: 15, color: TEXT_PRIMARY, letterSpacing: '-0.01em', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {court.court_name}
+            </span>
+            {court.court_fee != null && court.court_fee >= 0 && (
+              <span style={{ fontWeight: 700, fontSize: 14, color: GOLD, whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
+                {court.court_fee === 0 ? '무료' : `${court.court_fee.toLocaleString()}원`}
+              </span>
             )}
           </div>
-        )}
+          {(court.date || court.start_time) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 12.5, color: TEXT_SECONDARY }}>
+                {court.date ? formatDate(court.date) : ''}
+                {court.date && court.start_time ? ' · ' : ''}
+                {court.start_time ? `${court.start_time}${court.end_time ? ` ~ ${court.end_time}` : ''}` : ''}
+              </span>
+            </div>
+          )}
+        </div>
 
-        {/* Slots */}
+        {/* Row 2: Slots */}
         {(totalMale > 0 || totalFemale > 0) && (
-          <div className="mb-3">
+          <div style={{ marginBottom: 14 }}>
             {isClosed ? (
-              <div
-                className="rounded-xl px-4 py-2.5 flex items-center justify-center gap-2"
-                style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}
-              >
-                <Users className="w-3.5 h-3.5" style={{ color: '#DC2626' }} />
-                <span className="text-sm font-bold" style={{ color: '#DC2626' }}>모집 마감</span>
+              <div style={{ background: 'rgba(200,60,60,0.06)', border: '1px solid rgba(200,60,60,0.18)', borderRadius: 14, padding: '10px 16px', textAlign: 'center' }}>
+                <span style={{ fontWeight: 700, fontSize: 13, color: '#C03030' }}>모집 마감</span>
               </div>
             ) : (
-              <div className="grid gap-2" style={{ gridTemplateColumns: totalMale > 0 && totalFemale > 0 ? '1fr 1fr' : '1fr' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 {totalMale > 0 && (
-                  <div
-                    className="rounded-xl px-3 py-2.5 flex flex-col items-center gap-0.5"
-                    style={{
-                      background: remainMale <= 0 ? 'rgba(239,68,68,0.05)' : 'rgba(59,130,246,0.06)',
-                      border: `1px solid ${remainMale <= 0 ? 'rgba(239,68,68,0.18)' : 'rgba(59,130,246,0.15)'}`,
-                    }}
-                  >
-                    <span className="text-xs font-semibold" style={{ color: remainMale <= 0 ? '#DC2626' : '#2563EB', opacity: 0.75 }}>남성</span>
-                    <span className="font-bold" style={{ fontSize: 15, color: remainMale <= 0 ? '#DC2626' : '#1D4ED8' }}>
+                  <div style={{ flex: 1, background: remainMale <= 0 ? 'rgba(200,60,60,0.05)' : MINT_BG, border: `1px solid ${remainMale <= 0 ? 'rgba(200,60,60,0.2)' : LIGHT_GREEN + '60'}`, borderRadius: 14, padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: TEXT_SECONDARY, letterSpacing: '0.02em' }}>남성</span>
+                      <span style={{ fontSize: 10, color: TEXT_SECONDARY, opacity: 0.7 }}>{confirmedMale}/{totalMale}</span>
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: 16, color: remainMale <= 0 ? '#C03030' : SAGE, letterSpacing: '-0.02em' }}>
                       {remainMale <= 0 ? '마감' : `${remainMale}명 남음`}
-                    </span>
-                    <span className="text-xs" style={{ color: 'rgba(0,0,0,0.3)' }}>
-                      {confirmedMale}/{totalMale} 확정
                     </span>
                   </div>
                 )}
                 {totalFemale > 0 && (
-                  <div
-                    className="rounded-xl px-3 py-2.5 flex flex-col items-center gap-0.5"
-                    style={{
-                      background: remainFemale <= 0 ? 'rgba(239,68,68,0.05)' : 'rgba(236,72,153,0.06)',
-                      border: `1px solid ${remainFemale <= 0 ? 'rgba(239,68,68,0.18)' : 'rgba(236,72,153,0.15)'}`,
-                    }}
-                  >
-                    <span className="text-xs font-semibold" style={{ color: remainFemale <= 0 ? '#DC2626' : '#DB2777', opacity: 0.75 }}>여성</span>
-                    <span className="font-bold" style={{ fontSize: 15, color: remainFemale <= 0 ? '#DC2626' : '#BE185D' }}>
+                  <div style={{ flex: 1, background: remainFemale <= 0 ? 'rgba(200,60,60,0.05)' : MINT_BG, border: `1px solid ${remainFemale <= 0 ? 'rgba(200,60,60,0.2)' : LIGHT_GREEN + '60'}`, borderRadius: 14, padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: TEXT_SECONDARY, letterSpacing: '0.02em' }}>여성</span>
+                      <span style={{ fontSize: 10, color: TEXT_SECONDARY, opacity: 0.7 }}>{confirmedFemale}/{totalFemale}</span>
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: 16, color: remainFemale <= 0 ? '#C03030' : SAGE, letterSpacing: '-0.02em' }}>
                       {remainFemale <= 0 ? '마감' : `${remainFemale}명 남음`}
-                    </span>
-                    <span className="text-xs" style={{ color: 'rgba(0,0,0,0.3)' }}>
-                      {confirmedFemale}/{totalFemale} 확정
                     </span>
                   </div>
                 )}
@@ -408,108 +305,76 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           </div>
         )}
 
-        {/* Court fee */}
-        {court.court_fee != null && court.court_fee >= 0 && (
-          <div
-            className="flex items-center justify-between rounded-xl px-3.5 py-2.5 mb-3"
-            style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.18)' }}
-          >
-            <span className="text-xs font-semibold" style={{ color: '#8A6520' }}>코트 비용</span>
-            <span className="font-bold text-sm" style={{ color: '#C9A84C' }}>1인 {court.court_fee.toLocaleString()}원</span>
-          </div>
-        )}
-
-        {/* Description */}
+        {/* Row 3: Description */}
         {court.description && (
-          <div
-            className="mb-3 px-3.5 py-2.5 rounded-xl"
-            style={{ background: 'rgba(27,67,50,0.03)', borderLeft: '2.5px solid rgba(201,168,76,0.45)' }}
-          >
-            <p style={{ fontSize: 12.5, fontStyle: 'italic', color: 'rgba(100,80,30,0.85)', lineHeight: 1.6, margin: 0 }}>
-              "{court.description}"
-            </p>
+          <div style={{ marginBottom: 14, paddingLeft: 12, borderLeft: `2px solid ${LIGHT_GREEN}` }}>
+            <p style={{ fontSize: 12.5, color: TEXT_SECONDARY, lineHeight: 1.65, margin: 0 }}>{court.description}</p>
           </div>
         )}
 
-        {/* Apply button */}
+        {/* Row 4: CTA */}
         {onApply && (
           isClosed ? (
-            <div
-              className="w-full py-3 rounded-2xl font-medium text-center"
-              style={{ background: 'rgba(27,67,50,0.04)', color: 'rgba(27,67,50,0.3)', fontSize: 13, border: '1px solid rgba(27,67,50,0.07)' }}
-            >
-              마감된 모임이에요
+            <div style={{ padding: '13px 0', textAlign: 'center', background: `${MINT_BG}`, borderRadius: 16, border: `1px solid ${LIGHT_GREEN}40` }}>
+              <span style={{ fontSize: 13, color: TEXT_SECONDARY, fontWeight: 500 }}>마감된 모임이에요</span>
             </div>
           ) : (
             <button
               onClick={onApply}
-              className="w-full py-3.5 rounded-2xl font-bold transition active:scale-[0.98]"
               style={{
-                background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+                width: '100%',
+                padding: '14px 0',
+                borderRadius: 16,
+                border: 'none',
+                background: `linear-gradient(135deg, ${SAGE} 0%, #3D6B52 100%)`,
                 color: '#fff',
+                fontWeight: 700,
                 fontSize: 14,
-                boxShadow: '0 4px 14px rgba(27,67,50,0.25)',
                 letterSpacing: '0.02em',
+                cursor: 'pointer',
+                boxShadow: `0 6px 20px ${SAGE}45`,
+                transition: 'opacity 0.15s, transform 0.12s',
               }}
+              onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.985)')}
+              onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+              onTouchStart={(e) => (e.currentTarget.style.transform = 'scale(0.985)')}
+              onTouchEnd={(e) => (e.currentTarget.style.transform = 'scale(1)')}
             >
-              채팅 보내봐요
+              참여 신청하기
             </button>
           )
         )}
       </div>
 
-      {/* Modal */}
+      {/* ── Modal ── */}
       {modalOpen && photos.length > 0 && (
         <div
           onClick={() => setModalOpen(false)}
           onTouchStart={handleModalTouchStart}
           onTouchEnd={handleModalTouchEnd}
-          style={{
-            position: 'fixed', top: 0, left: 0,
-            width: '100%', height: '100%',
-            background: 'rgba(0,0,0,0.96)',
-            zIndex: 9999,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
+          style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <img
             src={photos[modalIndex]}
             alt={profile?.name}
-            style={{ maxWidth: '100%', maxHeight: '90%', objectFit: 'contain', borderRadius: '8px' }}
+            style={{ maxWidth: '100%', maxHeight: '90%', objectFit: 'contain', borderRadius: 8 }}
             onClick={(e) => e.stopPropagation()}
           />
           {photos.length > 1 && (
             <>
-              <button
-                onClick={modalPrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}
-              >
-                <ChevronLeft className="w-5 h-5 text-white" />
+              <button onClick={modalPrev} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <ChevronLeft style={{ width: 20, height: 20, color: '#fff' }} />
               </button>
-              <button
-                onClick={modalNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)' }}
-              >
-                <ChevronRight className="w-5 h-5 text-white" />
+              <button onClick={modalNext} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <ChevronRight style={{ width: 20, height: 20, color: '#fff' }} />
               </button>
             </>
           )}
-          <button
-            onClick={() => setModalOpen(false)}
-            style={{
-              position: 'absolute', top: '20px', right: '20px',
-              background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
-              width: '36px', height: '36px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', backdropFilter: 'blur(4px)',
-            }}
-          >
-            <X className="w-4 h-4 text-white" />
+          <button onClick={() => setModalOpen(false)} style={{ position: 'absolute', top: 20, right: 20, width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X style={{ width: 16, height: 16, color: '#fff' }} />
           </button>
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-            <span className="text-sm text-white/60">{modalIndex + 1} / {photos.length}</span>
+          <div style={{ position: 'absolute', bottom: 24, left: 0, right: 0, textAlign: 'center' }}>
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{modalIndex + 1} / {photos.length}</span>
           </div>
         </div>
       )}
