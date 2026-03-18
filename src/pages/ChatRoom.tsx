@@ -2432,17 +2432,22 @@ export default function ChatRoom() {
 
       {showLeaveRequestPopup && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          className="fixed inset-0 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
           onClick={() => setShowLeaveRequestPopup(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
             style={{
               background: isDating ? '#FFF8F2' : '#F4F8F5',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+              zIndex: 9999,
+              pointerEvents: 'auto',
+              touchAction: 'manipulation',
             }}
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }} />
             <p className="font-bold text-gray-900 text-base mb-1">나가기 요청</p>
@@ -2463,7 +2468,7 @@ export default function ChatRoom() {
               <button
                 onClick={() => setShowLeaveRequestPopup(false)}
                 className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
-                style={{ background: '#F3F4F6', color: '#374151' }}
+                style={{ background: '#F3F4F6', color: '#374151', position: 'relative', pointerEvents: 'auto', touchAction: 'manipulation' }}
               >
                 취소
               </button>
@@ -2471,7 +2476,7 @@ export default function ChatRoom() {
                 onClick={handleLeaveRequestSubmit}
                 disabled={leaveRequestSubmitting}
                 className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
-                style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+                style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', position: 'relative', pointerEvents: 'auto', touchAction: 'manipulation' }}
               >
                 {leaveRequestSubmitting ? '전송 중...' : '요청 보내기'}
               </button>
@@ -2482,14 +2487,21 @@ export default function ChatRoom() {
 
       {showDatingLeavePopup && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          className="fixed inset-0 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
           onClick={() => setShowDatingLeavePopup(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl px-6 pt-6 pb-10 shadow-xl"
-            style={{ background: isDating ? '#FFF8F2' : '#F4F8F5' }}
+            className="w-full max-w-md rounded-t-3xl px-6 pt-6 pb-10 shadow-xl relative"
+            style={{
+              background: isDating ? '#FFF8F2' : '#F4F8F5',
+              zIndex: 9999,
+              pointerEvents: 'auto',
+              touchAction: 'manipulation',
+            }}
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mb-5"
@@ -2510,6 +2522,9 @@ export default function ChatRoom() {
                   background: isDating
                     ? 'linear-gradient(135deg, #C9A84C 0%, #C9547A 100%)'
                     : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+                  position: 'relative',
+                  pointerEvents: 'auto',
+                  touchAction: 'manipulation',
                 }}
               >
                 네, 숨기기
@@ -2517,7 +2532,7 @@ export default function ChatRoom() {
               <button
                 onClick={handleLeaveWithoutBlock}
                 className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
-                style={{ background: '#F3F4F6', color: '#374151' }}
+                style={{ background: '#F3F4F6', color: '#374151', position: 'relative', pointerEvents: 'auto', touchAction: 'manipulation' }}
               >
                 아니요, 그냥 나갈게요
               </button>
@@ -2571,9 +2586,13 @@ export default function ChatRoom() {
               {groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => {
                 const avIsBlocked = blockedUserIds.includes(av.user_id);
                 return (
-                  <button
+                  <div
                     key={av.user_id}
-                    onClick={async () => {
+                    role="button"
+                    tabIndex={0}
+                    onMouseDown={async (e) => {
+                      e.stopPropagation();
+                      if (!!confirmingId || av.is_confirmed) return;
                       if (avIsBlocked) {
                         showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
                         return;
@@ -2581,8 +2600,17 @@ export default function ChatRoom() {
                       await handleParticipantConfirm(av.user_id, av.name);
                       setShowConfirmPicker(false);
                     }}
-                    disabled={!!confirmingId || av.is_confirmed}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition active:scale-95 disabled:opacity-60"
+                    onTouchEnd={async (e) => {
+                      e.stopPropagation();
+                      if (!!confirmingId || av.is_confirmed) return;
+                      if (avIsBlocked) {
+                        showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
+                        return;
+                      }
+                      await handleParticipantConfirm(av.user_id, av.name);
+                      setShowConfirmPicker(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition"
                     style={{
                       background: av.is_confirmed
                         ? (isDating ? 'rgba(201,84,122,0.08)' : 'rgba(45,106,79,0.08)')
@@ -2592,14 +2620,16 @@ export default function ChatRoom() {
                         : avIsBlocked ? '1.5px solid rgba(0,0,0,0.1)' : '1.5px solid rgba(0,0,0,0.07)',
                       position: 'relative',
                       zIndex: 10000,
-                      pointerEvents: 'auto',
+                      pointerEvents: (!!confirmingId || av.is_confirmed) ? 'none' : 'auto',
                       touchAction: 'manipulation',
+                      cursor: (!!confirmingId || av.is_confirmed) ? 'default' : 'pointer',
+                      opacity: (!!confirmingId && confirmingId !== av.user_id) ? 0.6 : 1,
                     }}
                   >
                     <div
                       className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm cursor-pointer active:opacity-75"
                       style={{ background: avIsBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
-                      onClick={(e) => {
+                      onMouseDown={(e) => {
                         e.stopPropagation();
                         if (avIsBlocked) return;
                         const prof = senderProfiles[av.user_id];
@@ -2641,7 +2671,7 @@ export default function ChatRoom() {
                         {confirmingId === av.user_id ? '처리 중...' : '확정하기'}
                       </span>
                     )}
-                  </button>
+                  </div>
                 );
               })}
               {groupAvatars.filter((av) => av.user_id !== user?.id).length === 0 && (

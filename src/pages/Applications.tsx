@@ -128,12 +128,12 @@ function ApplicantPhotoCarousel({ profile }: { profile: Profile }) {
           {profile.age && (
             <span className="text-white/80 text-lg mb-0.5 font-light">{profile.age}세</span>
           )}
-          {profile.gender && (
+          {(profile.gender === 'male' || profile.gender === '남성' || profile.gender === 'female' || profile.gender === '여성') && (
             <span
               className="text-lg font-bold mb-0.5"
-              style={{ color: profile.gender === '남성' ? '#93C5FD' : '#FDA4AF' }}
+              style={{ color: (profile.gender === 'male' || profile.gender === '남성') ? '#93C5FD' : '#FDA4AF' }}
             >
-              {profile.gender === '남성' ? '♂' : '♀'}
+              {(profile.gender === 'male' || profile.gender === '남성') ? '♂' : '♀'}
             </span>
           )}
         </div>
@@ -697,12 +697,12 @@ export default function Applications() {
                 {applicant?.age && (
                   <span className="text-sm text-gray-500">{applicant.age}세</span>
                 )}
-                {applicant?.gender && (
+                {(applicant?.gender === 'male' || applicant?.gender === '남성' || applicant?.gender === 'female' || applicant?.gender === '여성') && (
                   <span
                     className="text-sm font-bold"
-                    style={{ color: applicant.gender === '남성' ? '#93C5FD' : '#FDA4AF' }}
+                    style={{ color: (applicant.gender === 'male' || applicant.gender === '남성') ? '#93C5FD' : '#FDA4AF' }}
                   >
-                    {applicant.gender === '남성' ? '♂' : '♀'}
+                    {(applicant.gender === 'male' || applicant.gender === '남성') ? '♂' : '♀'}
                   </span>
                 )}
               </div>
