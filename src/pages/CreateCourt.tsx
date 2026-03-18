@@ -283,24 +283,26 @@ export default function CreateCourt() {
         ? (tennisProfile?.photos?.[0] || tennisProfile?.photo_url || null)
         : (datingPhotos[0] || null);
 
-      const courtData: Record<string, unknown> = {
-        user_id: user.id,
-        purpose,
-        court_name: selectedCourt!.name,
-        date: selectedDate,
-        start_time: selectedTime,
-        end_time: endTime,
-        format: format || '단식',
-        match_type: format || '단식',
-        description,
-        male_slots: maleSlots,
-        female_slots: femaleSlots,
-        male_count: maleSlots,
-        female_count: femaleSlots,
-        confirmed_male_slots: 0,
-        confirmed_female_slots: 0,
-        tennis_photo_url: tennisPhotoUrl,
-      };
+    const courtData: Record<string, unknown> = {
+  user_id: user.id,
+  host_id: user.id, // 👈 이거 한 줄 추가
+
+  purpose,
+  court_name: selectedCourt!.name,
+  date: selectedDate,
+  start_time: selectedTime,
+  end_time: endTime,
+  format: format || '단식',
+  match_type: format || '단식',
+  description,
+  male_slots: maleSlots,
+  female_slots: femaleSlots,
+  male_count: maleSlots,
+  female_count: femaleSlots,
+  confirmed_male_slots: 0,
+  confirmed_female_slots: 0,
+  tennis_photo_url: tennisPhotoUrl,
+};
 
       if (isTennis) {
         courtData.experience_wanted = experienceWanted;
