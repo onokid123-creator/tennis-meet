@@ -1432,13 +1432,14 @@ export default function ChatRoom() {
     setUnblockTargetUser(null);
   };
 
-  const closeAllPickers = () => {
-    pickerProcessingRef.current = false;
-    setShowConfirmPicker(false);
-    setShowCancelPicker(false);
-    setConfirmingId(null);
-    setCancellingId(null);
-  };
+ const closeAllPickers = () => {
+  pickerProcessingRef.current = false; // 🔥 이 줄 추가
+
+  setShowConfirmPicker(false);
+  setShowCancelPicker(false);
+  setConfirmingId(null);
+  setCancellingId(null);
+};
 
   const handleMatchConfirm = () => {
     pickerProcessingRef.current = false;
