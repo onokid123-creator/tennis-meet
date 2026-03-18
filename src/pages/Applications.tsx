@@ -404,37 +404,7 @@ export default function Applications() {
     const applicantId = app.applicant_id;
     const courtId = app.court_id;
 
-    // ── Step 1: Dedup — court_id + 유저쌍 기준으로 이미 생성된 채팅방 확인 ──
-    const { data: existingChats } = await supabase
-      .from('chats')
-      .select('id, user1_id, user2_id')
-      .eq('court_id', courtId)
-      .eq('is_group', false);
-
-    if (existingChats && existingChats.length > 0) {
-      const match = existingChats.find((c) => {
-        const ids = [c.user1_id, c.user2_id];
-        return ids.includes(hostId) && ids.includes(applicantId);
-      });
-      if (match) {
-        await supabase
-          .from('chats')
-          .update({ confirmed_user_ids: [] })
-          .eq('id', match.id);
-        await supabase
-          .from('chat_participants')
-          .update({ is_confirmed: false })
-          .eq('chat_id', match.id);
-        await supabase.rpc('accept_1v1_chat', {
-          p_chat_id: match.id,
-          p_host_id: hostId,
-          p_applicant_id: applicantId,
-        });
-        return { chatId: match.id, isNew: true };
-      }
-    }
-
-    // ── Step 2: 새 채팅방 생성 ──────────────────────────────
+    // ── Step 1: 항상 새 채팅방 생성 ─────────────────────────
     const { data: newChat, error: chatError } = await supabase
       .from('chats')
       .insert({
