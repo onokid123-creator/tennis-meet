@@ -591,9 +591,17 @@ export default function ChatRoom() {
   const [showUnblockMessagePopup, setShowUnblockMessagePopup] = useState(false);
   const [unblockMessageTarget, setUnblockMessageTarget] = useState<{ user_id: string; name: string } | null>(null);
   const [confirmedParticipants, setConfirmedParticipants] = useState<Array<{ user_id: string; name: string; photo_url?: string; tennis_photo_url?: string }>>([]);
+const pickerProcessingRef = useRef(false);
 
+const closeAllPickers = () => {
+  pickerProcessingRef.current = false;
+  setShowConfirmPicker(false);
+  setShowCancelPicker(false);
+  setConfirmingId(null);
+  setCancellingId(null);
+};
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pickerProcessingRef = useRef(false);
+
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1441,14 +1449,13 @@ export default function ChatRoom() {
   setCancellingId(null);
 };
 
-  const handleMatchConfirm = () => {
+ const handleMatchConfirm = () => {
+  closeAllPickers();
+  requestAnimationFrame(() => {
     pickerProcessingRef.current = false;
-    setShowConfirmPicker(false);
-    setShowCancelPicker(false);
-    setConfirmingId(null);
-    setCancellingId(null);
-    requestAnimationFrame(() => setShowConfirmPicker(true));
-  };
+    setShowConfirmPicker(true);
+  });
+};
 
   const handleMatchConfirmDirect = async () => {
     if (otherUser && blockedUserIds.includes(otherUser.user_id || otherUser.id)) {
@@ -1506,14 +1513,13 @@ export default function ChatRoom() {
     if (ok) setMatchConfirmed(true);
   };
 
-  const handleMatchCancel = () => {
+ const handleMatchCancel = () => {
+  closeAllPickers();
+  requestAnimationFrame(() => {
     pickerProcessingRef.current = false;
-    setShowConfirmPicker(false);
-    setShowCancelPicker(false);
-    setConfirmingId(null);
-    setCancellingId(null);
-    requestAnimationFrame(() => setShowCancelPicker(true));
-  };
+    setShowCancelPicker(true);
+  });
+};
 
   const handleMatchCancelDirect = async () => {
     if (courtId && otherUser) {
