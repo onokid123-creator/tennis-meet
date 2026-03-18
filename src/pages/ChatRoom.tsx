@@ -27,7 +27,7 @@ function TennisProfilePopup({
   onClose: () => void;
   onBlock: () => void;
   onReport: () => void;
-  isBlocked: boolean;
+  isBlocked: boolean;ㅁ
   onUnblock: () => void;
 }) {
   const photo = profile.tennis_photo_url || profile.photo_url || null;
@@ -1466,6 +1466,7 @@ export default function ChatRoom() {
     if (otherUser) {
       const newConfirmedIds = [otherUser.user_id];
       await supabase.from('chats').update({ confirmed_user_ids: newConfirmedIds }).eq('id', chatId!);
+      await supabase.from('chat_participants').update({ is_confirmed: true }).eq('chat_id', chatId!).eq('user_id', otherUser.user_id || otherUser.id);
       const { data: confirmedProfs } = await supabase
         .from('profiles')
         .select('user_id, name, photo_url, tennis_photo_url')
@@ -1490,9 +1491,9 @@ export default function ChatRoom() {
   const handleMatchCancel = async () => {
     if (isGroupChat) {
       setShowCancelPicker(true);
-      return;
+    } else {
+      await handleMatchCancelDirect();
     }
-    setShowCancelPicker(true);
   };
 
   const handleMatchCancelDirect = async () => {
@@ -1518,6 +1519,9 @@ export default function ChatRoom() {
       }
     }
     await supabase.from('chats').update({ confirmed_user_ids: [] }).eq('id', chatId!);
+    if (otherUser) {
+      await supabase.from('chat_participants').update({ is_confirmed: false }).eq('chat_id', chatId!).eq('user_id', otherUser.user_id || otherUser.id);
+    }
     setConfirmedParticipants([]);
     setMatchConfirmed(false);
     setHostBarDismissed(true);
@@ -2536,17 +2540,22 @@ export default function ChatRoom() {
 
       {showConfirmPicker && isHost && (
         <div
-          className="fixed inset-0 z-[70] flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          className="fixed inset-0 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
           onClick={() => setShowConfirmPicker(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
             style={{
               background: isDating ? '#FFF8F2' : '#F4F8F5',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+              zIndex: 9999,
+              pointerEvents: 'auto',
+              touchAction: 'manipulation',
             }}
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mb-4"
@@ -2581,6 +2590,10 @@ export default function ChatRoom() {
                       border: av.is_confirmed
                         ? `1.5px solid ${isDating ? 'rgba(201,84,122,0.35)' : 'rgba(45,106,79,0.35)'}`
                         : avIsBlocked ? '1.5px solid rgba(0,0,0,0.1)' : '1.5px solid rgba(0,0,0,0.07)',
+                      position: 'relative',
+                      zIndex: 10000,
+                      pointerEvents: 'auto',
+                      touchAction: 'manipulation',
                     }}
                   >
                     <div
@@ -2648,17 +2661,22 @@ export default function ChatRoom() {
 
       {showCancelPicker && isHost && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          className="fixed inset-0 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
           onClick={() => setShowCancelPicker(false)}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
             style={{
               background: isDating ? '#FFF8F2' : '#F4F8F5',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+              zIndex: 9999,
+              pointerEvents: 'auto',
+              touchAction: 'manipulation',
             }}
             onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mb-4"
@@ -2677,7 +2695,14 @@ export default function ChatRoom() {
                   onClick={() => handleParticipantCancel(av.user_id, av.name)}
                   disabled={!!cancellingId}
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition active:scale-95 disabled:opacity-60"
-                  style={{ background: '#fff', border: '1.5px solid rgba(239,68,68,0.25)' }}
+                  style={{
+                    background: '#fff',
+                    border: '1.5px solid rgba(239,68,68,0.25)',
+                    position: 'relative',
+                    zIndex: 10000,
+                    pointerEvents: 'auto',
+                    touchAction: 'manipulation',
+                  }}
                 >
                   <div
                     className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
