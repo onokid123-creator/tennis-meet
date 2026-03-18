@@ -2590,17 +2590,7 @@ export default function ChatRoom() {
                     key={av.user_id}
                     role="button"
                     tabIndex={0}
-                    onMouseDown={async (e) => {
-                      e.stopPropagation();
-                      if (!!confirmingId || av.is_confirmed) return;
-                      if (avIsBlocked) {
-                        showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
-                        return;
-                      }
-                      await handleParticipantConfirm(av.user_id, av.name);
-                      setShowConfirmPicker(false);
-                    }}
-                    onTouchEnd={async (e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
                       if (!!confirmingId || av.is_confirmed) return;
                       if (avIsBlocked) {
@@ -2629,7 +2619,7 @@ export default function ChatRoom() {
                     <div
                       className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm cursor-pointer active:opacity-75"
                       style={{ background: avIsBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
-                      onMouseDown={(e) => {
+                      onClick={(e) => {
                         e.stopPropagation();
                         if (avIsBlocked) return;
                         const prof = senderProfiles[av.user_id];
