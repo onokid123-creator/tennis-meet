@@ -1429,6 +1429,9 @@ export default function ChatRoom() {
   };
 
   const handleMatchConfirm = async () => {
+    setShowCancelPicker(false);
+    setConfirmingId(null);
+    setCancellingId(null);
     setShowConfirmPicker(true);
   };
 
@@ -1489,6 +1492,9 @@ export default function ChatRoom() {
   };
 
   const handleMatchCancel = async () => {
+    setShowConfirmPicker(false);
+    setConfirmingId(null);
+    setCancellingId(null);
     setShowCancelPicker(true);
   };
 
@@ -2542,7 +2548,7 @@ export default function ChatRoom() {
         <div
           className="fixed inset-0 flex items-end justify-center"
           style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
-          onClick={() => setShowConfirmPicker(false)}
+          onClick={() => { setShowConfirmPicker(false); setConfirmingId(null); }}
         >
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
@@ -2712,7 +2718,8 @@ export default function ChatRoom() {
               )}
             </div>
             <button
-              onClick={() => setShowConfirmPicker(false)}
+              type="button"
+              onClick={() => { setShowConfirmPicker(false); setConfirmingId(null); }}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
               style={{ background: '#F3F4F6', color: '#374151' }}
             >
@@ -2726,7 +2733,7 @@ export default function ChatRoom() {
         <div
           className="fixed inset-0 flex items-end justify-center"
           style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
-          onClick={() => setShowCancelPicker(false)}
+          onClick={() => { setShowCancelPicker(false); setCancellingId(null); }}
         >
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
@@ -2810,7 +2817,8 @@ export default function ChatRoom() {
               })()}
             </div>
             <button
-              onClick={() => setShowCancelPicker(false)}
+              type="button"
+              onClick={() => { setShowCancelPicker(false); setCancellingId(null); }}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
               style={{ background: '#F3F4F6', color: '#374151' }}
             >
