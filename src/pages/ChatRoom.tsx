@@ -746,7 +746,10 @@ export default function ChatRoom() {
         }
       }
 
-      const chatConfirmedIds: string[] = (chat as { confirmed_user_ids?: string[] | null } | null)?.confirmed_user_ids ?? [];
+      const rawConfirmedIds: string[] = (chat as { confirmed_user_ids?: string[] | null } | null)?.confirmed_user_ids ?? [];
+      const chatConfirmedIds = isGroup
+        ? rawConfirmedIds
+        : rawConfirmedIds.filter((id) => id !== user.id);
       if (chatConfirmedIds.length > 0) {
         const { data: confirmedProfs } = await supabase
           .from('profiles')
@@ -2777,7 +2780,7 @@ export default function ChatRoom() {
               {(() => {
                 const cancelList = isGroupChat
                   ? groupAvatars.filter((av) => av.user_id !== user?.id && av.is_confirmed)
-                  : confirmedParticipants;
+                  : confirmedParticipants.filter((p) => p.user_id !== user?.id);
                 if (cancelList.length === 0) {
                   return <p className="text-sm text-center py-4" style={{ color: 'rgba(0,0,0,0.4)' }}>확정된 참여자가 없습니다.</p>;
                 }

@@ -417,6 +417,14 @@ export default function Applications() {
         return ids.includes(hostId) && ids.includes(applicantId);
       });
       if (match) {
+        await supabase
+          .from('chats')
+          .update({ confirmed_user_ids: [] })
+          .eq('id', match.id);
+        await supabase
+          .from('chat_participants')
+          .update({ is_confirmed: false })
+          .eq('chat_id', match.id);
         await supabase.rpc('accept_1v1_chat', {
           p_chat_id: match.id,
           p_host_id: hostId,
@@ -459,6 +467,11 @@ export default function Applications() {
     if (rpcErr) {
       console.error('[1v1] 참여자 등록 실패:', rpcErr);
     }
+
+    await supabase
+      .from('chats')
+      .update({ confirmed_user_ids: [] })
+      .eq('id', chatId);
 
     // ── Step 4: 코트 마감 처리 ──────────────────────────────
     await supabase.from('courts').update({ status: 'closed' }).eq('id', courtId);
