@@ -1429,10 +1429,10 @@ export default function ChatRoom() {
   };
 
   const handleMatchConfirm = async () => {
-    if (isGroupChat) {
-      setShowConfirmPicker(true);
-      return;
-    }
+    setShowConfirmPicker(true);
+  };
+
+  const handleMatchConfirmDirect = async () => {
     if (otherUser && blockedUserIds.includes(otherUser.user_id || otherUser.id)) {
       showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
       return;
@@ -1489,11 +1489,7 @@ export default function ChatRoom() {
   };
 
   const handleMatchCancel = async () => {
-    if (isGroupChat) {
-      setShowCancelPicker(true);
-    } else {
-      await handleMatchCancelDirect();
-    }
+    setShowCancelPicker(true);
   };
 
   const handleMatchCancelDirect = async () => {
@@ -1524,7 +1520,6 @@ export default function ChatRoom() {
     }
     setConfirmedParticipants([]);
     setMatchConfirmed(false);
-    setHostBarDismissed(true);
   };
 
   const handleParticipantCancel = async (participantId: string, participantName: string) => {
@@ -2583,7 +2578,7 @@ export default function ChatRoom() {
               선택한 참여자에게 확정 배지가 부여됩니다
             </p>
             <div className="flex flex-col gap-2 mb-3">
-              {groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => {
+              {isGroupChat ? groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => {
                 const avIsBlocked = blockedUserIds.includes(av.user_id);
                 return (
                   <div
@@ -2643,10 +2638,6 @@ export default function ChatRoom() {
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!!confirmingId || avIsBlocked) return;
-                          if (avIsBlocked) {
-                            showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
-                            return;
-                          }
                           await handleParticipantConfirm(av.user_id, av.name);
                           setShowConfirmPicker(false);
                         }}
@@ -2662,8 +2653,80 @@ export default function ChatRoom() {
                     )}
                   </div>
                 );
-              })}
-              {groupAvatars.filter((av) => av.user_id !== user?.id).length === 0 && (
+              }) : otherUser ? (() => {
+                const avIsBlocked = blockedUserIds.includes(otherUser.user_id || otherUser.id);
+                const avPhoto = isDating ? otherUser.photo_url : (otherUser.tennis_photo_url || otherUser.photo_url);
+                const alreadyConfirmed = confirmedParticipants.some((p) => p.user_id === (otherUser.user_id || otherUser.id));
+                return (
+                  <div
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl"
+                    style={{
+                      background: alreadyConfirmed
+                        ? (isDating ? 'rgba(201,84,122,0.08)' : 'rgba(45,106,79,0.08)')
+                        : avIsBlocked ? 'rgba(0,0,0,0.04)' : '#fff',
+                      border: alreadyConfirmed
+                        ? `1.5px solid ${isDating ? 'rgba(201,84,122,0.35)' : 'rgba(45,106,79,0.35)'}`
+                        : avIsBlocked ? '1.5px solid rgba(0,0,0,0.1)' : '1.5px solid rgba(0,0,0,0.07)',
+                      position: 'relative',
+                      zIndex: 10000,
+                    }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm cursor-pointer active:opacity-75"
+                      style={{ background: avIsBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!avIsBlocked) { setShowConfirmPicker(false); setShowProfilePopup(true); }
+                      }}
+                    >
+                      {avIsBlocked ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      ) : avPhoto ? (
+                        <img src={avPhoto} alt={otherUser.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{otherUser.name?.charAt(0) ?? '?'}</span>
+                      )}
+                    </div>
+                    <span className="flex-1 text-sm font-semibold text-left" style={{ color: avIsBlocked ? '#9CA3AF' : '#1a1a1a' }}>
+                      {avIsBlocked ? '알 수 없음' : otherUser.name}
+                    </span>
+                    {avIsBlocked ? (
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(156,163,175,0.15)', color: '#9CA3AF' }}>
+                        차단됨
+                      </span>
+                    ) : alreadyConfirmed ? (
+                      <span
+                        className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+                        style={{ background: isDating ? 'rgba(201,84,122,0.15)' : 'rgba(45,106,79,0.15)', color: isDating ? '#C9547A' : '#2D6A4F' }}
+                      >
+                        확정 {isDating ? '💕' : '🎾'}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (avIsBlocked) { showToastMsg('차단된 유저는 매칭 확정이 불가합니다.'); return; }
+                          await handleMatchConfirmDirect();
+                          setShowConfirmPicker(false);
+                        }}
+                        disabled={!!confirmingId}
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white active:scale-95 transition disabled:opacity-60"
+                        style={{
+                          background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+                          touchAction: 'manipulation',
+                        }}
+                      >
+                        확정
+                      </button>
+                    )}
+                  </div>
+                );
+              })() : (
+                <p className="text-sm text-center py-4" style={{ color: 'rgba(0,0,0,0.4)' }}>참여자가 없습니다.</p>
+              )}
+              {isGroupChat && groupAvatars.filter((av) => av.user_id !== user?.id).length === 0 && (
                 <p className="text-sm text-center py-4" style={{ color: 'rgba(0,0,0,0.4)' }}>참여자가 없습니다.</p>
               )}
             </div>
@@ -2716,18 +2779,14 @@ export default function ChatRoom() {
                   return <p className="text-sm text-center py-4" style={{ color: 'rgba(0,0,0,0.4)' }}>확정된 참여자가 없습니다.</p>;
                 }
                 return cancelList.map((av) => (
-                  <button
+                  <div
                     key={av.user_id}
-                    onClick={() => handleParticipantCancel(av.user_id, av.name)}
-                    disabled={!!cancellingId}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition active:scale-95 disabled:opacity-60"
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl"
                     style={{
                       background: '#fff',
                       border: '1.5px solid rgba(239,68,68,0.25)',
                       position: 'relative',
                       zIndex: 10000,
-                      pointerEvents: 'auto',
-                      touchAction: 'manipulation',
                     }}
                   >
                     <div
@@ -2741,13 +2800,26 @@ export default function ChatRoom() {
                     <span className="flex-1 text-sm font-semibold text-left" style={{ color: '#1a1a1a' }}>
                       {av.name}
                     </span>
-                    <span
-                      className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white"
-                      style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (isGroupChat) {
+                          await handleParticipantCancel(av.user_id, av.name);
+                        } else {
+                          await handleMatchCancelDirect();
+                        }
+                        setShowCancelPicker(false);
+                      }}
+                      disabled={!!cancellingId}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white active:scale-95 transition disabled:opacity-60"
+                      style={{
+                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                        touchAction: 'manipulation',
+                      }}
                     >
-                      {cancellingId === av.user_id ? '취소 중...' : '취소하기'}
-                    </span>
-                  </button>
+                      {cancellingId === av.user_id ? '취소 중...' : '취소'}
+                    </button>
+                  </div>
                 ));
               })()}
             </div>
