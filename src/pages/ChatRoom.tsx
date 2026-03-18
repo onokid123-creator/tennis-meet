@@ -593,6 +593,7 @@ export default function ChatRoom() {
   const [confirmedParticipants, setConfirmedParticipants] = useState<Array<{ user_id: string; name: string; photo_url?: string; tennis_photo_url?: string }>>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const pickerProcessingRef = useRef(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1428,12 +1429,21 @@ export default function ChatRoom() {
     setUnblockTargetUser(null);
   };
 
-  const handleMatchConfirm = () => {
+  const closeAllPickers = () => {
+    pickerProcessingRef.current = false;
     setShowConfirmPicker(false);
     setShowCancelPicker(false);
     setConfirmingId(null);
     setCancellingId(null);
-    setTimeout(() => setShowConfirmPicker(true), 0);
+  };
+
+  const handleMatchConfirm = () => {
+    pickerProcessingRef.current = false;
+    setShowConfirmPicker(false);
+    setShowCancelPicker(false);
+    setConfirmingId(null);
+    setCancellingId(null);
+    requestAnimationFrame(() => setShowConfirmPicker(true));
   };
 
   const handleMatchConfirmDirect = async () => {
@@ -1493,11 +1503,12 @@ export default function ChatRoom() {
   };
 
   const handleMatchCancel = () => {
+    pickerProcessingRef.current = false;
     setShowConfirmPicker(false);
     setShowCancelPicker(false);
     setConfirmingId(null);
     setCancellingId(null);
-    setTimeout(() => setShowCancelPicker(true), 0);
+    requestAnimationFrame(() => setShowCancelPicker(true));
   };
 
   const handleMatchCancelDirect = async () => {
@@ -1531,7 +1542,6 @@ export default function ChatRoom() {
   };
 
   const handleParticipantCancel = async (participantId: string, participantName: string) => {
-    if (cancellingId) return;
     setCancellingId(participantId);
     try {
       if (courtId) {
@@ -1601,7 +1611,6 @@ export default function ChatRoom() {
   };
 
   const handleParticipantConfirm = async (participantId: string, participantName: string) => {
-    if (confirmingId) return;
     if (blockedUserIds.includes(participantId)) {
       showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
       return;
@@ -2550,7 +2559,7 @@ export default function ChatRoom() {
         <div
           className="fixed inset-0 flex items-end justify-center"
           style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
-          onClick={() => { setShowConfirmPicker(false); setShowCancelPicker(false); setConfirmingId(null); setCancellingId(null); }}
+          onClick={closeAllPickers}
         >
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
@@ -2580,10 +2589,12 @@ export default function ChatRoom() {
                 const avIsBlocked = blockedUserIds.includes(av.user_id);
                 const handleConfirmRow = async () => {
                   if (avIsBlocked) { showToastMsg('차단된 유저는 확정이 불가합니다.'); return; }
-                  if (confirmingId) return;
+                  if (pickerProcessingRef.current) return;
                   if (av.is_confirmed) return;
+                  pickerProcessingRef.current = true;
+                  setConfirmingId(av.user_id);
                   await handleParticipantConfirm(av.user_id, av.name);
-                  setShowConfirmPicker(false); setShowCancelPicker(false); setConfirmingId(null); setCancellingId(null);
+                  closeAllPickers();
                 };
                 return (
                   <div
@@ -2622,15 +2633,15 @@ export default function ChatRoom() {
                       {avIsBlocked ? '알 수 없음' : av.name}
                     </span>
                     {avIsBlocked ? (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(156,163,175,0.15)', color: '#9CA3AF' }}>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(156,163,175,0.15)', color: '#9CA3AF', pointerEvents: 'none' }}>
                         차단됨
                       </span>
                     ) : av.is_confirmed ? (
                       <span
                         className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                        style={{ background: isDating ? 'rgba(201,84,122,0.15)' : 'rgba(45,106,79,0.15)', color: isDating ? '#C9547A' : '#2D6A4F' }}
+                        style={{ background: isDating ? 'rgba(201,84,122,0.15)' : 'rgba(45,106,79,0.15)', color: isDating ? '#C9547A' : '#2D6A4F', pointerEvents: 'none' }}
                       >
-                        확정 {isDating ? '💕' : '🎾'}
+                        확정
                       </span>
                     ) : (
                       <span
@@ -2639,6 +2650,7 @@ export default function ChatRoom() {
                           background: confirmingId === av.user_id
                             ? 'rgba(0,0,0,0.25)'
                             : (isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)'),
+                          pointerEvents: 'none',
                         }}
                       >
                         {confirmingId === av.user_id ? '처리 중...' : '확정'}
@@ -2652,10 +2664,11 @@ export default function ChatRoom() {
                 const alreadyConfirmed = confirmedParticipants.some((p) => p.user_id === (otherUser.user_id || otherUser.id));
                 const handleConfirmRow1v1 = async () => {
                   if (avIsBlocked) { showToastMsg('차단된 유저는 매칭 확정이 불가합니다.'); return; }
-                  if (confirmingId) return;
+                  if (pickerProcessingRef.current) return;
                   if (alreadyConfirmed) return;
+                  pickerProcessingRef.current = true;
                   await handleMatchConfirmDirect();
-                  setShowConfirmPicker(false); setShowCancelPicker(false); setConfirmingId(null); setCancellingId(null);
+                  closeAllPickers();
                 };
                 return (
                   <div
@@ -2692,20 +2705,20 @@ export default function ChatRoom() {
                       {avIsBlocked ? '알 수 없음' : otherUser.name}
                     </span>
                     {avIsBlocked ? (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(156,163,175,0.15)', color: '#9CA3AF' }}>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(156,163,175,0.15)', color: '#9CA3AF', pointerEvents: 'none' }}>
                         차단됨
                       </span>
                     ) : alreadyConfirmed ? (
                       <span
                         className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                        style={{ background: isDating ? 'rgba(201,84,122,0.15)' : 'rgba(45,106,79,0.15)', color: isDating ? '#C9547A' : '#2D6A4F' }}
+                        style={{ background: isDating ? 'rgba(201,84,122,0.15)' : 'rgba(45,106,79,0.15)', color: isDating ? '#C9547A' : '#2D6A4F', pointerEvents: 'none' }}
                       >
-                        확정 {isDating ? '💕' : '🎾'}
+                        확정
                       </span>
                     ) : (
                       <span
                         className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white"
-                        style={{ background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+                        style={{ background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', pointerEvents: 'none' }}
                       >
                         확정
                       </span>
@@ -2721,7 +2734,7 @@ export default function ChatRoom() {
             </div>
             <button
               type="button"
-              onClick={() => { setShowConfirmPicker(false); setShowCancelPicker(false); setConfirmingId(null); setCancellingId(null); }}
+              onClick={closeAllPickers}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
               style={{ background: '#F3F4F6', color: '#374151' }}
             >
@@ -2735,7 +2748,7 @@ export default function ChatRoom() {
         <div
           className="fixed inset-0 flex items-end justify-center"
           style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
-          onClick={() => { setShowConfirmPicker(false); setShowCancelPicker(false); setConfirmingId(null); setCancellingId(null); }}
+          onClick={closeAllPickers}
         >
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
@@ -2770,13 +2783,15 @@ export default function ChatRoom() {
                 }
                 return cancelList.map((av) => {
                   const handleCancelRow = async () => {
-                    if (cancellingId) return;
+                    if (pickerProcessingRef.current) return;
+                    pickerProcessingRef.current = true;
+                    setCancellingId(av.user_id);
                     if (isGroupChat) {
                       await handleParticipantCancel(av.user_id, av.name);
                     } else {
                       await handleMatchCancelDirect();
                     }
-                    setShowConfirmPicker(false); setShowCancelPicker(false); setConfirmingId(null); setCancellingId(null);
+                    closeAllPickers();
                   };
                   return (
                     <div
@@ -2809,6 +2824,7 @@ export default function ChatRoom() {
                           background: cancellingId === av.user_id
                             ? 'rgba(0,0,0,0.25)'
                             : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                          pointerEvents: 'none',
                         }}
                       >
                         {cancellingId === av.user_id ? '취소 중...' : '취소'}
@@ -2820,7 +2836,7 @@ export default function ChatRoom() {
             </div>
             <button
               type="button"
-              onClick={() => { setShowConfirmPicker(false); setShowCancelPicker(false); setConfirmingId(null); setCancellingId(null); }}
+              onClick={closeAllPickers}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
               style={{ background: '#F3F4F6', color: '#374151' }}
             >
