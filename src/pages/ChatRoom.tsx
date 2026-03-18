@@ -1748,28 +1748,28 @@ export default function ChatRoom() {
   };
 
   const bgStyle = isDating
-    ? { background: 'linear-gradient(160deg, #FFF4F7 0%, #FFF8F2 50%, #FFF5EC 100%)' }
-    : { background: '#F0F7F2' };
+    ? { background: 'linear-gradient(160deg, #FEF2F4 0%, #FFF5F0 50%, #FFF8F2 100%)' }
+    : { background: '#F3FAF5' };
 
   const myBubbleStyle = isDating
-    ? { background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)', color: '#fff' }
-    : { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', color: '#fff' };
+    ? { background: 'linear-gradient(135deg, #C97A95 0%, #E2A8B8 100%)', color: '#fff' }
+    : { background: 'linear-gradient(135deg, #2F5D50 0%, #4C7A6B 100%)', color: '#fff' };
 
   const otherBubbleStyle = isDating
-    ? { background: '#FFF5F8', color: '#2D1820', border: '1px solid rgba(183,110,121,0.15)', boxShadow: '0 1px 3px rgba(183,110,121,0.07)' }
-    : { background: '#FFFFFF', color: '#1a1a1a', border: '1px solid rgba(0,100,0,0.08)', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' };
+    ? { background: '#FFF8FA', color: '#2D1820', border: '1px solid rgba(201,122,149,0.13)', boxShadow: '0 1px 3px rgba(183,110,121,0.06)' }
+    : { background: '#FFFFFF', color: '#1a1a1a', border: '1px solid rgba(47,93,80,0.09)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' };
 
   const inputAreaStyle = isDating
-    ? { background: '#FFF8F2', borderTop: '1px solid rgba(201,100,120,0.12)' }
-    : { background: '#fff', borderTop: '1px solid #E8ECE9' };
+    ? { background: '#FFF5F7', borderTop: '1px solid rgba(201,100,120,0.1)' }
+    : { background: '#FAFCFA', borderTop: '1px solid rgba(47,93,80,0.1)' };
 
   const sendBtnStyle = isDating
     ? { background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' }
     : { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' };
 
   const systemMsgStyle = isDating
-    ? { background: 'rgba(255,220,230,0.55)', color: '#9B4060', border: '1px solid rgba(201,100,120,0.18)' }
-    : { background: 'rgba(200,230,215,0.6)', color: '#1B4332', border: '1px solid rgba(45,106,79,0.2)' };
+    ? { background: 'rgba(255,210,225,0.4)', color: '#A0405E', border: '1px solid rgba(201,100,120,0.14)' }
+    : { background: 'rgba(190,230,210,0.45)', color: '#2A5C40', border: '1px solid rgba(47,93,80,0.16)' };
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -1787,7 +1787,7 @@ export default function ChatRoom() {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `radial-gradient(circle at 20% 20%, rgba(255,182,193,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,218,185,0.12) 0%, transparent 50%)`,
+            backgroundImage: `radial-gradient(circle at 15% 15%, rgba(255,180,195,0.1) 0%, transparent 45%), radial-gradient(circle at 85% 85%, rgba(255,210,185,0.08) 0%, transparent 45%)`,
             zIndex: 0,
           }}
         />
@@ -1797,7 +1797,7 @@ export default function ChatRoom() {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(45,106,79,0.04) 39px, rgba(45,106,79,0.04) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(45,106,79,0.04) 39px, rgba(45,106,79,0.04) 40px)`,
+            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(47,93,80,0.03) 39px, rgba(47,93,80,0.03) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(47,93,80,0.03) 39px, rgba(47,93,80,0.03) 40px)`,
             zIndex: 0,
           }}
         />
@@ -1849,14 +1849,14 @@ export default function ChatRoom() {
         style={{
           height: 60,
           background: isDating
-            ? 'linear-gradient(135deg, #C9547A 0%, #E8A0BF 100%)'
-            : 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)',
+            ? 'linear-gradient(135deg, #C06070 0%, #D9809A 100%)'
+            : 'linear-gradient(135deg, #264D3A 0%, #376952 100%)',
           borderBottom: isDating
-            ? '1px solid rgba(201,84,122,0.3)'
-            : '1px solid rgba(45,106,79,0.3)',
+            ? '1px solid rgba(180,70,100,0.25)'
+            : '1px solid rgba(38,77,58,0.3)',
           boxShadow: isDating
-            ? '0 2px 16px rgba(201,84,122,0.25)'
-            : '0 2px 16px rgba(45,106,79,0.25)',
+            ? '0 2px 14px rgba(180,80,110,0.2)'
+            : '0 2px 14px rgba(38,77,58,0.22)',
         }}
       >
         <button
@@ -2414,8 +2414,8 @@ export default function ChatRoom() {
             className="flex-1 min-w-0 px-4 py-2.5 rounded-full focus:outline-none transition"
             style={{
               fontSize: '16px',
-              background: isDating ? 'rgba(255,220,230,0.25)' : 'rgba(45,106,79,0.08)',
-              border: isDating ? '1px solid rgba(201,84,122,0.2)' : '1px solid rgba(45,106,79,0.15)',
+              background: isDating ? 'rgba(255,228,235,0.35)' : '#fff',
+              border: isDating ? '1px solid rgba(201,100,120,0.18)' : '1px solid rgba(47,93,80,0.14)',
               color: isDating ? '#2D1820' : '#0F2118',
             }}
           />
