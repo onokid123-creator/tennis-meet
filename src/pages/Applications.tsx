@@ -1619,7 +1619,7 @@ export default function Applications() {
   const isDating = purposeTab === 'dating';
   const activeColor = isDating ? '#C9637A' : '#1B4332';
   const activeBg = isDating
-    ? 'linear-gradient(160deg, #5A2635 0%, #7A3348 100%)'
+    ? 'linear-gradient(180deg, #F43F5E 0%, #FECDD3 100%)'
     : 'linear-gradient(160deg, #0A1F14 0%, #1B4332 100%)';
   const pageBg = isDating
     ? 'linear-gradient(180deg, #FFF5F7 0%, #FFF0F3 100%)'
@@ -1639,8 +1639,8 @@ export default function Applications() {
               onClick={() => setPurposeTab(tab)}
               className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
               style={purposeTab === tab
-                ? { background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)' }
-                : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
+                ? { background: 'rgba(255,255,255,0.22)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }
+                : { background: 'rgba(255,255,255,0.08)', color: isDating ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.5)', border: `1.5px solid ${isDating ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}` }
               }
             >
               {tab === 'tennis' ? '🎾 테니스 신청' : '🥂 설레는 만남'}
@@ -1652,7 +1652,7 @@ export default function Applications() {
           <button
             onClick={() => setDirectionTab('received')}
             className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative flex items-center justify-center gap-1.5"
-            style={{ color: directionTab === 'received' ? '#fff' : 'rgba(255,255,255,0.45)' }}
+            style={{ color: directionTab === 'received' ? '#fff' : isDating ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.45)' }}
           >
             받은 신청
             {pendingReceivedCount > 0 && (
@@ -1670,7 +1670,7 @@ export default function Applications() {
           <button
             onClick={() => setDirectionTab('sent')}
             className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
-            style={{ color: directionTab === 'sent' ? '#fff' : 'rgba(255,255,255,0.45)' }}
+            style={{ color: directionTab === 'sent' ? '#fff' : isDating ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.45)' }}
           >
             보낸 신청
             {directionTab === 'sent' && (
@@ -1779,60 +1779,99 @@ export default function Applications() {
 
       {rejectTarget && (() => {
         const isDatingReject = rejectTarget.purpose === 'dating';
-        const accentColor = isDatingReject ? '#C9637A' : '#1A5C35';
-        const accentBorder = isDatingReject ? 'rgba(201,99,122,0.25)' : 'rgba(26,92,53,0.2)';
-        const accentBg = isDatingReject ? 'rgba(201,99,122,0.06)' : 'rgba(26,92,53,0.06)';
+        const hasReason = rejectReason.trim().length > 0;
+
+        const sheetBg = isDatingReject
+          ? 'linear-gradient(160deg, #FFF5F7 0%, #FFFBFC 100%)'
+          : 'linear-gradient(160deg, #F0F7F2 0%, #FAFCFB 100%)';
+        const handleColor = isDatingReject ? 'rgba(201,99,122,0.25)' : 'rgba(26,92,53,0.2)';
+        const titleColor = isDatingReject ? '#8B3A50' : '#1B4332';
+        const descColor = isDatingReject ? 'rgba(139,58,80,0.55)' : 'rgba(27,67,50,0.5)';
+        const borderActive = isDatingReject ? '#C9637A' : '#2D6A4F';
+        const borderIdle = isDatingReject ? 'rgba(201,99,122,0.2)' : 'rgba(26,92,53,0.18)';
+        const shadowActive = isDatingReject ? 'rgba(201,99,122,0.12)' : 'rgba(26,92,53,0.1)';
+        const hintColor = isDatingReject ? 'rgba(139,58,80,0.38)' : 'rgba(27,67,50,0.38)';
+        const cancelBg = isDatingReject ? 'rgba(201,99,122,0.06)' : 'rgba(26,92,53,0.06)';
+        const cancelColor = isDatingReject ? '#9E5068' : '#2D6A4F';
+        const cancelBorder = isDatingReject ? 'rgba(201,99,122,0.18)' : 'rgba(26,92,53,0.16)';
         const btnGradient = isDatingReject
           ? 'linear-gradient(135deg, #C9637A 0%, #D4849A 100%)'
-          : 'linear-gradient(135deg, #1A5C35 0%, #2D7A4A 100%)';
-        const hasReason = rejectReason.trim().length > 0;
+          : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)';
+        const btnShadow = isDatingReject ? 'rgba(201,99,122,0.35)' : 'rgba(26,92,53,0.3)';
+        const footerBg = isDatingReject ? 'rgba(255,250,252,0.97)' : 'rgba(248,253,250,0.97)';
+        const footerBorder = isDatingReject ? 'rgba(201,99,122,0.12)' : 'rgba(26,92,53,0.12)';
 
         return (
           <div
             className="fixed inset-0 z-[9999] flex items-end justify-center"
-            style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(5px)' }}
+            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
             onClick={() => { setRejectTarget(null); setRejectReason(''); }}
           >
             <div
               className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl flex flex-col"
               style={{
-                background: isDatingReject ? '#FFF8F5' : '#F4FAF6',
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+                background: sheetBg,
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div
-                className="w-10 h-1 rounded-full mx-auto mb-4"
-                style={{ background: isDatingReject ? 'rgba(183,110,121,0.3)' : 'rgba(26,92,53,0.25)' }}
-              />
-              <p className="font-bold text-gray-900 text-base mb-1">거절 사유 입력</p>
-              <p className="text-xs mb-4" style={{ color: isDatingReject ? 'rgba(184,48,80,0.6)' : 'rgba(26,92,53,0.55)' }}>
-                사유를 입력하면 신청자에게 전달됩니다. 거절 전 꼭 입력해주세요.
-              </p>
+              <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: handleColor }} />
+
+              <div className="flex items-center gap-2.5 mb-1">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: isDatingReject ? 'rgba(201,99,122,0.1)' : 'rgba(26,92,53,0.1)', border: `1px solid ${borderIdle}` }}
+                >
+                  {isDatingReject ? (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={borderActive} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  ) : (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={borderActive} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M2 12a15.3 15.3 0 0 0 4 4c1.9 1.3 4 2 6 2s4.1-.7 6-2a15.3 15.3 0 0 0 4-4" />
+                      <path d="M2 12a15.3 15.3 0 0 1 4-4 11.6 11.6 0 0 1 6-2 11.6 11.6 0 0 1 6 2 15.3 15.3 0 0 1 4 4" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <p className="font-bold text-sm" style={{ color: titleColor }}>
+                    {isDatingReject ? '이번엔 인연이 아닌 것 같아요' : '이번 파트너십은 어렵겠어요'}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: descColor }}>
+                    {isDatingReject ? '부드럽게 사유를 전달해주세요' : '간단한 이유를 남겨주시면 좋아요'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="h-px my-4" style={{ background: isDatingReject ? 'rgba(201,99,122,0.1)' : 'rgba(26,92,53,0.1)' }} />
+
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder={isDatingReject ? '예) 비슷한 분위기가 아닌 것 같아서요...' : '예) 구력 차이가 많이 나서요...'}
+                placeholder={isDatingReject
+                  ? '예) 일정이 맞지 않아서요, 다음에 또 좋은 인연이 생기길 바랍니다 :)'
+                  : '예) 구력 차이가 조금 있어서요, 좋은 파트너 만나시길 바랍니다!'}
                 rows={4}
                 autoFocus
-                className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none mb-4"
+                className="w-full rounded-2xl px-4 py-3.5 text-sm resize-none focus:outline-none"
                 style={{
                   background: '#fff',
-                  border: `1.5px solid ${hasReason ? accentColor : accentBorder}`,
+                  border: `1.5px solid ${hasReason ? borderActive : borderIdle}`,
                   color: '#1a1a1a',
-                  lineHeight: 1.6,
-                  transition: 'border-color 0.2s',
-                  boxShadow: hasReason ? `0 0 0 3px ${accentBg}` : 'none',
+                  lineHeight: 1.7,
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                  boxShadow: hasReason ? `0 0 0 3px ${shadowActive}` : 'none',
+                  fontSize: '14px',
                 }}
               />
               {!hasReason && (
-                <p className="text-xs text-center mb-3" style={{ color: isDatingReject ? 'rgba(184,48,80,0.45)' : 'rgba(26,92,53,0.45)' }}>
-                  사유를 입력해야 거절할 수 있어요
+                <p className="text-xs text-center mt-2.5" style={{ color: hintColor }}>
+                  {isDatingReject ? '사유를 입력해야 거절을 보낼 수 있어요' : '한 줄이라도 남겨주시면 상대방에게 큰 도움이 돼요'}
                 </p>
               )}
             </div>
 
-            {/* Fixed 버튼 */}
             <div
               style={{
                 position: 'fixed',
@@ -1840,10 +1879,10 @@ export default function Applications() {
                 left: 0,
                 right: 0,
                 zIndex: 10001,
-                padding: '12px 20px 16px',
-                background: isDatingReject ? 'rgba(255,248,245,0.98)' : 'rgba(244,250,246,0.98)',
+                padding: '12px 20px 14px',
+                background: footerBg,
                 backdropFilter: 'blur(12px)',
-                borderTop: `1px solid ${accentBorder}`,
+                borderTop: `1px solid ${footerBorder}`,
                 display: 'flex',
                 gap: '10px',
               }}
@@ -1851,7 +1890,7 @@ export default function Applications() {
               <button
                 onClick={() => { setRejectTarget(null); setRejectReason(''); }}
                 className="flex-1 rounded-2xl font-semibold text-sm transition active:scale-95"
-                style={{ background: isDatingReject ? 'rgba(201,99,122,0.08)' : 'rgba(26,92,53,0.08)', color: isDatingReject ? '#A05570' : '#2D6A4F', minHeight: '52px', border: `1px solid ${accentBorder}` }}
+                style={{ background: cancelBg, color: cancelColor, minHeight: '50px', border: `1px solid ${cancelBorder}` }}
               >
                 취소
               </button>
@@ -1859,9 +1898,9 @@ export default function Applications() {
                 onClick={handleRejectConfirm}
                 disabled={rejectSubmitting || !hasReason}
                 className="flex-1 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-40"
-                style={{ background: btnGradient, minHeight: '52px', border: 'none', boxShadow: hasReason ? `0 4px 14px ${isDatingReject ? 'rgba(244,63,94,0.3)' : 'rgba(26,92,53,0.3)'}` : 'none' }}
+                style={{ background: btnGradient, minHeight: '50px', border: 'none', boxShadow: hasReason ? `0 4px 14px ${btnShadow}` : 'none' }}
               >
-                {rejectSubmitting ? '처리 중...' : '거절하기'}
+                {rejectSubmitting ? '처리 중...' : '거절 전달하기'}
               </button>
             </div>
           </div>
@@ -1927,7 +1966,7 @@ export default function Applications() {
               className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
               style={{
                 background: isDatingDelete ? '#FFF8F5' : '#fff',
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+                paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 28px)',
               }}
               onClick={(e) => e.stopPropagation()}
             >

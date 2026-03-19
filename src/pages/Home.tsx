@@ -609,8 +609,11 @@ export default function Home() {
             onClick={() => setApplyTargetCourt(null)}
           >
             <div
-              className="w-full max-w-md rounded-t-3xl px-5 pt-5 pb-10 shadow-xl"
-              style={{ background: isDatingApply ? 'linear-gradient(160deg, #FB7185 0%, #FECDD3 100%)' : '#1B4332' }}
+              className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
+              style={{
+                background: isDatingApply ? 'linear-gradient(160deg, #FB7185 0%, #FECDD3 100%)' : '#1B4332',
+                paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 24px)',
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: isDatingApply ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)' }} />

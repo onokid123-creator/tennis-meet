@@ -228,7 +228,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         </div>
 
         {/* ── Scrollable area ── */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: (onApply || isOwner) ? 160 : 24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 160 : 24 }}>
 
         {/* ── Image slide ── */}
         <div
@@ -466,7 +466,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
       </div>
 
       {/* ── Fixed CTA — BottomNav(70px) + safe-area 위에 고정 ── */}
-      {(onApply || isOwner) && (
+      {onApply && (
         <div style={{
           position: 'fixed',
           bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
@@ -478,16 +478,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
           borderTop: '1px solid rgba(234,153,166,0.18)',
           boxShadow: '0 -4px 20px rgba(234,153,166,0.12)',
         }}>
-          {isOwner ? (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { onClose(); onEdit?.(); }} style={{ flex: 1, padding: '14px', borderRadius: 16, border: '1.5px solid rgba(234,153,166,0.3)', background: WHITE, color: '#B76E79', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <Pencil style={{ width: 14, height: 14 }} />수정하기
-              </button>
-              <button onClick={() => { onClose(); onDelete?.(); }} style={{ flex: 1, padding: '14px', borderRadius: 16, border: '1.5px solid #FCA5A5', background: '#FFF5F5', color: '#DC2626', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <Trash2 style={{ width: 14, height: 14 }} />삭제하기
-              </button>
-            </div>
-          ) : closed ? (
+          {closed ? (
             <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#FDF2F4', border: '1px solid rgba(234,153,166,0.2)' }}>
               <span style={{ fontWeight: 600, fontSize: 14, color: MUTED }}>이미 마감된 모임이에요</span>
             </div>
