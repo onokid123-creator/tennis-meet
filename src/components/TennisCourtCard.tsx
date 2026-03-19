@@ -421,8 +421,19 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
           boxShadow: '0 -4px 20px rgba(0,0,0,0.12)',
         }}>
           {isOwner ? (
-            <div style={{ padding: '14px', borderRadius: 16, border: `1.5px solid ${L}`, background: WH, color: M, fontWeight: 500, fontSize: 13, textAlign: 'center' }}>
-              내 코트 목록에서 수정/삭제할 수 있어요
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => { onClose(); onEdit?.(); }}
+                style={{ flex: 1, padding: '14px', borderRadius: 16, border: `1.5px solid ${L}`, background: WH, color: P, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <Pencil style={{ width: 14, height: 14 }} />수정하기
+              </button>
+              <button
+                onClick={() => { onClose(); onDelete?.(); }}
+                style={{ flex: 1, padding: '14px', borderRadius: 16, border: '1.5px solid #FCA5A5', background: '#FFF5F5', color: '#DC2626', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <Trash2 style={{ width: 14, height: 14 }} />삭제하기
+              </button>
             </div>
           ) : isClosed ? (
             <div style={{ padding: '16px', borderRadius: 18, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.2)` }}>

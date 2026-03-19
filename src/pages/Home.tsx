@@ -365,8 +365,8 @@ export default function Home() {
             onClick={() => handleCategoryTab('tennis')}
             className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
             style={categoryTab === 'tennis'
-              ? { background: 'rgba(255,255,255,0.22)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.45)', backdropFilter: 'blur(8px)' }
-              : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.72)', border: '1.5px solid rgba(255,255,255,0.18)' }
+              ? { background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)' }
+              : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
             }
           >
             🎾 오직 테니스
@@ -375,8 +375,8 @@ export default function Home() {
             onClick={() => handleCategoryTab('dating')}
             className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
             style={categoryTab === 'dating'
-              ? { background: 'rgba(255,255,255,0.22)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.45)', backdropFilter: 'blur(8px)' }
-              : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.72)', border: '1.5px solid rgba(255,255,255,0.18)' }
+              ? { background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)' }
+              : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
             }
           >
             🥂 설레는 만남
@@ -387,7 +387,7 @@ export default function Home() {
           <button
             onClick={() => setActiveTab('others')}
             className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
-            style={{ color: activeTab === 'others' ? '#fff' : 'rgba(255,255,255,0.68)' }}
+            style={{ color: activeTab === 'others' ? '#fff' : 'rgba(255,255,255,0.45)' }}
           >
             {categoryTab === 'tennis' ? '파트너 찾기' : '인연 찾기'}
             {activeTab === 'others' && (
@@ -400,7 +400,7 @@ export default function Home() {
           <button
             onClick={() => setActiveTab('mine')}
             className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
-            style={{ color: activeTab === 'mine' ? '#fff' : 'rgba(255,255,255,0.68)' }}
+            style={{ color: activeTab === 'mine' ? '#fff' : 'rgba(255,255,255,0.45)' }}
           >
             내 코트
             {activeTab === 'mine' && (

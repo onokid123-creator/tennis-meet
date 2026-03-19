@@ -1238,8 +1238,8 @@ export default function Applications() {
       if (useGroupChat && targetChatId) {
         const entryMsg =
           courtPurpose === 'dating'
-            ? `${applicantName}님이 입장했어요 😊`
-            : `${applicantName}님이 참여했어요 🎾`;
+            ? `${applicantName}님이 입장했어요 💕`
+            : `${applicantName}님이 입장했어요 🎾`;
         await supabase.from('court_group_chat_messages').insert({
           group_chat_id: targetChatId,
           sender_id: null,
@@ -1250,7 +1250,7 @@ export default function Applications() {
       } else if (!useGroupChat && isNewChat && targetChatId) {
         const welcomeMsg =
           courtPurpose === 'dating'
-            ? '✨ 채팅방이 열렸어요 — 설레는 첫 마디를 건네볼까요?'
+            ? '채팅방이 열렸어요. 경기 전 가볍게 인사해보세요 💕'
             : '채팅방이 열렸어요. 경기 전 가볍게 소통해보세요 🎾';
         await supabase.from('messages').insert({
           chat_id: targetChatId,
@@ -1617,9 +1617,9 @@ export default function Applications() {
   };
 
   const isDating = purposeTab === 'dating';
-  const activeColor = isDating ? '#F43F5E' : '#1B4332';
+  const activeColor = isDating ? '#C9637A' : '#1B4332';
   const activeBg = isDating
-    ? 'linear-gradient(180deg, #F43F5E 0%, #FECDD3 100%)'
+    ? 'linear-gradient(160deg, #5A2635 0%, #7A3348 100%)'
     : 'linear-gradient(160deg, #0A1F14 0%, #1B4332 100%)';
   const pageBg = isDating
     ? 'linear-gradient(180deg, #FFF5F7 0%, #FFF0F3 100%)'
@@ -1627,7 +1627,7 @@ export default function Applications() {
 
   return (
     <div className="min-h-screen pb-20" style={{ background: pageBg }}>
-      <header className="sticky top-0 z-10" style={{ background: activeBg, boxShadow: isDating ? '0 4px 24px rgba(251,113,133,0.3)' : '0 2px 20px rgba(0,0,0,0.25)' }}>
+      <header className="sticky top-0 z-10" style={{ background: activeBg, boxShadow: '0 2px 20px rgba(0,0,0,0.25)' }}>
         <div className="px-5 pt-4 pb-3">
           <h1 className="text-xl font-bold text-white tracking-tight">신청 목록</h1>
         </div>
@@ -1919,7 +1919,7 @@ export default function Applications() {
         const isDatingDelete = deleteTarget.purpose === 'dating';
         return (
           <div
-            className="fixed inset-0 z-[200] flex items-end justify-center"
+            className="fixed inset-0 z-50 flex items-end justify-center"
             style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
             onClick={() => setDeleteTarget(null)}
           >
@@ -1927,7 +1927,7 @@ export default function Applications() {
               className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
               style={{
                 background: isDatingDelete ? '#FFF8F5' : '#fff',
-                paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)',
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
