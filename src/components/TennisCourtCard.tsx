@@ -30,12 +30,13 @@ function getCourtStatus(court: Court): 'open' | 'closing-soon' | 'closed' {
   return 'open';
 }
 
-const SAGE = '#5B7F6E';
-const LIGHT_GREEN = '#A8C5A0';
-const MINT_BG = '#F4FAF6';
-const TEXT_PRIMARY = '#1C2B24';
-const TEXT_SECONDARY = '#6B7F74';
-const GOLD = '#C4A24A';
+const PRIMARY = '#1F5A3C';
+const SECONDARY = '#5FAF7B';
+const LIGHT_GREEN = '#B8D9C4';
+const MINT_BG = '#F4F8F5';
+const TEXT_PRIMARY = '#111C16';
+const TEXT_SECONDARY = '#7A8F82';
+const GOLD = '#B8953A';
 
 export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDelete }: TennisCourtCardProps) {
   const profile = court.profile;
@@ -95,10 +96,10 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
   return (
     <div
       style={{
-        borderRadius: '24px',
+        borderRadius: '20px',
         background: '#fff',
-        boxShadow: '0 4px 24px rgba(91,127,110,0.10), 0 1px 4px rgba(0,0,0,0.04)',
-        border: `1px solid ${LIGHT_GREEN}55`,
+        boxShadow: '0 2px 16px rgba(31,90,60,0.08), 0 1px 3px rgba(0,0,0,0.04)',
+        border: `1px solid ${LIGHT_GREEN}`,
         overflow: 'hidden',
       }}
     >
@@ -131,7 +132,7 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           <div
             style={{
               position: 'absolute', inset: 0, pointerEvents: 'none',
-              background: 'linear-gradient(to top, rgba(28,43,36,0.55) 0%, rgba(28,43,36,0.08) 45%, transparent 70%)',
+              background: 'linear-gradient(to top, rgba(15,35,22,0.62) 0%, rgba(15,35,22,0.10) 42%, transparent 65%)',
             }}
           />
 
@@ -163,15 +164,15 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           {/* Status badge */}
           <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6, zIndex: 2 }}>
             {court.format && (
-              <span style={{ background: 'rgba(255,255,255,0.22)', color: '#fff', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>
+              <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 99, padding: '3px 10px', fontSize: 10.5, fontWeight: 600, letterSpacing: '0.06em' }}>
                 {court.format}
               </span>
             )}
             {isClosingSoon && !isClosed && (
-              <span style={{ background: 'rgba(220,150,30,0.88)', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>마감 임박</span>
+              <span style={{ background: 'rgba(196,130,20,0.85)', color: '#fff', borderRadius: 99, padding: '3px 9px', fontSize: 10.5, fontWeight: 600, backdropFilter: 'blur(6px)' }}>마감 임박</span>
             )}
             {isClosed && (
-              <span style={{ background: 'rgba(200,60,60,0.88)', color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>마감</span>
+              <span style={{ background: 'rgba(185,50,50,0.82)', color: '#fff', borderRadius: 99, padding: '3px 9px', fontSize: 10.5, fontWeight: 600, backdropFilter: 'blur(6px)' }}>마감</span>
             )}
           </div>
 
@@ -188,18 +189,18 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           )}
 
           {/* Profile name overlay */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 18px 16px', zIndex: 2 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-              <span style={{ color: '#fff', fontWeight: 700, fontSize: 17, letterSpacing: '-0.01em', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 16px 15px', zIndex: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+              <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em', textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
                 {profile?.name}
               </span>
               {profile?.experience && (
-                <span style={{ background: 'rgba(255,255,255,0.18)', color: '#E8F5E0', border: '1px solid rgba(255,255,255,0.28)', borderRadius: 20, padding: '2px 9px', fontSize: 11, fontWeight: 600, backdropFilter: 'blur(4px)', marginBottom: 2 }}>
+                <span style={{ background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.92)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 99, padding: '2px 8px', fontSize: 10.5, fontWeight: 500, backdropFilter: 'blur(6px)' }}>
                   {profile.experience}
                 </span>
               )}
               {profile?.tennis_style && (
-                <span style={{ background: 'rgba(168,197,160,0.28)', color: '#D4F0C8', border: '1px solid rgba(168,197,160,0.35)', borderRadius: 20, padding: '2px 9px', fontSize: 11, backdropFilter: 'blur(4px)', marginBottom: 2 }}>
+                <span style={{ background: 'rgba(95,175,123,0.25)', color: '#C6EDDA', border: '1px solid rgba(95,175,123,0.3)', borderRadius: 99, padding: '2px 8px', fontSize: 10.5, backdropFilter: 'blur(6px)' }}>
                   {profile.tennis_style}
                 </span>
               )}
@@ -210,33 +211,31 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
 
       {/* ── No photo header ── */}
       {photos.length === 0 && (
-        <div style={{ padding: '18px 18px 14px', borderBottom: `1px solid ${LIGHT_GREEN}40`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: MINT_BG }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: `linear-gradient(135deg, ${SAGE} 0%, ${LIGHT_GREEN} 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>{profile?.name?.charAt(0) || 'T'}</span>
+        <div style={{ padding: '16px 16px 12px', borderBottom: `1px solid ${LIGHT_GREEN}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: MINT_BG }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 13, background: `linear-gradient(135deg, ${PRIMARY} 0%, ${SECONDARY} 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ color: '#fff', fontWeight: 700, fontSize: 17 }}>{profile?.name?.charAt(0) || 'T'}</span>
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 700, fontSize: 15, color: TEXT_PRIMARY, letterSpacing: '-0.01em' }}>{profile?.name}</span>
-                {profile?.experience && (
-                  <span style={{ background: `${SAGE}18`, color: SAGE, border: `1px solid ${SAGE}35`, borderRadius: 20, padding: '2px 9px', fontSize: 11, fontWeight: 600 }}>{profile.experience}</span>
-                )}
-                {profile?.tennis_style && (
-                  <span style={{ background: `${LIGHT_GREEN}22`, color: SAGE, border: `1px solid ${LIGHT_GREEN}40`, borderRadius: 20, padding: '2px 9px', fontSize: 11 }}>{profile.tennis_style}</span>
-                )}
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, fontSize: 14.5, color: TEXT_PRIMARY, letterSpacing: '-0.02em' }}>{profile?.name}</span>
+              {profile?.experience && (
+                <span style={{ background: `${PRIMARY}12`, color: PRIMARY, border: `1px solid ${PRIMARY}25`, borderRadius: 99, padding: '2px 8px', fontSize: 10.5, fontWeight: 600 }}>{profile.experience}</span>
+              )}
+              {profile?.tennis_style && (
+                <span style={{ background: `${SECONDARY}18`, color: PRIMARY, border: `1px solid ${SECONDARY}40`, borderRadius: 99, padding: '2px 8px', fontSize: 10.5 }}>{profile.tennis_style}</span>
+              )}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             {court.format && (
-              <span style={{ background: SAGE, color: '#fff', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{court.format}</span>
+              <span style={{ background: PRIMARY, color: '#fff', borderRadius: 99, padding: '3px 9px', fontSize: 10.5, fontWeight: 600 }}>{court.format}</span>
             )}
-            {isClosingSoon && !isClosed && <span style={{ background: `rgba(220,150,30,0.12)`, color: '#B8850A', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>마감 임박</span>}
-            {isClosed && <span style={{ background: 'rgba(200,60,60,0.1)', color: '#C03030', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>마감</span>}
+            {isClosingSoon && !isClosed && <span style={{ background: 'rgba(196,130,20,0.1)', color: '#9A7010', borderRadius: 99, padding: '3px 9px', fontSize: 10.5, fontWeight: 600 }}>마감 임박</span>}
+            {isClosed && <span style={{ background: 'rgba(185,50,50,0.08)', color: '#B03030', borderRadius: 99, padding: '3px 9px', fontSize: 10.5, fontWeight: 600 }}>마감</span>}
             {isOwner && (
               <>
-                <button onClick={onEdit} style={{ padding: 6, border: 'none', background: 'none', cursor: 'pointer', color: TEXT_SECONDARY }}><Pencil style={{ width: 14, height: 14 }} /></button>
-                <button onClick={onDelete} style={{ padding: 6, border: 'none', background: 'none', cursor: 'pointer', color: TEXT_SECONDARY }}><Trash2 style={{ width: 14, height: 14 }} /></button>
+                <button onClick={onEdit} style={{ padding: 5, border: 'none', background: 'none', cursor: 'pointer', color: TEXT_SECONDARY }}><Pencil style={{ width: 13, height: 13 }} /></button>
+                <button onClick={onDelete} style={{ padding: 5, border: 'none', background: 'none', cursor: 'pointer', color: TEXT_SECONDARY }}><Trash2 style={{ width: 13, height: 13 }} /></button>
               </>
             )}
           </div>
@@ -244,58 +243,68 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
       )}
 
       {/* ── Body ── */}
-      <div style={{ padding: '16px 18px 18px' }}>
+      <div style={{ padding: '14px 16px 16px' }}>
 
-        {/* Row 1: Court name + date/time */}
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginBottom: 5 }}>
-            <span style={{ fontWeight: 700, fontSize: 15, color: TEXT_PRIMARY, letterSpacing: '-0.01em', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {/* Row 1: Court name + price / date */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontWeight: 700, fontSize: 14.5, color: TEXT_PRIMARY, letterSpacing: '-0.02em', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {court.court_name}
             </span>
             {court.court_fee != null && court.court_fee >= 0 && (
-              <span style={{ fontWeight: 700, fontSize: 14, color: GOLD, whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
+              <span style={{ fontWeight: 600, fontSize: 13.5, color: GOLD, whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
                 {court.court_fee === 0 ? '무료' : `${court.court_fee.toLocaleString()}원`}
               </span>
             )}
           </div>
           {(court.date || court.start_time) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 12.5, color: TEXT_SECONDARY }}>
-                {court.date ? formatDate(court.date) : ''}
-                {court.date && court.start_time ? ' · ' : ''}
-                {court.start_time ? `${court.start_time}${court.end_time ? ` ~ ${court.end_time}` : ''}` : ''}
-              </span>
-            </div>
+            <span style={{ fontSize: 12, color: TEXT_SECONDARY, letterSpacing: '0.01em' }}>
+              {court.date ? formatDate(court.date) : ''}
+              {court.date && court.start_time ? '  ·  ' : ''}
+              {court.start_time ? `${court.start_time}${court.end_time ? ` – ${court.end_time}` : ''}` : ''}
+            </span>
           )}
         </div>
 
-        {/* Row 2: Slots */}
+        {/* Row 2: Slots — compact inline style */}
         {(totalMale > 0 || totalFemale > 0) && (
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 12 }}>
             {isClosed ? (
-              <div style={{ background: 'rgba(200,60,60,0.06)', border: '1px solid rgba(200,60,60,0.18)', borderRadius: 14, padding: '10px 16px', textAlign: 'center' }}>
-                <span style={{ fontWeight: 700, fontSize: 13, color: '#C03030' }}>모집 마감</span>
+              <div style={{ background: 'rgba(185,50,50,0.05)', border: '1px solid rgba(185,50,50,0.15)', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
+                <span style={{ fontWeight: 600, fontSize: 12.5, color: '#B03030' }}>모집 마감</span>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 7 }}>
                 {totalMale > 0 && (
-                  <div style={{ flex: 1, background: remainMale <= 0 ? 'rgba(200,60,60,0.05)' : MINT_BG, border: `1px solid ${remainMale <= 0 ? 'rgba(200,60,60,0.2)' : LIGHT_GREEN + '60'}`, borderRadius: 14, padding: '10px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: TEXT_SECONDARY, letterSpacing: '0.02em' }}>남성</span>
-                      <span style={{ fontSize: 10, color: TEXT_SECONDARY, opacity: 0.7 }}>{confirmedMale}/{totalMale}</span>
-                    </div>
-                    <span style={{ fontWeight: 800, fontSize: 16, color: remainMale <= 0 ? '#C03030' : SAGE, letterSpacing: '-0.02em' }}>
+                  <div style={{
+                    flex: 1,
+                    background: remainMale <= 0 ? 'rgba(185,50,50,0.04)' : MINT_BG,
+                    border: `1px solid ${remainMale <= 0 ? 'rgba(185,50,50,0.18)' : LIGHT_GREEN}`,
+                    borderRadius: 11,
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span style={{ fontSize: 11, color: TEXT_SECONDARY, fontWeight: 500 }}>남성 <span style={{ color: TEXT_SECONDARY, opacity: 0.6 }}>{confirmedMale}/{totalMale}</span></span>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: remainMale <= 0 ? '#B03030' : PRIMARY, letterSpacing: '-0.01em' }}>
                       {remainMale <= 0 ? '마감' : `${remainMale}명 남음`}
                     </span>
                   </div>
                 )}
                 {totalFemale > 0 && (
-                  <div style={{ flex: 1, background: remainFemale <= 0 ? 'rgba(200,60,60,0.05)' : MINT_BG, border: `1px solid ${remainFemale <= 0 ? 'rgba(200,60,60,0.2)' : LIGHT_GREEN + '60'}`, borderRadius: 14, padding: '10px 12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: TEXT_SECONDARY, letterSpacing: '0.02em' }}>여성</span>
-                      <span style={{ fontSize: 10, color: TEXT_SECONDARY, opacity: 0.7 }}>{confirmedFemale}/{totalFemale}</span>
-                    </div>
-                    <span style={{ fontWeight: 800, fontSize: 16, color: remainFemale <= 0 ? '#C03030' : SAGE, letterSpacing: '-0.02em' }}>
+                  <div style={{
+                    flex: 1,
+                    background: remainFemale <= 0 ? 'rgba(185,50,50,0.04)' : MINT_BG,
+                    border: `1px solid ${remainFemale <= 0 ? 'rgba(185,50,50,0.18)' : LIGHT_GREEN}`,
+                    borderRadius: 11,
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}>
+                    <span style={{ fontSize: 11, color: TEXT_SECONDARY, fontWeight: 500 }}>여성 <span style={{ color: TEXT_SECONDARY, opacity: 0.6 }}>{confirmedFemale}/{totalFemale}</span></span>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: remainFemale <= 0 ? '#B03030' : PRIMARY, letterSpacing: '-0.01em' }}>
                       {remainFemale <= 0 ? '마감' : `${remainFemale}명 남음`}
                     </span>
                   </div>
@@ -307,37 +316,37 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
 
         {/* Row 3: Description */}
         {court.description && (
-          <div style={{ marginBottom: 14, paddingLeft: 12, borderLeft: `2px solid ${LIGHT_GREEN}` }}>
-            <p style={{ fontSize: 12.5, color: TEXT_SECONDARY, lineHeight: 1.65, margin: 0 }}>{court.description}</p>
+          <div style={{ marginBottom: 12, paddingLeft: 11, borderLeft: `2px solid ${SECONDARY}60` }}>
+            <p style={{ fontSize: 12, color: TEXT_SECONDARY, lineHeight: 1.6, margin: 0 }}>{court.description}</p>
           </div>
         )}
 
         {/* Row 4: CTA */}
         {onApply && (
           isClosed ? (
-            <div style={{ padding: '13px 0', textAlign: 'center', background: `${MINT_BG}`, borderRadius: 16, border: `1px solid ${LIGHT_GREEN}40` }}>
-              <span style={{ fontSize: 13, color: TEXT_SECONDARY, fontWeight: 500 }}>마감된 모임이에요</span>
+            <div style={{ padding: '12px 0', textAlign: 'center', background: MINT_BG, borderRadius: 13, border: `1px solid ${LIGHT_GREEN}` }}>
+              <span style={{ fontSize: 12.5, color: TEXT_SECONDARY, fontWeight: 500 }}>마감된 모임이에요</span>
             </div>
           ) : (
             <button
               onClick={onApply}
               style={{
                 width: '100%',
-                padding: '14px 0',
-                borderRadius: 16,
+                padding: '13px 0',
+                borderRadius: 13,
                 border: 'none',
-                background: `linear-gradient(135deg, ${SAGE} 0%, #3D6B52 100%)`,
+                background: `linear-gradient(135deg, ${SECONDARY} 0%, ${PRIMARY} 100%)`,
                 color: '#fff',
                 fontWeight: 700,
-                fontSize: 14,
-                letterSpacing: '0.02em',
+                fontSize: 13.5,
+                letterSpacing: '0.01em',
                 cursor: 'pointer',
-                boxShadow: `0 6px 20px ${SAGE}45`,
-                transition: 'opacity 0.15s, transform 0.12s',
+                boxShadow: `0 4px 16px rgba(31,90,60,0.28)`,
+                transition: 'transform 0.12s',
               }}
-              onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.985)')}
+              onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.982)')}
               onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-              onTouchStart={(e) => (e.currentTarget.style.transform = 'scale(0.985)')}
+              onTouchStart={(e) => (e.currentTarget.style.transform = 'scale(0.982)')}
               onTouchEnd={(e) => (e.currentTarget.style.transform = 'scale(1)')}
             >
               참여 신청하기
