@@ -283,26 +283,28 @@ export default function CreateCourt() {
         ? (tennisProfile?.photos?.[0] || tennisProfile?.photo_url || null)
         : (datingPhotos[0] || null);
 
-    const courtData: Record<string, unknown> = {
-  user_id: user.id,
-  host_id: user.id, // 👈 이거 한 줄 추가
+      const courtData: Record<string, unknown> = {
+        user_id: user.id,
+        host_id: user.id,
+        purpose,
+        court_name: selectedCourt!.name,
+        date: selectedDate,
+        start_time: selectedTime,
+        end_time: endTime,
+        format: format || '단식',
+        match_type: format || '단식',
+        description,
+        male_slots: maleSlots,
+        female_slots: femaleSlots,
+        male_count: maleSlots,
+        female_count: femaleSlots,
+        tennis_photo_url: tennisPhotoUrl,
+      };
 
-  purpose,
-  court_name: selectedCourt!.name,
-  date: selectedDate,
-  start_time: selectedTime,
-  end_time: endTime,
-  format: format || '단식',
-  match_type: format || '단식',
-  description,
-  male_slots: maleSlots,
-  female_slots: femaleSlots,
-  male_count: maleSlots,
-  female_count: femaleSlots,
-  confirmed_male_slots: 0,
-  confirmed_female_slots: 0,
-  tennis_photo_url: tennisPhotoUrl,
-};
+      if (!isEditing) {
+        courtData.confirmed_male_slots = 0;
+        courtData.confirmed_female_slots = 0;
+      }
 
       if (isTennis) {
         courtData.experience_wanted = experienceWanted;
@@ -314,19 +316,39 @@ export default function CreateCourt() {
         courtData.match_type = format || '단식';
         courtData.male_count = maleSlots;
         courtData.female_count = femaleSlots;
-        courtData.confirmed_male_slots = 0;
-        courtData.confirmed_female_slots = 0;
-        courtData.owner_photos = datingPhotos;
-        courtData.owner_photo = datingPhotos[0] || null;
-        courtData.tennis_photo_url = datingPhotos[0] || null;
-        courtData.owner_mbti = datingProfile?.mbti || null;
-        courtData.owner_height = datingProfile?.height || null;
-        courtData.owner_bio = datingProfile?.bio || null;
-        courtData.owner_experience = datingProfile?.experience || null;
-        courtData.owner_gender = datingProfile?.gender || null;
-        courtData.owner_age = datingProfile?.age || null;
-        courtData.owner_name = datingProfile?.name || null;
         courtData.court_intro = description;
+
+        if (isEditing) {
+          const existingPhotos: string[] = editCourt!.owner_photos?.length
+            ? editCourt!.owner_photos
+            : editCourt!.owner_photo
+              ? [editCourt!.owner_photo]
+              : [];
+          const finalPhotos = datingPhotos.length > 0 ? datingPhotos : existingPhotos;
+          courtData.owner_photos = finalPhotos;
+          courtData.owner_photo = finalPhotos[0] || null;
+          courtData.tennis_photo_url = finalPhotos[0] || null;
+          courtData.owner_mbti = datingProfile?.mbti || editCourt!.owner_mbti || null;
+          courtData.owner_height = datingProfile?.height || editCourt!.owner_height || null;
+          courtData.owner_bio = datingProfile?.bio || editCourt!.owner_bio || null;
+          courtData.owner_experience = datingProfile?.experience || editCourt!.owner_experience || null;
+          courtData.owner_gender = datingProfile?.gender || editCourt!.owner_gender || null;
+          courtData.owner_age = datingProfile?.age || editCourt!.owner_age || null;
+          courtData.owner_name = datingProfile?.name || editCourt!.owner_name || null;
+        } else {
+          courtData.confirmed_male_slots = 0;
+          courtData.confirmed_female_slots = 0;
+          courtData.owner_photos = datingPhotos;
+          courtData.owner_photo = datingPhotos[0] || null;
+          courtData.tennis_photo_url = datingPhotos[0] || null;
+          courtData.owner_mbti = datingProfile?.mbti || null;
+          courtData.owner_height = datingProfile?.height || null;
+          courtData.owner_bio = datingProfile?.bio || null;
+          courtData.owner_experience = datingProfile?.experience || null;
+          courtData.owner_gender = datingProfile?.gender || null;
+          courtData.owner_age = datingProfile?.age || null;
+          courtData.owner_name = datingProfile?.name || null;
+        }
       }
 
       if (isEditing) {
@@ -338,10 +360,8 @@ export default function CreateCourt() {
       }
 
       triggerRefresh();
-      if (!isEditing) {
-        localStorage.setItem('home_category_tab', purpose === 'tennis' ? 'tennis' : 'dating');
-        localStorage.setItem('home_active_tab', 'mine');
-      }
+      localStorage.setItem('home_category_tab', purpose === 'tennis' ? 'tennis' : 'dating');
+      localStorage.setItem('home_active_tab', 'mine');
       navigate('/home', { replace: true });
     } catch (err) {
       alert(err instanceof Error ? err.message : '저장에 실패했습니다.');

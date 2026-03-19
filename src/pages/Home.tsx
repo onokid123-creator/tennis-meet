@@ -80,8 +80,14 @@ export default function Home() {
   const { refreshKey, triggerRefresh } = useCourts();
   const [courts, setCourts] = useState<Court[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('others');
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const saved = localStorage.getItem('home_active_tab');
+    localStorage.removeItem('home_active_tab');
+    return saved === 'mine' ? 'mine' : 'others';
+  });
   const [categoryTab, setCategoryTab] = useState<CategoryTab>(() => {
+    const saved = localStorage.getItem('home_category_tab');
+    if (saved === 'tennis' || saved === 'dating') return saved;
     return profile?.purpose === 'dating' ? 'dating' : 'tennis';
   });
   const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
