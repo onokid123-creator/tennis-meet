@@ -1161,8 +1161,8 @@ const closeAllPickers = () => {
     if (!user || !otherUser) return;
     const purpose = chatPurpose ?? 'tennis';
     const welcomeMsg = purpose === 'dating'
-      ? '💌 설레는 만남 시작! 식사도 같이해요 🍽️'
-      : '🎾 매칭됐어요! 코트에서 만나요!';
+      ? '매칭됐어요! 식사나 커피 한 잔 어때요?'
+      : '매칭됐어요! 코트에서 좋은 경기 해요.';
 
     const otherId = otherUser.user_id || otherUser.id;
     const { data: newChat, error: chatErr } = await supabase
