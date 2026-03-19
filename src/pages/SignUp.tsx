@@ -217,11 +217,12 @@ export default function SignUp() {
       navigate('/purpose-selection');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
-      if (msg.toLowerCase().includes('already registered') || msg.includes('이미 등록된')) {
+      console.error('[SignUp Page] 회원가입 실패:', msg);
+      if (msg.includes('이미 가입된')) {
         navigate('/purpose-selection');
         return;
       }
-      setError(msg || '회원가입에 실패했습니다.');
+      setError(msg || '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }

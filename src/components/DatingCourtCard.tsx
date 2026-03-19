@@ -475,7 +475,14 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
 
         {/* ── Fixed CTA at bottom ── */}
         {onApply && (
-          <div style={{ flexShrink: 0, padding: '10px 14px', paddingBottom: 'max(env(safe-area-inset-bottom),14px)', background: PAGE, borderTop: '1px solid rgba(255,126,138,0.08)', zIndex: 20 }}>
+          <div style={{
+            flexShrink: 0,
+            padding: '12px 14px',
+            paddingBottom: 'calc(max(env(safe-area-inset-bottom), 16px) + 4px)',
+            background: PAGE,
+            borderTop: '1px solid rgba(255,126,138,0.08)',
+            zIndex: 20,
+          }}>
             {closed ? (
               <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#F3F4F6', border: '1px solid #E5E7EB' }}>
                 <span style={{ fontWeight: 600, fontSize: 14, color: MUTED }}>이미 마감된 모임이에요</span>

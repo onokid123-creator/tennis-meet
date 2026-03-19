@@ -31,6 +31,8 @@ export default function Profile() {
   const navigate = useNavigate();
   const { profile, signOut, refreshProfile, loading: authLoading } = useAuth();
   const [profileTab, setProfileTab] = useState<ProfileTab>(() => {
+    const saved = localStorage.getItem('home_category_tab');
+    if (saved === 'tennis' || saved === 'dating') return saved;
     return profile?.purpose === 'tennis' ? 'tennis' : 'dating';
   });
   const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
@@ -77,7 +79,12 @@ export default function Profile() {
           height: profile.height?.toString() || '',
           bio: profile.bio || '',
         });
-        setProfileTab(profile.purpose === 'tennis' ? 'tennis' : 'dating');
+        const savedTab = localStorage.getItem('home_category_tab');
+        if (savedTab === 'tennis' || savedTab === 'dating') {
+          setProfileTab(savedTab);
+        } else {
+          setProfileTab(profile.purpose === 'tennis' ? 'tennis' : 'dating');
+        }
       }
     }
   }, [authLoading, profile]);

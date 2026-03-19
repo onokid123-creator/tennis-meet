@@ -260,6 +260,7 @@ export default function Home() {
 
     setCategoryTab(tab);
     setActiveTab('others');
+    localStorage.setItem('home_category_tab', tab);
   };
 
   const openApplyPopup = (court: Court) => {

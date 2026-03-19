@@ -119,7 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (error.message.includes('Invalid')) {
+      console.error('[Login] error code:', error.status, '| message:', error.message);
+      if (error.message.includes('Invalid') || error.message.includes('invalid')) {
         throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
       }
       throw new Error('로그인에 실패했습니다. 다시 시도해주세요.');
@@ -127,6 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, name: string, age: number, gender: string) => {
+    console.log('[SignUp] 시도 이메일:', email);
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -134,23 +137,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (error) {
-      if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already exists')) {
+      console.error('[SignUp] auth signup error:', error.status, error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
         throw new Error('이미 가입된 이메일입니다. 로그인 화면에서 시도해주세요.');
       }
-      throw new Error('회원가입에 실패했습니다. 다시 시도해주세요.');
+      if (msg.includes('password')) {
+        throw new Error('비밀번호는 6자 이상이어야 합니다.');
+      }
+      if (msg.includes('email')) {
+        throw new Error('올바른 이메일 형식이 아닙니다.');
+      }
+      throw new Error(`회원가입에 실패했습니다: ${error.message}`);
     }
 
-    if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        user_id: data.user.id,
-        name,
-        age,
-        gender,
-        profile_completed: false,
-      }, { onConflict: 'user_id', ignoreDuplicates: true });
-      if (profileError) {
-        console.error('프로필 생성 실패:', profileError);
+    console.log('[SignUp] auth.user uid:', data.user?.id ?? '없음');
+
+    if (!data.user) {
+      throw new Error('회원가입 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+
+    const { error: profileError } = await supabase.from('profiles').upsert({
+      user_id: data.user.id,
+      name,
+      age,
+      gender,
+      profile_completed: false,
+    }, { onConflict: 'user_id' });
+
+    if (profileError) {
+      console.error('[SignUp] profile insert/upsert error:', profileError.code, profileError.message);
+      if (profileError.code === '23505') {
+        console.warn('[SignUp] 기존 프로필 row 존재 - 이메일 중복 또는 orphan row. upsert로 덮어씀');
       }
+    } else {
+      console.log('[SignUp] 프로필 생성 완료');
     }
   };
 
