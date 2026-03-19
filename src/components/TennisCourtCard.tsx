@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Court, Profile } from '../types';
 import { Pencil, Trash2, X, MapPin, Calendar, Clock, Users, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -11,13 +11,15 @@ interface TennisCourtCardProps {
   onDelete?: () => void;
 }
 
-const P = '#1A5C35';
-const A = '#6CBF6C';
-const L = '#E8F5EC';
-const T = '#111C16';
-const M = '#6B8070';
-const G = '#B8953A';
-const BG = '#F2FAF4';
+const P  = '#1A5C35';
+const P2 = '#2D7A4A';
+const A  = '#6CBF6C';
+const L  = '#E8F5EC';
+const T  = '#0D1F14';
+const M  = '#6B8070';
+const G  = '#B8953A';
+const BG = '#F4FAF6';
+const WH = '#FFFFFF';
 
 function courtStatus(court: Court): 'open' | 'closing-soon' | 'closed' {
   if (court.status === 'closed') return 'closed';
@@ -41,20 +43,49 @@ function fmtFee(fee: number) {
   return fee === 0 ? '무료' : `${fee.toLocaleString()}원`;
 }
 
+function fmtDate(d: string) {
+  return new Date(d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+function fmtDateLong(d: string) {
+  return new Date(d).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+}
+
 function Avatar({ src, name, size = 36, border }: { src?: string; name?: string; size?: number; border?: string }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
-      background: `linear-gradient(135deg, ${P} 0%, ${A} 100%)`,
+      background: `linear-gradient(135deg,${P},${A})`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      border: border ?? `2px solid #fff`,
-      boxShadow: '0 1px 6px rgba(0,0,0,0.12)',
+      border: border ?? `2px solid ${WH}`,
+      boxShadow: '0 1px 6px rgba(26,92,53,0.18)',
     }}>
-      {src ? (
-        <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
-      ) : (
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: size * 0.4 }}>{name?.charAt(0) || 'T'}</span>
-      )}
+      {src
+        ? <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+        : <span style={{ color: WH, fontWeight: 700, fontSize: size * 0.4 }}>{name?.charAt(0) || 'T'}</span>
+      }
+    </div>
+  );
+}
+
+function SectionHead({ label }: { label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+      <div style={{ width: 3, height: 15, borderRadius: 2, background: `linear-gradient(180deg,${P},${A})` }} />
+      <span style={{ fontWeight: 700, fontSize: 14, color: T }}>{label}</span>
+    </div>
+  );
+}
+
+function InfoCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      background: WH, borderRadius: 20, padding: '16px 18px',
+      boxShadow: '0 2px 14px rgba(26,92,53,0.07)',
+      border: `1px solid ${L}`,
+      ...style,
+    }}>
+      {children}
     </div>
   );
 }
@@ -84,15 +115,12 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
   const cm = court.confirmed_male_slots ?? 0;
   const cf = court.confirmed_female_slots ?? 0;
   const total = tm + tf;
-  const confirmed = cm + cf;
-  const remain = Math.max(0, total - confirmed);
+  const confirmedCount = cm + cf;
+  const remain = Math.max(0, total - confirmedCount);
   const rm = Math.max(0, tm - cm);
   const rf = Math.max(0, tf - cf);
   const hasSlotsInfo = total > 0;
-  const fill = hasSlotsInfo ? confirmed / total : 0;
-
-  const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+  const fill = hasSlotsInfo ? confirmedCount / total : 0;
 
   useEffect(() => {
     let mounted = true;
@@ -124,385 +152,301 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
     return () => { mounted = false; };
   }, [court.id]);
 
-  const hostProfile = profile;
-
   return (
     <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9000,
-        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(4px)',
-      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          background: BG,
-          borderRadius: '24px 24px 0 0',
-          maxHeight: '93dvh',
-          overflowY: 'auto',
-          overscrollBehavior: 'contain',
-          WebkitOverflowScrolling: 'touch',
-          paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
-          position: 'relative',
-        }}
+        style={{ background: BG, borderRadius: '28px 28px 0 0', maxHeight: '94dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
       >
-        {/* 핸들 */}
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 2, position: 'sticky', top: 0, zIndex: 5, background: photo ? 'transparent' : BG }}>
+        {/* handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px', flexShrink: 0 }}>
           <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(26,92,53,0.2)' }} />
         </div>
 
-        {/* 이미지 */}
-        {photo ? (
-          <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden' }}>
-            <img
-              src={photo}
-              alt={court.court_name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
-              draggable={false}
-            />
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.5) 100%)',
-            }} />
-            <button
-              onClick={onClose}
-              style={{
-                position: 'absolute', top: 14, right: 14, zIndex: 10,
-                width: 34, height: 34, borderRadius: '50%', border: 'none',
-                background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <X style={{ width: 16, height: 16, color: '#fff' }} />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute', top: 14, right: 14, zIndex: 10,
-              width: 34, height: 34, borderRadius: '50%', border: 'none',
-              background: 'rgba(26,92,53,0.15)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <X style={{ width: 16, height: 16, color: P }} />
-          </button>
-        )}
+        {/* scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
 
-        <div style={{ padding: '14px 16px 0' }}>
+          {/* photo */}
+          {photo ? (
+            <div style={{ position: 'relative', margin: '4px 14px 0', borderRadius: 20, overflow: 'hidden' }}>
+              <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', borderRadius: 20 }}>
+                <img
+                  src={photo}
+                  alt={court.court_name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+                  draggable={false}
+                />
+              </div>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: 20, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.58) 100%)', pointerEvents: 'none' }} />
 
-          {/* 코트 기본 정보 카드 */}
-          <div style={{
-            background: '#fff', borderRadius: 20, padding: '16px 18px',
-            boxShadow: '0 2px 12px rgba(26,92,53,0.08)', border: `1px solid ${L}`,
-            marginBottom: 10,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
-                  {isClosed && <span style={{ background: '#FEE2E2', color: '#DC2626', borderRadius: 99, padding: '2px 9px', fontSize: 10, fontWeight: 700 }}>마감</span>}
-                  {isClosingSoon && !isClosed && <span style={{ background: '#FEF3C7', color: '#D97706', borderRadius: 99, padding: '2px 9px', fontSize: 10, fontWeight: 700 }}>마감 임박</span>}
-                  {court.format && <span style={{ background: L, color: P, borderRadius: 99, padding: '2px 9px', fontSize: 10, fontWeight: 600 }}>{court.format}</span>}
-                  {court.match_type && <span style={{ background: L, color: M, borderRadius: 99, padding: '2px 9px', fontSize: 10, fontWeight: 600 }}>{court.match_type}</span>}
+              {/* name overlay */}
+              <div style={{ position: 'absolute', bottom: 14, left: 16, zIndex: 2 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 5 }}>
+                  {isClosed && <span style={{ background: 'rgba(239,68,68,0.85)', color: WH, borderRadius: 99, padding: '2px 9px', fontSize: 10, fontWeight: 700 }}>마감</span>}
+                  {isClosingSoon && !isClosed && <span style={{ background: 'rgba(245,158,11,0.85)', color: WH, borderRadius: 99, padding: '2px 9px', fontSize: 10, fontWeight: 700 }}>마감 임박</span>}
+                  {court.format && <span style={{ background: `rgba(108,191,108,0.22)`, color: A, borderRadius: 99, padding: '2px 9px', fontSize: 10, fontWeight: 600, backdropFilter: 'blur(4px)', border: '1px solid rgba(108,191,108,0.3)' }}>{court.format}</span>}
                 </div>
-                <h1 style={{ margin: 0, fontWeight: 800, fontSize: 20, color: T, letterSpacing: '-0.03em', lineHeight: 1.25 }}>
+                <h1 style={{ margin: 0, fontWeight: 800, fontSize: 22, color: WH, letterSpacing: '-0.03em', lineHeight: 1.2, textShadow: '0 1px 8px rgba(0,0,0,0.45)' }}>
                   {court.court_name}
                 </h1>
+                {court.start_time && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
+                    <Clock style={{ width: 12, height: 12, color: 'rgba(255,255,255,0.8)' }} />
+                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', fontWeight: 700, textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                      {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
+                    </span>
+                  </div>
+                )}
               </div>
+
+              {/* close btn */}
+              <button
+                onClick={onClose}
+                style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                <X style={{ width: 16, height: 16, color: WH }} />
+              </button>
+
+              {/* fee badge */}
               {court.court_fee != null && court.court_fee >= 0 && (
-                <div style={{
-                  flexShrink: 0,
-                  background: 'rgba(184,149,58,0.1)', color: G,
-                  border: '1.5px solid rgba(184,149,58,0.35)',
-                  borderRadius: 12, padding: '6px 12px',
-                  textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(184,149,58,0.7)', letterSpacing: '0.04em', marginBottom: 1 }}>매칭비</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{fmtFee(court.court_fee)}</div>
+                <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(8px)', borderRadius: 10, padding: '5px 10px', border: '1px solid rgba(184,149,58,0.4)' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(184,149,58,0.85)', fontWeight: 600, letterSpacing: '0.04em' }}>매칭비</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: G, lineHeight: 1 }}>{fmtFee(court.court_fee)}</div>
                 </div>
               )}
             </div>
+          ) : (
+            <div style={{ position: 'relative', margin: '4px 14px 0' }}>
+              <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 20, background: `linear-gradient(135deg,${P},${P2})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: WH, fontSize: 52, fontWeight: 700, opacity: 0.35 }}>🎾</span>
+              </div>
+              <button
+                onClick={onClose}
+                style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'rgba(26,92,53,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                <X style={{ width: 16, height: 16, color: WH }} />
+              </button>
+            </div>
+          )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {court.date && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Calendar style={{ width: 13, height: 13, color: P }} />
+          <div style={{ padding: '14px 14px 0' }}>
+
+            {/* 코트 기본 정보 */}
+            <InfoCard style={{ marginBottom: 10 }}>
+              <SectionHead label="코트 정보" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {court.court_name && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 9, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <MapPin style={{ width: 14, height: 14, color: P }} />
+                    </div>
+                    <span style={{ fontSize: 14, color: T, fontWeight: 600 }}>{court.court_name}</span>
                   </div>
-                  <span style={{ fontSize: 13, color: T, fontWeight: 600 }}>{fmtDate(court.date)}</span>
-                </div>
-              )}
-              {court.start_time && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Clock style={{ width: 13, height: 13, color: P }} />
+                )}
+                {court.date && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 9, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Calendar style={{ width: 14, height: 14, color: P }} />
+                    </div>
+                    <span style={{ fontSize: 14, color: T, fontWeight: 600 }}>{fmtDateLong(court.date)}</span>
                   </div>
-                  <span style={{ fontSize: 14, color: T, fontWeight: 700 }}>
-                    {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
+                )}
+                {court.start_time && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 9, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Clock style={{ width: 14, height: 14, color: P }} />
+                    </div>
+                    <span style={{ fontSize: 14, color: T, fontWeight: 700 }}>{court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}</span>
+                  </div>
+                )}
+                {court.location && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 9, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <MapPin style={{ width: 14, height: 14, color: A }} />
+                    </div>
+                    <span style={{ fontSize: 13, color: M }}>{court.location}</span>
+                  </div>
+                )}
+              </div>
+              {court.court_fee != null && court.court_fee >= 0 && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${L}` }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(184,149,58,0.1)', border: '1px solid rgba(184,149,58,0.28)', color: G, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
+                    💳 매칭비 {fmtFee(court.court_fee)}
                   </span>
                 </div>
               )}
-              {court.location && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <MapPin style={{ width: 13, height: 13, color: P }} />
+            </InfoCard>
+
+            {/* 모집 현황 */}
+            {hasSlotsInfo && (
+              <InfoCard style={{ marginBottom: 10 }}>
+                <SectionHead label="모집 현황" />
+                {isClosed ? (
+                  <div style={{ background: '#FEE2E2', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: '#DC2626' }}>모집이 마감되었습니다</span>
                   </div>
-                  <span style={{ fontSize: 13, color: M }}>{court.location}</span>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                        <span style={{ fontWeight: 900, fontSize: 34, color: P, letterSpacing: '-0.04em', lineHeight: 1 }}>{confirmedCount}</span>
+                        <span style={{ fontSize: 15, color: M, fontWeight: 500 }}>/ {total}명</span>
+                      </div>
+                      {remain > 0 && (
+                        <span style={{
+                          background: remain <= 1 ? '#FEE2E2' : L,
+                          color: remain <= 1 ? '#DC2626' : P,
+                          border: `1.5px solid ${remain <= 1 ? '#FCA5A5' : 'rgba(108,191,108,0.5)'}`,
+                          borderRadius: 99, padding: '5px 14px', fontSize: 13, fontWeight: 800,
+                        }}>
+                          {remain}명 남음
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ height: 8, background: L, borderRadius: 99, overflow: 'hidden', marginBottom: 12 }}>
+                      <div style={{
+                        height: '100%', width: `${Math.min(fill * 100, 100)}%`, borderRadius: 99,
+                        background: fill >= 0.8 ? 'linear-gradient(90deg,#EF4444,#F87171)' : `linear-gradient(90deg,${P},${A})`,
+                        transition: 'width 0.4s',
+                      }} />
+                    </div>
+                    {tm > 0 && tf > 0 && (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {[
+                          { label: '남성', confirmed: cm, total: tm, remain: rm, color: '#4A90D9', bg: 'rgba(74,144,217,0.07)', border: 'rgba(74,144,217,0.2)' },
+                          { label: '여성', confirmed: cf, total: tf, remain: rf, color: '#E57A8A', bg: 'rgba(229,122,138,0.07)', border: 'rgba(229,122,138,0.2)' },
+                        ].map((s) => (
+                          <div key={s.label} style={{ flex: 1, background: s.bg, border: `1px solid ${s.border}`, borderRadius: 14, padding: '12px 14px' }}>
+                            <div style={{ fontSize: 11, color: s.color, fontWeight: 600, marginBottom: 4 }}>{s.label}</div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                              <span style={{ fontWeight: 800, fontSize: 22, color: s.color }}>{s.confirmed}</span>
+                              <span style={{ fontSize: 12, color: M }}>/ {s.total}명</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: s.remain <= 0 ? '#DC2626' : s.color, fontWeight: 700, marginTop: 3 }}>
+                              {s.remain <= 0 ? '마감' : `${s.remain}명 남음`}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </InfoCard>
+            )}
+
+            {/* 호스트 */}
+            {profile && (
+              <InfoCard style={{ marginBottom: 10 }}>
+                <SectionHead label="호스트" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: BG, borderRadius: 14, padding: '12px 14px', border: `1px solid ${L}` }}>
+                  <Avatar src={profile.tennis_photo_url || profile.photo_url} name={profile.name} size={52} border={`2.5px solid ${A}`} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                      <span style={{ fontWeight: 700, fontSize: 15, color: T }}>{profile.name}</span>
+                      <span style={{ background: `linear-gradient(135deg,${P},${P2})`, color: WH, borderRadius: 99, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>호스트</span>
+                    </div>
+                    {profile.experience && <div style={{ fontSize: 12, color: M }}>구력 {profile.experience}</div>}
+                    {profile.tennis_style && <div style={{ fontSize: 11, color: A, fontWeight: 600, marginTop: 2 }}>{profile.tennis_style}</div>}
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
+              </InfoCard>
+            )}
 
-          {/* 모집 현황 */}
-          {hasSlotsInfo && (
-            <div style={{
-              background: '#fff', borderRadius: 20, padding: '16px 18px',
-              boxShadow: '0 2px 12px rgba(26,92,53,0.08)', border: `1px solid ${L}`,
-              marginBottom: 10,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
-                <Users style={{ width: 14, height: 14, color: P }} />
-                <span style={{ fontWeight: 700, fontSize: 14, color: T }}>모집 현황</span>
+            {/* 확정 참여자 */}
+            <InfoCard style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                <div style={{ width: 3, height: 15, borderRadius: 2, background: `linear-gradient(180deg,${P},${A})` }} />
+                <span style={{ fontWeight: 700, fontSize: 14, color: T }}>확정 참여자</span>
+                {!loadingParticipants && (
+                  <span style={{ background: L, color: P, borderRadius: 99, padding: '1px 8px', fontSize: 11, fontWeight: 700, marginLeft: 2 }}>{confirmedProfiles.length}명</span>
+                )}
               </div>
-
-              {isClosed ? (
-                <div style={{ background: '#FEE2E2', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
-                  <span style={{ fontWeight: 700, fontSize: 14, color: '#DC2626' }}>모집이 마감되었습니다</span>
+              {loadingParticipants ? (
+                <div style={{ padding: '12px 0', textAlign: 'center' }}>
+                  <span style={{ fontSize: 13, color: M }}>불러오는 중...</span>
+                </div>
+              ) : confirmedProfiles.length === 0 ? (
+                <div style={{ background: BG, borderRadius: 12, padding: '14px', textAlign: 'center', border: `1px solid ${L}` }}>
+                  <Users style={{ width: 20, height: 20, color: A, opacity: 0.45, margin: '0 auto 6px' }} />
+                  <span style={{ fontSize: 13, color: M }}>아직 확정된 참여자가 없습니다</span>
                 </div>
               ) : (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                      <span style={{ fontWeight: 900, fontSize: 36, color: P, letterSpacing: '-0.04em', lineHeight: 1 }}>{confirmed}</span>
-                      <span style={{ fontSize: 16, color: M, fontWeight: 500 }}>/ {total}명</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {confirmedProfiles.map((p, idx) => (
+                    <div key={p.user_id || idx} style={{ display: 'flex', alignItems: 'center', gap: 12, background: BG, borderRadius: 12, padding: '10px 12px', border: `1px solid ${L}` }}>
+                      <Avatar src={p.tennis_photo_url || p.photo_url} name={p.name} size={42} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: T }}>{p.name}</span>
+                        {p.experience && <div style={{ fontSize: 12, color: M, marginTop: 2 }}>구력 {p.experience}</div>}
+                        {p.tennis_style && <div style={{ fontSize: 11, color: A, fontWeight: 600, marginTop: 2 }}>{p.tennis_style}</div>}
+                      </div>
                     </div>
-                    {remain > 0 && (
-                      <span style={{
-                        background: remain <= 1 ? '#FEE2E2' : L,
-                        color: remain <= 1 ? '#DC2626' : P,
-                        border: `1.5px solid ${remain <= 1 ? '#FCA5A5' : 'rgba(108,191,108,0.5)'}`,
-                        borderRadius: 99, padding: '5px 14px', fontSize: 13, fontWeight: 800,
-                      }}>
-                        {remain}명 남음
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ height: 8, background: L, borderRadius: 99, overflow: 'hidden', marginBottom: 12 }}>
-                    <div style={{
-                      height: '100%', width: `${Math.min(fill * 100, 100)}%`, borderRadius: 99,
-                      background: fill >= 0.8 ? 'linear-gradient(90deg,#EF4444,#F87171)' : `linear-gradient(90deg,${P},${A})`,
-                      transition: 'width 0.4s',
-                    }} />
-                  </div>
-                  {tm > 0 && tf > 0 && (
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {[
-                        { label: '남성', confirmed: cm, total: tm, remain: rm, color: '#4A90D9', bg: 'rgba(74,144,217,0.07)', border: 'rgba(74,144,217,0.2)' },
-                        { label: '여성', confirmed: cf, total: tf, remain: rf, color: '#E57A8A', bg: 'rgba(229,122,138,0.07)', border: 'rgba(229,122,138,0.2)' },
-                      ].map((s) => (
-                        <div key={s.label} style={{ flex: 1, background: s.bg, border: `1px solid ${s.border}`, borderRadius: 14, padding: '10px 14px' }}>
-                          <div style={{ fontSize: 11, color: s.color, fontWeight: 600, marginBottom: 4 }}>{s.label}</div>
-                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                            <span style={{ fontWeight: 800, fontSize: 22, color: s.color }}>{s.confirmed}</span>
-                            <span style={{ fontSize: 12, color: M }}>/ {s.total}명</span>
-                          </div>
-                          <div style={{ fontSize: 11, color: s.remain <= 0 ? '#DC2626' : s.color, fontWeight: 700, marginTop: 3 }}>
-                            {s.remain <= 0 ? '마감' : `${s.remain}명 남음`}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* 호스트 */}
-          {hostProfile && (
-            <div style={{
-              background: '#fff', borderRadius: 20, padding: '16px 18px',
-              boxShadow: '0 2px 12px rgba(26,92,53,0.08)', border: `1px solid ${L}`,
-              marginBottom: 10,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-                <div style={{ width: 4, height: 16, borderRadius: 2, background: `linear-gradient(180deg,${P},${A})` }} />
-                <span style={{ fontWeight: 700, fontSize: 14, color: T }}>호스트</span>
-              </div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                background: BG, borderRadius: 14, padding: '12px 14px',
-                border: `1px solid ${L}`,
-              }}>
-                <Avatar
-                  src={hostProfile.tennis_photo_url || hostProfile.photo_url}
-                  name={hostProfile.name}
-                  size={48}
-                  border={`2px solid ${A}`}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <span style={{ fontWeight: 700, fontSize: 15, color: T }}>{hostProfile.name}</span>
-                    <span style={{
-                      background: `linear-gradient(135deg,${P},#2D7A4A)`, color: '#fff',
-                      borderRadius: 99, padding: '1px 7px', fontSize: 10, fontWeight: 700,
-                    }}>호스트</span>
-                  </div>
-                  {hostProfile.experience && (
-                    <div style={{ fontSize: 12, color: M }}>구력 {hostProfile.experience}</div>
-                  )}
-                  {hostProfile.tennis_style && (
-                    <div style={{ fontSize: 11, color: A, fontWeight: 600, marginTop: 2 }}>{hostProfile.tennis_style}</div>
-                  )}
+                  ))}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* 확정 참여자 */}
-          <div style={{
-            background: '#fff', borderRadius: 20, padding: '16px 18px',
-            boxShadow: '0 2px 12px rgba(26,92,53,0.08)', border: `1px solid ${L}`,
-            marginBottom: 10,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-              <div style={{ width: 4, height: 16, borderRadius: 2, background: `linear-gradient(180deg,${A},${P})` }} />
-              <span style={{ fontWeight: 700, fontSize: 14, color: T }}>확정 참여자</span>
-              {!loadingParticipants && (
-                <span style={{
-                  background: L, color: P, borderRadius: 99,
-                  padding: '1px 8px', fontSize: 11, fontWeight: 700, marginLeft: 2,
-                }}>{confirmedProfiles.length}명</span>
               )}
-            </div>
+            </InfoCard>
 
-            {loadingParticipants ? (
-              <div style={{ padding: '12px 0', textAlign: 'center' }}>
-                <span style={{ fontSize: 13, color: M }}>불러오는 중...</span>
-              </div>
-            ) : confirmedProfiles.length === 0 ? (
-              <div style={{
-                background: BG, borderRadius: 12, padding: '16px',
-                textAlign: 'center', border: `1px solid ${L}`,
-              }}>
-                <span style={{ fontSize: 13, color: M }}>아직 확정된 참여자가 없습니다</span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {confirmedProfiles.map((p, idx) => (
-                  <div key={p.user_id || idx} style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    background: BG, borderRadius: 12, padding: '10px 12px',
-                    border: `1px solid ${L}`,
-                  }}>
-                    <Avatar
-                      src={p.tennis_photo_url || p.photo_url}
-                      name={p.name}
-                      size={42}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: T }}>{p.name}</span>
-                      {p.experience && (
-                        <div style={{ fontSize: 12, color: M, marginTop: 2 }}>구력 {p.experience}</div>
-                      )}
-                      {p.tennis_style && (
-                        <div style={{ fontSize: 11, color: A, fontWeight: 600, marginTop: 2 }}>{p.tennis_style}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+            {/* 호스트 한마디 */}
+            {(court.court_intro || court.description) && (
+              <InfoCard style={{ marginBottom: 10 }}>
+                <SectionHead label="호스트 한마디" />
+                <p style={{ margin: 0, fontSize: 14, color: '#3D5244', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                  {court.court_intro || court.description}
+                </p>
+              </InfoCard>
+            )}
+
+            {/* 구력 조건 */}
+            {court.experience_wanted && (
+              <div style={{ background: L, borderRadius: 14, padding: '11px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 9, border: '1px solid rgba(108,191,108,0.35)' }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: A, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: P, fontWeight: 600 }}>구력 조건: {court.experience_wanted}</span>
               </div>
             )}
-          </div>
 
-          {/* 호스트 한마디 */}
-          {(court.court_intro || court.description) && (
-            <div style={{
-              background: '#fff', borderRadius: 20, padding: '16px 18px',
-              boxShadow: '0 2px 12px rgba(26,92,53,0.08)', border: `1px solid ${L}`,
-              marginBottom: 10,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
-                <div style={{ width: 4, height: 16, borderRadius: 2, background: `linear-gradient(180deg,${P},${A})` }} />
-                <span style={{ fontWeight: 700, fontSize: 14, color: T }}>호스트 한마디</span>
-              </div>
-              <p style={{ margin: 0, fontSize: 14, color: T, lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
-                {court.court_intro || court.description}
-              </p>
-            </div>
-          )}
-
-          {/* 구력 조건 */}
-          {court.experience_wanted && (
-            <div style={{
-              background: L, borderRadius: 14, padding: '11px 16px', marginBottom: 10,
-              display: 'flex', alignItems: 'center', gap: 9,
-              border: '1px solid rgba(108,191,108,0.35)',
-            }}>
-              <div style={{ width: 7, height: 7, borderRadius: '50%', background: A, flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: P, fontWeight: 600 }}>구력 조건: {court.experience_wanted}</span>
-            </div>
-          )}
-
-          {/* 소유자 액션 */}
-          {isOwner && (
-            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-              <button
-                onClick={() => { onClose(); onEdit?.(); }}
-                style={{
-                  flex: 1, padding: '13px', borderRadius: 14, border: `1.5px solid ${L}`,
-                  background: '#fff', color: P, fontWeight: 700, fontSize: 13,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}
-              >
-                <Pencil style={{ width: 13, height: 13 }} />수정하기
-              </button>
-              <button
-                onClick={() => { onClose(); onDelete?.(); }}
-                style={{
-                  flex: 1, padding: '13px', borderRadius: 14, border: '1.5px solid #FCA5A5',
-                  background: '#FFF5F5', color: '#DC2626', fontWeight: 700, fontSize: 13,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}
-              >
-                <Trash2 style={{ width: 13, height: 13 }} />삭제하기
-              </button>
-            </div>
-          )}
-
-          {/* CTA */}
-          {onApply && (
-            <div style={{ marginBottom: 4 }}>
-              {isClosed ? (
-                <div style={{ padding: '16px', borderRadius: 18, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.2)` }}>
-                  <span style={{ fontWeight: 600, fontSize: 14, color: M }}>이 코트는 모집이 마감되었어요</span>
-                </div>
-              ) : (
+            {/* 소유자 액션 */}
+            {isOwner && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 <button
-                  onClick={() => { onClose(); onApply(); }}
-                  style={{
-                    width: '100%', padding: '17px', borderRadius: 18, border: 'none',
-                    background: `linear-gradient(135deg,${A},${P})`,
-                    color: '#fff', fontWeight: 800, fontSize: 16, letterSpacing: '0.02em',
-                    cursor: 'pointer', boxShadow: '0 6px 20px rgba(26,92,53,0.35)',
-                  }}
-                  onMouseDown={(e) => (e.currentTarget.style.opacity = '0.9')}
-                  onMouseUp={(e) => (e.currentTarget.style.opacity = '1')}
-                  onTouchStart={(e) => (e.currentTarget.style.opacity = '0.9')}
-                  onTouchEnd={(e) => (e.currentTarget.style.opacity = '1')}
+                  onClick={() => { onClose(); onEdit?.(); }}
+                  style={{ flex: 1, padding: '13px', borderRadius: 14, border: `1.5px solid ${L}`, background: WH, color: P, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                 >
-                  참여 신청하기
+                  <Pencil style={{ width: 13, height: 13 }} />수정하기
                 </button>
-              )}
-            </div>
-          )}
+                <button
+                  onClick={() => { onClose(); onDelete?.(); }}
+                  style={{ flex: 1, padding: '13px', borderRadius: 14, border: '1.5px solid #FCA5A5', background: '#FFF5F5', color: '#DC2626', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                >
+                  <Trash2 style={{ width: 13, height: 13 }} />삭제하기
+                </button>
+              </div>
+            )}
+
+          </div>
         </div>
+
+        {/* Fixed CTA */}
+        {onApply && (
+          <div style={{ flexShrink: 0, padding: '10px 14px', paddingBottom: 'max(env(safe-area-inset-bottom),14px)', background: BG, borderTop: `1px solid ${L}`, zIndex: 20 }}>
+            {isClosed ? (
+              <div style={{ padding: '16px', borderRadius: 18, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.2)` }}>
+                <span style={{ fontWeight: 600, fontSize: 14, color: M }}>이 코트는 모집이 마감되었어요</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => { onClose(); onApply(); }}
+                style={{ width: '100%', padding: '17px', borderRadius: 18, border: 'none', background: `linear-gradient(135deg,${A},${P})`, color: WH, fontWeight: 800, fontSize: 16, letterSpacing: '0.02em', cursor: 'pointer', boxShadow: '0 6px 20px rgba(26,92,53,0.35)' }}
+                onPointerDown={(e) => (e.currentTarget.style.opacity = '0.9')}
+                onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
+              >
+                참여 신청하기
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -522,201 +466,168 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
   const cm = court.confirmed_male_slots ?? 0;
   const cf = court.confirmed_female_slots ?? 0;
   const total = tm + tf;
-  const confirmed = cm + cf;
-  const remain = Math.max(0, total - confirmed);
+  const confirmedCount = cm + cf;
+  const remain = Math.max(0, total - confirmedCount);
   const rm = Math.max(0, tm - cm);
   const rf = Math.max(0, tf - cf);
   const hasSlotsInfo = total > 0;
-  const fill = hasSlotsInfo ? confirmed / total : 0;
-
-  const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+  const fill = hasSlotsInfo ? confirmedCount / total : 0;
 
   return (
     <>
       <div
         className="select-none"
-        style={{
-          background: '#fff',
-          borderRadius: 20,
-          boxShadow: '0 2px 16px rgba(26,92,53,0.09), 0 1px 3px rgba(0,0,0,0.04)',
-          border: `1px solid ${L}`,
-          overflow: 'hidden',
-          cursor: 'pointer',
-        }}
+        style={{ background: WH, borderRadius: 24, boxShadow: '0 4px 22px rgba(26,92,53,0.09), 0 1px 3px rgba(0,0,0,0.04)', border: `1px solid ${L}`, overflow: 'hidden', cursor: 'pointer' }}
         onClick={() => setDetailOpen(true)}
       >
-        {/* 딥그린 헤더 */}
-        <div style={{ background: `linear-gradient(135deg,${P} 0%,#2D7A4A 100%)`, padding: '14px 16px 12px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-
-            {/* 왼쪽: 소유자 버튼 + 코트명 */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {isOwner && (
-                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
-                    style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Pencil style={{ width: 12, height: 12, color: '#fff' }} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
-                    style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,100,100,0.3)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Trash2 style={{ width: 12, height: 12, color: '#ffaaaa' }} />
-                  </button>
-                </div>
-              )}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 5 }}>
-                {isClosed && (
-                  <span style={{ background: 'rgba(255,80,80,0.22)', color: '#ffaaaa', borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>마감</span>
-                )}
-                {isClosingSoon && !isClosed && (
-                  <span style={{ background: 'rgba(255,200,50,0.2)', color: '#FFD060', borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>마감 임박</span>
-                )}
-                {court.format && (
-                  <span style={{ background: 'rgba(108,191,108,0.2)', color: A, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 600 }}>{court.format}</span>
-                )}
-                {court.match_type && (
-                  <span style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)', borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 600 }}>{court.match_type}</span>
-                )}
-              </div>
-              <h2 style={{
-                color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: '-0.03em',
-                lineHeight: 1.2, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {court.court_name}
-              </h2>
-              {court.start_time && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
-                  <Clock style={{ width: 12, height: 12, color: A, flexShrink: 0 }} />
-                  <span style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 700, fontSize: 14 }}>
-                    {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* 오른쪽: 가격 pill */}
-            {court.court_fee != null && court.court_fee >= 0 && (
-              <div style={{
-                flexShrink: 0, alignSelf: 'flex-start',
-                background: 'rgba(184,149,58,0.15)',
-                border: '1.5px solid rgba(184,149,58,0.4)',
-                borderRadius: 12, padding: '6px 10px',
-                textAlign: 'center', minWidth: 56,
-              }}>
-                <div style={{ fontSize: 9, color: 'rgba(184,149,58,0.8)', fontWeight: 600, letterSpacing: '0.04em', marginBottom: 1 }}>매칭비</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: G, lineHeight: 1, whiteSpace: 'nowrap' }}>
-                  {fmtFee(court.court_fee)}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 인원 현황 */}
-        {hasSlotsInfo && (
-          <div style={{ padding: '11px 16px', borderBottom: `1px solid ${L}` }}>
-            {isClosed ? (
-              <div style={{ background: 'rgba(185,50,50,0.06)', border: '1px solid rgba(185,50,50,0.15)', borderRadius: 10, padding: '8px 12px', textAlign: 'center' }}>
-                <span style={{ fontWeight: 700, fontSize: 13, color: '#B03030' }}>모집 마감</span>
-              </div>
-            ) : (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Users style={{ width: 13, height: 13, color: P }} />
-                    <span style={{ fontSize: 11, color: M, fontWeight: 600 }}>현재 인원</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                    <span style={{ fontWeight: 900, fontSize: 20, color: P, letterSpacing: '-0.03em' }}>{confirmed}</span>
-                    <span style={{ fontSize: 13, color: M }}>/ {total}명</span>
-                    {remain > 0 && (
-                      <span style={{
-                        marginLeft: 5,
-                        background: remain <= 1 ? 'rgba(239,68,68,0.1)' : 'rgba(108,191,108,0.15)',
-                        color: remain <= 1 ? '#DC2626' : P,
-                        border: `1px solid ${remain <= 1 ? 'rgba(239,68,68,0.25)' : 'rgba(108,191,108,0.35)'}`,
-                        borderRadius: 99, padding: '1px 8px', fontSize: 11, fontWeight: 700,
-                      }}>{remain}명 남음</span>
-                    )}
-                  </div>
-                </div>
-                <div style={{ height: 6, background: L, borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', width: `${Math.min(fill * 100, 100)}%`, borderRadius: 99,
-                    background: fill >= 0.8 ? 'linear-gradient(90deg,#ef4444,#f87171)' : `linear-gradient(90deg,${P},${A})`,
-                    transition: 'width 0.4s',
-                  }} />
-                </div>
-                {tm > 0 && tf > 0 && (
-                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: L, borderRadius: 8, padding: '4px 10px' }}>
-                      <span style={{ fontSize: 11, color: '#4A90D9', fontWeight: 600 }}>남 {cm}/{tm}</span>
-                      <span style={{ fontSize: 11, color: rm <= 0 ? '#B03030' : P, fontWeight: 700 }}>{rm <= 0 ? '마감' : `${rm}명`}</span>
-                    </div>
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: L, borderRadius: 8, padding: '4px 10px' }}>
-                      <span style={{ fontSize: 11, color: '#E57A8A', fontWeight: 600 }}>여 {cf}/{tf}</span>
-                      <span style={{ fontSize: 11, color: rf <= 0 ? '#B03030' : P, fontWeight: 700 }}>{rf <= 0 ? '마감' : `${rf}명`}</span>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+        {/* owner actions */}
+        {isOwner && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, padding: '11px 13px 0' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+              style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(26,92,53,0.09)', border: `1px solid ${L}`, cursor: 'pointer' }}
+            >
+              <Pencil style={{ width: 12, height: 12, color: P }} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
+              style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.18)', cursor: 'pointer' }}
+            >
+              <Trash2 style={{ width: 12, height: 12, color: '#F87171' }} />
+            </button>
           </div>
         )}
 
-        {/* 하단: 날짜/위치 + 프로필 썸네일 + 상세보기 */}
-        <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 0 }}>
+        {/* main photo */}
+        <div style={{ position: 'relative', margin: isOwner ? '8px 12px 0' : '12px 12px 0', borderRadius: 18, overflow: 'hidden' }}>
+          {photo ? (
+            <>
+              <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', borderRadius: 18 }}>
+                <img
+                  src={photo}
+                  alt={court.court_name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
+                  draggable={false}
+                />
+              </div>
+
+              {/* gradient */}
+              <div style={{ position: 'absolute', inset: 0, borderRadius: 18, background: 'linear-gradient(to bottom,transparent 38%,rgba(0,0,0,0.72) 100%)', pointerEvents: 'none' }} />
+
+              {/* name + badges */}
+              <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, zIndex: 2 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
+                  {isClosed && <span style={{ background: 'rgba(239,68,68,0.85)', color: WH, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>마감</span>}
+                  {isClosingSoon && !isClosed && <span style={{ background: 'rgba(245,158,11,0.85)', color: WH, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>마감 임박</span>}
+                  {court.format && <span style={{ background: 'rgba(108,191,108,0.22)', color: A, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 600, backdropFilter: 'blur(4px)', border: '1px solid rgba(108,191,108,0.3)' }}>{court.format}</span>}
+                  {court.match_type && <span style={{ background: 'rgba(255,255,255,0.15)', color: WH, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 600, backdropFilter: 'blur(4px)' }}>{court.match_type}</span>}
+                </div>
+                <h2 style={{ margin: 0, fontWeight: 800, fontSize: 20, color: WH, letterSpacing: '-0.03em', lineHeight: 1.2, textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
+                  {court.court_name}
+                </h2>
+                {court.start_time && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
+                    <Clock style={{ width: 12, height: 12, color: A }} />
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.92)', fontWeight: 700 }}>
+                      {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* fee badge top-right */}
+              {court.court_fee != null && court.court_fee >= 0 && (
+                <div style={{ position: 'absolute', top: 11, right: 11, zIndex: 3, background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(6px)', borderRadius: 10, padding: '4px 8px', border: '1px solid rgba(184,149,58,0.35)' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(184,149,58,0.85)', fontWeight: 600, letterSpacing: '0.04em' }}>매칭비</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: G, lineHeight: 1 }}>{fmtFee(court.court_fee)}</div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 18, background: `linear-gradient(135deg,${P},${P2})`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+              <span style={{ color: WH, fontSize: 52, fontWeight: 700, opacity: 0.35 }}>🎾</span>
+              <span style={{ color: WH, fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', opacity: 0.9, textAlign: 'center', padding: '0 20px' }}>{court.court_name}</span>
+            </div>
+          )}
+        </div>
+
+        {/* info strip */}
+        <div style={{ padding: '12px 14px 14px' }}>
+
+          {/* meta row */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
             {court.date && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Calendar style={{ width: 12, height: 12, color: M, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: M }}>{fmtDate(court.date)}</span>
+                <Calendar style={{ width: 11, height: 11, color: A }} />
+                <span style={{ fontSize: 12, color: M }}>{fmtDate(court.date)}</span>
               </div>
             )}
             {court.location && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <MapPin style={{ width: 12, height: 12, color: M, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, color: M, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{court.location}</span>
+                <MapPin style={{ width: 11, height: 11, color: A }} />
+                <span style={{ fontSize: 12, color: M, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{court.location}</span>
               </div>
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            {/* 호스트 아바타 */}
-            {photo ? (
-              <Avatar src={photo} name={profile?.name} size={32} />
-            ) : (
-              <Avatar name={profile?.name || 'T'} size={32} />
+          {/* slots + fee pills */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {hasSlotsInfo && !isClosed && (
+              <>
+                {tm > 0 && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(74,144,217,0.08)', border: '1px solid rgba(74,144,217,0.18)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: '#4A90D9', fontWeight: 600 }}>
+                    남 {rm <= 0 ? '마감' : `${rm}명`}
+                  </span>
+                )}
+                {tf > 0 && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(229,122,138,0.08)', border: '1px solid rgba(229,122,138,0.18)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: '#E57A8A', fontWeight: 600 }}>
+                    여 {rf <= 0 ? '마감' : `${rf}명`}
+                  </span>
+                )}
+                {total > 0 && tm === 0 && tf === 0 && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', background: L, border: `1px solid rgba(108,191,108,0.2)`, borderRadius: 99, padding: '3px 9px', fontSize: 11, color: P, fontWeight: 600 }}>
+                    {remain}명 남음
+                  </span>
+                )}
+              </>
             )}
+            {isClosed && (
+              <span style={{ background: L, border: `1px solid rgba(108,191,108,0.2)`, borderRadius: 99, padding: '3px 10px', fontSize: 11, color: M, fontWeight: 700 }}>모집 마감</span>
+            )}
+            {hasSlotsInfo && !isClosed && fill > 0 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: L, border: `1px solid rgba(108,191,108,0.22)`, borderRadius: 99, padding: '3px 10px', fontSize: 11, color: P, fontWeight: 600 }}>
+                <Users style={{ width: 10, height: 10 }} />
+                {confirmedCount}/{total}명
+              </span>
+            )}
+          </div>
 
-            {/* 상세 보기 버튼 */}
+          {/* CTA row — 2 buttons */}
+          <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={(e) => { e.stopPropagation(); setDetailOpen(true); }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                padding: '7px 12px 7px 14px', borderRadius: 12,
-                border: `1.5px solid ${L}`, background: BG,
-                color: P, fontWeight: 700, fontSize: 12,
-                cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
-              }}
+              style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: `1.5px solid ${L}`, background: BG, color: P, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
             >
               자세히 보기
               <ChevronRight style={{ width: 13, height: 13, color: A }} />
             </button>
+
+            {onApply && (
+              isClosed ? (
+                <div style={{ flex: 1.6, padding: '12px', borderRadius: 14, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.18)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontWeight: 600, fontSize: 13, color: M }}>마감</span>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onApply(); }}
+                  style={{ flex: 1.6, padding: '12px 0', borderRadius: 14, border: 'none', background: `linear-gradient(135deg,${A},${P})`, color: WH, fontWeight: 800, fontSize: 13, cursor: 'pointer', boxShadow: '0 5px 16px rgba(26,92,53,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                  onPointerDown={(e) => (e.currentTarget.style.opacity = '0.88')}
+                  onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
+                >
+                  참여 신청하기
+                </button>
+              )
+            )}
           </div>
         </div>
       </div>

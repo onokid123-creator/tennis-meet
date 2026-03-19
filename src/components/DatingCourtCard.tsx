@@ -220,12 +220,15 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
     <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ background: PAGE, borderRadius: '28px 28px 0 0', maxHeight: '94dvh', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: 'max(env(safe-area-inset-bottom),100px)', position: 'relative' }}
+        style={{ background: PAGE, borderRadius: '28px 28px 0 0', maxHeight: '94dvh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}
       >
         {/* handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px', flexShrink: 0 }}>
           <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,126,138,0.18)' }} />
         </div>
+
+        {/* ── Scrollable area ── */}
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
 
         {/* ── Image slide ── */}
         <div
@@ -467,10 +470,12 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
             </>
           )}
         </div>
+        {/* ── end scrollable area ── */}
+        </div>
 
-        {/* ── Sticky CTA ── */}
+        {/* ── Fixed CTA at bottom ── */}
         {onApply && (
-          <div style={{ position: 'sticky', bottom: 0, padding: '10px 14px max(env(safe-area-inset-bottom),12px)', background: `linear-gradient(to top,${PAGE} 72%,rgba(255,248,246,0))`, zIndex: 20 }}>
+          <div style={{ flexShrink: 0, padding: '10px 14px', paddingBottom: 'max(env(safe-area-inset-bottom),14px)', background: PAGE, borderTop: '1px solid rgba(255,126,138,0.08)', zIndex: 20 }}>
             {closed ? (
               <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#F3F4F6', border: '1px solid #E5E7EB' }}>
                 <span style={{ fontWeight: 600, fontSize: 14, color: MUTED }}>이미 마감된 모임이에요</span>
