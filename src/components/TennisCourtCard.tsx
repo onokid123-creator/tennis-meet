@@ -454,6 +454,12 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
 
   const photo = court.tennis_photo_url || profile?.tennis_photo_url || profile?.photo_url;
 
+  const hostName = profile?.name ?? court.court_name;
+  const hostGender = profile?.gender;
+  const hostExp = profile?.experience;
+  const hostFormat = court.format ?? court.match_type;
+  const genderClr = hostGender === '남성' ? '#4A90D9' : hostGender === '여성' ? '#E57A8A' : M;
+
   const tm = court.male_count ?? 0;
   const tf = court.female_count ?? 0;
   const cm = court.confirmed_male_slots ?? 0;
@@ -505,33 +511,30 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
               </div>
 
               {/* gradient */}
-              <div style={{ position: 'absolute', inset: 0, borderRadius: 18, background: 'linear-gradient(to bottom,transparent 38%,rgba(0,0,0,0.72) 100%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: 0, borderRadius: 18, background: 'linear-gradient(to bottom,transparent 42%,rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
 
-              {/* name + badges */}
+              {/* host name + gender + format + exp overlay (설레는 만남 동일 구조) */}
               <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, zIndex: 2 }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
-                  {isClosed && <span style={{ background: 'rgba(239,68,68,0.85)', color: WH, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>마감</span>}
-                  {isClosingSoon && !isClosed && <span style={{ background: 'rgba(245,158,11,0.85)', color: WH, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>마감 임박</span>}
-                  {court.format && <span style={{ background: 'rgba(108,191,108,0.22)', color: A, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 600, backdropFilter: 'blur(4px)', border: '1px solid rgba(108,191,108,0.3)' }}>{court.format}</span>}
-                  {court.match_type && <span style={{ background: 'rgba(255,255,255,0.15)', color: WH, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 600, backdropFilter: 'blur(4px)' }}>{court.match_type}</span>}
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 7 }}>
+                  <span style={{ fontWeight: 800, fontSize: 20, color: WH, letterSpacing: '-0.03em', textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>{hostName}</span>
+                  {hostGender && (
+                    <span style={{ fontSize: 12, fontWeight: 700, color: genderClr, background: 'rgba(255,255,255,0.15)', borderRadius: 99, padding: '1px 7px', backdropFilter: 'blur(4px)' }}>{hostGender}</span>
+                  )}
+                  {isClosed && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: 'rgba(239,68,68,0.85)', color: WH }}>마감</span>}
+                  {isClosingSoon && !isClosed && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: 'rgba(245,158,11,0.85)', color: WH }}>마감 임박</span>}
                 </div>
-                <h2 style={{ margin: 0, fontWeight: 800, fontSize: 20, color: WH, letterSpacing: '-0.03em', lineHeight: 1.2, textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
-                  {court.court_name}
-                </h2>
-                {court.start_time && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
-                    <Clock style={{ width: 12, height: 12, color: A }} />
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.92)', fontWeight: 700 }}>
-                      {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
-                    </span>
-                  </div>
-                )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {hostFormat && (
+                    <span style={{ background: `linear-gradient(135deg,${A},${P})`, color: WH, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{hostFormat}</span>
+                  )}
+                  {hostExp && (
+                    <span style={{ background: 'rgba(255,255,255,0.18)', color: WH, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 600, backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.2)' }}>{hostExp}</span>
+                  )}
+                </div>
               </div>
-
             </>
           ) : (
             <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 18, background: `linear-gradient(135deg,${P},${P2})`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-              <span style={{ color: WH, fontSize: 52, fontWeight: 700, opacity: 0.35 }}>🎾</span>
               <span style={{ color: WH, fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', opacity: 0.9, textAlign: 'center', padding: '0 20px' }}>{court.court_name}</span>
             </div>
           )}
@@ -540,32 +543,30 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
         {/* info strip */}
         <div style={{ padding: '12px 14px 14px' }}>
 
-          {/* meta row */}
+          {/* meta row: 코트명 / 날짜 / 시간 / 매칭비 */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
+            {court.court_name && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <MapPin style={{ width: 11, height: 11, color: A }} />
+                <span style={{ fontSize: 12, color: M, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{court.court_name}</span>
+              </div>
+            )}
             {court.date && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Calendar style={{ width: 11, height: 11, color: A }} />
                 <span style={{ fontSize: 12, color: M }}>{fmtDate(court.date)}</span>
               </div>
             )}
-            {court.start_time && !photo && (
+            {court.start_time && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Clock style={{ width: 11, height: 11, color: A }} />
                 <span style={{ fontSize: 12, color: M }}>{court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}</span>
               </div>
             )}
-            {court.location && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <MapPin style={{ width: 11, height: 11, color: A }} />
-                <span style={{ fontSize: 12, color: M, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{court.location}</span>
-              </div>
-            )}
             {court.court_fee != null && court.court_fee >= 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(184,149,58,0.1)', border: '1px solid rgba(184,149,58,0.25)', color: G, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
-                  {fmtFee(court.court_fee)}
-                </span>
-              </div>
+              <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(184,149,58,0.1)', border: '1px solid rgba(184,149,58,0.25)', color: G, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
+                {fmtFee(court.court_fee)}
+              </span>
             )}
           </div>
 
