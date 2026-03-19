@@ -167,7 +167,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
         </div>
 
         {/* scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 160 : 24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: (onApply || isOwner) ? 160 : 24 }}>
 
           {/* photo */}
           {photo ? (
@@ -400,23 +400,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
               </div>
             )}
 
-            {/* 소유자 액션 */}
-            {isOwner && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                <button
-                  onClick={() => { onClose(); onEdit?.(); }}
-                  style={{ flex: 1, padding: '13px', borderRadius: 14, border: `1.5px solid ${L}`, background: WH, color: P, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                >
-                  <Pencil style={{ width: 13, height: 13 }} />수정하기
-                </button>
-                <button
-                  onClick={() => { onClose(); onDelete?.(); }}
-                  style={{ flex: 1, padding: '13px', borderRadius: 14, border: '1.5px solid #FCA5A5', background: '#FFF5F5', color: '#DC2626', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                >
-                  <Trash2 style={{ width: 13, height: 13 }} />삭제하기
-                </button>
-              </div>
-            )}
+            {/* 소유자 액션 — fixed CTA로 이동됨 */}
 
           </div>
         </div>
@@ -424,7 +408,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
       </div>
 
       {/* Fixed CTA — BottomNav(70px) + safe-area 위에 고정 */}
-      {onApply && (
+      {(onApply || isOwner) && (
         <div style={{
           position: 'fixed',
           bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
@@ -436,13 +420,28 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
           borderTop: `1px solid ${L}`,
           boxShadow: '0 -4px 20px rgba(0,0,0,0.12)',
         }}>
-          {isClosed ? (
+          {isOwner ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => { onClose(); onEdit?.(); }}
+                style={{ flex: 1, padding: '14px', borderRadius: 16, border: `1.5px solid ${L}`, background: WH, color: P, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <Pencil style={{ width: 14, height: 14 }} />수정하기
+              </button>
+              <button
+                onClick={() => { onClose(); onDelete?.(); }}
+                style={{ flex: 1, padding: '14px', borderRadius: 16, border: '1.5px solid #FCA5A5', background: '#FFF5F5', color: '#DC2626', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              >
+                <Trash2 style={{ width: 14, height: 14 }} />삭제하기
+              </button>
+            </div>
+          ) : isClosed ? (
             <div style={{ padding: '16px', borderRadius: 18, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.2)` }}>
               <span style={{ fontWeight: 600, fontSize: 14, color: M }}>이 코트는 모집이 마감되었어요</span>
             </div>
           ) : (
             <button
-              onClick={() => { onClose(); onApply(); }}
+              onClick={() => { onClose(); onApply!(); }}
               style={{ width: '100%', padding: '18px', borderRadius: 18, border: 'none', background: `linear-gradient(135deg,${A},${P})`, color: WH, fontWeight: 800, fontSize: 16, letterSpacing: '0.02em', cursor: 'pointer', boxShadow: '0 6px 20px rgba(26,92,53,0.35)', display: 'block' }}
               onPointerDown={(e) => (e.currentTarget.style.opacity = '0.9')}
               onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}

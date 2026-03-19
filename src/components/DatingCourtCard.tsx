@@ -7,9 +7,9 @@ import {
 import { supabase } from '../lib/supabase';
 
 /* ─────────── Design tokens ─────────── */
-const PINK  = '#FF7E8A';
-const PINK2 = '#FF9EB3';
-const ROSE  = '#FFF0F3';
+const PINK  = '#C9637A';
+const PINK2 = '#D4849A';
+const ROSE  = '#FFF5F7';
 const GOLD  = '#C9A84C';
 const DARK  = '#1a1a1a';
 const MUTED = '#9CA3AF';
@@ -228,7 +228,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         </div>
 
         {/* ── Scrollable area ── */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 160 : 24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: (onApply || isOwner) ? 160 : 24 }}>
 
         {/* ── Image slide ── */}
         <div
@@ -411,17 +411,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                 )}
               </Card>
 
-              {/* 소유자 버튼 */}
-              {isOwner && (
-                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  <button onClick={() => { onClose(); onEdit?.(); }} style={{ flex: 1, padding: '13px', borderRadius: 14, border: '1.5px solid rgba(255,126,138,0.22)', background: WHITE, color: PINK, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <Pencil style={{ width: 13, height: 13 }} />수정하기
-                  </button>
-                  <button onClick={() => { onClose(); onDelete?.(); }} style={{ flex: 1, padding: '13px', borderRadius: 14, border: '1.5px solid #FCA5A5', background: '#FFF5F5', color: '#DC2626', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <Trash2 style={{ width: 13, height: 13 }} />삭제하기
-                  </button>
-                </div>
-              )}
+              {/* 소유자 버튼 — fixed CTA로 이동됨 */}
             </>
           )}
 
@@ -462,7 +452,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
 
               {/* 자기소개 */}
               {bio && (
-                <Card style={{ marginBottom: 10 }}>
+                <Card style={{ marginBottom: 16 }}>
                   <SectionHead label="자기소개" />
                   <p style={{ margin: 0, fontSize: 14, color: '#4B5563', lineHeight: 1.85, whiteSpace: 'pre-wrap' }}>{bio}</p>
                 </Card>
@@ -476,7 +466,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
       </div>
 
       {/* ── Fixed CTA — BottomNav(70px) + safe-area 위에 고정 ── */}
-      {onApply && (
+      {(onApply || isOwner) && (
         <div style={{
           position: 'fixed',
           bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
@@ -485,15 +475,24 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
           zIndex: 10000,
           padding: '12px 16px 16px',
           background: PAGE,
-          borderTop: '1px solid rgba(255,126,138,0.1)',
-          boxShadow: '0 -4px 20px rgba(255,126,138,0.1)',
+          borderTop: '1px solid rgba(234,153,166,0.18)',
+          boxShadow: '0 -4px 20px rgba(234,153,166,0.12)',
         }}>
-          {closed ? (
-            <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#F3F4F6', border: '1px solid #E5E7EB' }}>
+          {isOwner ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { onClose(); onEdit?.(); }} style={{ flex: 1, padding: '14px', borderRadius: 16, border: '1.5px solid rgba(234,153,166,0.3)', background: WHITE, color: '#B76E79', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Pencil style={{ width: 14, height: 14 }} />수정하기
+              </button>
+              <button onClick={() => { onClose(); onDelete?.(); }} style={{ flex: 1, padding: '14px', borderRadius: 16, border: '1.5px solid #FCA5A5', background: '#FFF5F5', color: '#DC2626', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Trash2 style={{ width: 14, height: 14 }} />삭제하기
+              </button>
+            </div>
+          ) : closed ? (
+            <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#FDF2F4', border: '1px solid rgba(234,153,166,0.2)' }}>
               <span style={{ fontWeight: 600, fontSize: 14, color: MUTED }}>이미 마감된 모임이에요</span>
             </div>
           ) : (
-            <PinkBtn onClick={() => { onClose(); onApply(); }}>
+            <PinkBtn onClick={() => { onClose(); onApply!(); }}>
               <Heart style={{ width: 17, height: 17, fill: WHITE, strokeWidth: 0 }} />
               이 만남, 이어가볼까요?
             </PinkBtn>

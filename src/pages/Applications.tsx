@@ -295,7 +295,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(45,10,20,0.82)', backdropFilter: 'blur(6px)' }}
+      style={{ background: 'rgba(30,10,15,0.78)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}
     >
       <div
@@ -305,7 +305,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           maxHeight: '96dvh',
           borderRadius: '28px 28px 0 0',
           overflow: 'hidden',
-          background: page === 1 ? '#000' : 'linear-gradient(180deg, #FFF8F8 0%, #FFF2F4 100%)',
+          background: page === 1 ? '#000' : 'linear-gradient(180deg, #FFF8F6 0%, #FFF4F6 100%)',
         }}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={handleTouchStart}
@@ -317,9 +317,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           style={{
             paddingTop: '14px',
             paddingBottom: '12px',
-            background: 'rgba(255,240,245,0.97)',
+            background: 'rgba(255,248,246,0.98)',
             backdropFilter: 'blur(14px)',
-            borderBottom: '1.5px solid rgba(244,63,94,0.12)',
+            borderBottom: '1.5px solid rgba(201,99,122,0.12)',
             position: 'relative',
             zIndex: 30,
           }}
@@ -328,13 +328,13 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(244,63,94,0.09)', border: '1px solid rgba(244,63,94,0.18)' }}
+            style={{ background: 'rgba(201,99,122,0.09)', border: '1px solid rgba(201,99,122,0.18)' }}
           >
-            <X className="w-4 h-4" style={{ color: '#B83050' }} />
+            <X className="w-4 h-4" style={{ color: '#C9637A' }} />
           </button>
 
           {/* 탭 버튼 — 중앙 */}
-          <div className="flex gap-0 rounded-2xl p-1" style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.14)' }}>
+          <div className="flex gap-0 rounded-2xl p-1" style={{ background: 'rgba(201,99,122,0.07)', border: '1px solid rgba(201,99,122,0.14)' }}>
             <button
               onClick={(e) => { e.stopPropagation(); setPage(1); }}
               className="rounded-xl transition-all duration-200"
@@ -342,9 +342,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 padding: '7px 22px',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: page === 1 ? '#fff' : 'rgba(184,48,80,0.45)',
-                background: page === 1 ? 'linear-gradient(135deg,#F43F5E,#C0556E)' : 'transparent',
-                boxShadow: page === 1 ? '0 2px 12px rgba(244,63,94,0.4)' : 'none',
+                color: page === 1 ? '#fff' : 'rgba(201,99,122,0.45)',
+                background: page === 1 ? 'linear-gradient(135deg,#C9637A,#D4849A)' : 'transparent',
+                boxShadow: page === 1 ? '0 2px 12px rgba(201,99,122,0.35)' : 'none',
                 letterSpacing: '0.03em',
                 border: 'none',
                 cursor: 'pointer',
@@ -359,9 +359,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 padding: '7px 22px',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: page === 2 ? '#C0304A' : 'rgba(184,48,80,0.45)',
+                color: page === 2 ? '#C9637A' : 'rgba(201,99,122,0.45)',
                 background: page === 2 ? '#fff' : 'transparent',
-                boxShadow: page === 2 ? '0 2px 10px rgba(244,63,94,0.18)' : 'none',
+                boxShadow: page === 2 ? '0 2px 10px rgba(201,99,122,0.15)' : 'none',
                 letterSpacing: '0.03em',
                 border: 'none',
                 cursor: 'pointer',
@@ -374,7 +374,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           {/* 이름 / 사진 카운트 */}
           <div className="w-8 flex items-center justify-end">
             {page === 1 && photos.length > 1 && (
-              <span className="text-xs font-semibold" style={{ color: '#B83050' }}>
+              <span className="text-xs font-semibold" style={{ color: '#C9637A' }}>
                 {photoIdx + 1}/{photos.length}
               </span>
             )}
@@ -388,11 +388,11 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               {photos.length === 0 ? (
                 <div
                   className="w-full h-full flex flex-col items-center justify-center"
-                  style={{ background: 'linear-gradient(180deg, #3D1828 0%, #1A0A10 100%)' }}
+                  style={{ background: 'linear-gradient(180deg, #2D1218 0%, #1A0A10 100%)' }}
                 >
                   <div
                     className="w-28 h-28 rounded-full flex items-center justify-center font-bold"
-                    style={{ fontSize: '3.5rem', background: 'rgba(244,63,94,0.15)', color: '#F9A8B8' }}
+                    style={{ fontSize: '3.5rem', background: 'rgba(201,99,122,0.15)', color: '#D4849A' }}
                   >
                     {applicant.name?.charAt(0) || '?'}
                   </div>
@@ -450,9 +450,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
             {/* 안내 문구 */}
             <div
               className="flex-shrink-0 px-5 py-3 flex items-center justify-center gap-2"
-              style={{ background: 'rgba(255,240,245,0.97)', borderTop: '1px solid rgba(244,63,94,0.08)' }}
+              style={{ background: 'rgba(255,248,246,0.98)', borderTop: '1px solid rgba(201,99,122,0.08)' }}
             >
-              <span style={{ fontSize: '11px', color: 'rgba(184,48,80,0.5)', fontWeight: 500, textAlign: 'center', letterSpacing: '0.01em' }}>
+              <span style={{ fontSize: '11px', color: 'rgba(201,99,122,0.5)', fontWeight: 500, textAlign: 'center', letterSpacing: '0.01em' }}>
                 프로필에서 MBTI · 키 · 분위기를 살펴보고 편하게 말을 걸어보세요
               </span>
             </div>
@@ -464,11 +464,11 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
         {page === 2 && (
           <div className="flex flex-col flex-1 overflow-hidden">
             {/* 프로필 헤더 */}
-            <div className="flex-shrink-0 px-5 pt-4 pb-4" style={{ borderBottom: '1px solid rgba(244,63,94,0.1)' }}>
+            <div className="flex-shrink-0 px-5 pt-4 pb-4" style={{ borderBottom: '1px solid rgba(201,99,122,0.1)' }}>
               <div className="flex items-center gap-3">
                 <div
                   className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0"
-                  style={{ border: '2px solid rgba(244,63,94,0.25)' }}
+                  style={{ border: '2px solid rgba(201,99,122,0.25)' }}
                 >
                   {photos.length > 0 ? (
                     <img
@@ -480,7 +480,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                   ) : (
                     <div
                       className="w-full h-full flex items-center justify-center font-bold"
-                      style={{ background: 'rgba(244,63,94,0.12)', color: '#F43F5E', fontSize: '1.4rem' }}
+                      style={{ background: 'rgba(201,99,122,0.1)', color: '#C9637A', fontSize: '1.4rem' }}
                     >
                       {applicant.name?.charAt(0) || '?'}
                     </div>
@@ -488,9 +488,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold" style={{ fontSize: '1.15rem', color: '#2D1820' }}>{applicant.name}</span>
+                    <span className="font-bold" style={{ fontSize: '1.15rem', color: '#1a1a1a' }}>{applicant.name}</span>
                     {applicant.age && (
-                      <span className="font-medium" style={{ color: '#7C3D50' }}>{applicant.age}세</span>
+                      <span className="font-medium" style={{ color: '#9CA3AF' }}>{applicant.age}세</span>
                     )}
                     {(applicant.gender === 'male' || applicant.gender === '남성' || applicant.gender === 'female' || applicant.gender === '여성') && (
                       <span style={{ color: isMale ? '#93C5FD' : '#F9A8B8', fontWeight: 700 }}>
@@ -500,17 +500,17 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
                     {applicant.experience && (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,168,76,0.14)', border: '1px solid rgba(201,168,76,0.45)', color: '#9A7A2A' }}>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', color: '#9A7A2A' }}>
                         구력 {applicant.experience}
                       </span>
                     )}
                     {applicant.mbti && (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.28)', color: '#B83050' }}>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,99,122,0.08)', border: '1px solid rgba(201,99,122,0.22)', color: '#C9637A' }}>
                         {applicant.mbti}
                       </span>
                     )}
                     {applicant.height && (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(183,110,121,0.1)', border: '1px solid rgba(183,110,121,0.28)', color: '#7C3D50' }}>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(212,132,154,0.08)', border: '1px solid rgba(212,132,154,0.22)', color: '#A05570' }}>
                         {applicant.height}cm
                       </span>
                     )}
@@ -527,15 +527,15 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 </div>
               )}
               {app.message && (
-                <div className="px-4 py-3.5 rounded-2xl" style={{ background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.16)' }}>
-                  <p className="text-xs font-semibold mb-1.5" style={{ color: '#B83050' }}>첫 인사</p>
-                  <p className="text-sm leading-relaxed" style={{ color: '#2D1820' }}>{app.message}</p>
+                <div className="px-4 py-3.5 rounded-2xl" style={{ background: 'rgba(201,99,122,0.05)', border: '1px solid rgba(201,99,122,0.14)' }}>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: '#C9637A' }}>첫 인사</p>
+                  <p className="text-sm leading-relaxed" style={{ color: '#3a2228' }}>{app.message}</p>
                 </div>
               )}
               {applicant.bio && (
-                <div className="px-4 py-3.5 rounded-2xl" style={{ background: 'rgba(183,110,121,0.06)', border: '1px solid rgba(183,110,121,0.14)' }}>
-                  <p className="text-xs font-semibold mb-1.5" style={{ color: '#7C3D50' }}>자기소개</p>
-                  <p className="text-sm leading-relaxed" style={{ color: '#4A2030' }}>{applicant.bio}</p>
+                <div className="px-4 py-3.5 rounded-2xl" style={{ background: 'rgba(212,132,154,0.05)', border: '1px solid rgba(212,132,154,0.12)' }}>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: '#A05570' }}>자기소개</p>
+                  <p className="text-sm leading-relaxed" style={{ color: '#4A3040' }}>{applicant.bio}</p>
                 </div>
               )}
               {app.court && (
@@ -580,10 +580,10 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               right: 0,
               zIndex: 10000,
               padding: '12px 20px 16px',
-              background: 'rgba(255,240,245,0.97)',
+              background: 'rgba(255,248,246,0.98)',
               backdropFilter: 'blur(12px)',
-              borderTop: '1px solid rgba(244,63,94,0.12)',
-              boxShadow: '0 -4px 20px rgba(244,63,94,0.08)',
+              borderTop: '1px solid rgba(201,99,122,0.12)',
+              boxShadow: '0 -4px 20px rgba(201,99,122,0.08)',
               display: 'flex',
               gap: '10px',
             }}
@@ -593,9 +593,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               disabled={processing}
               className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
               style={{
-                background: 'rgba(183,110,121,0.1)',
-                color: '#7C3D50',
-                border: '1.5px solid rgba(183,110,121,0.25)',
+                background: 'rgba(201,99,122,0.08)',
+                color: '#A05570',
+                border: '1.5px solid rgba(201,99,122,0.2)',
                 minHeight: '52px',
               }}
             >
@@ -606,9 +606,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               disabled={processing}
               className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
               style={{
-                background: 'linear-gradient(135deg, #F43F5E 0%, #B76E79 100%)',
+                background: 'linear-gradient(135deg, #C9637A 0%, #D4849A 100%)',
                 color: '#fff',
-                boxShadow: '0 4px 14px rgba(244,63,94,0.35)',
+                boxShadow: '0 4px 14px rgba(201,99,122,0.3)',
                 minHeight: '52px',
                 border: 'none',
               }}
@@ -1617,12 +1617,12 @@ export default function Applications() {
   };
 
   const isDating = purposeTab === 'dating';
-  const activeColor = isDating ? '#B76E79' : '#1B4332';
+  const activeColor = isDating ? '#C9637A' : '#1B4332';
   const activeBg = isDating
-    ? 'linear-gradient(160deg, #2D1820 0%, #3D2030 100%)'
+    ? 'linear-gradient(160deg, #5A2635 0%, #7A3348 100%)'
     : 'linear-gradient(160deg, #0A1F14 0%, #1B4332 100%)';
   const pageBg = isDating
-    ? 'linear-gradient(180deg, #FFF8F5 0%, #FFF4F0 100%)'
+    ? 'linear-gradient(180deg, #FFF5F7 0%, #FFF0F3 100%)'
     : 'linear-gradient(180deg, #F0F7F2 0%, #EBF4EE 100%)';
 
   return (
@@ -1683,18 +1683,18 @@ export default function Applications() {
       <div className="px-4 py-5">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: isDating ? 'rgba(183,110,121,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }} />
-            <p className="text-sm" style={{ color: isDating ? 'rgba(183,110,121,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: isDating ? 'rgba(201,99,122,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }} />
+            <p className="text-sm" style={{ color: isDating ? 'rgba(201,99,122,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
           </div>
         ) : directionTab === 'received' ? (
           filteredReceived.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-5">
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ background: isDating ? 'rgba(183,110,121,0.1)' : 'rgba(27,67,50,0.08)', border: `1.5px solid ${isDating ? 'rgba(183,110,121,0.25)' : 'rgba(27,67,50,0.2)'}` }}
+                style={{ background: isDating ? 'rgba(201,99,122,0.08)' : 'rgba(27,67,50,0.08)', border: `1.5px solid ${isDating ? 'rgba(201,99,122,0.2)' : 'rgba(27,67,50,0.2)'}` }}
               >
                 {isDating ? (
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#B76E79" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C9637A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                   </svg>
                 ) : (
@@ -1706,10 +1706,10 @@ export default function Applications() {
                 )}
               </div>
               <div className="text-center">
-                <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#B76E79' : '#2D6A4F' }}>
+                <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#C9637A' : '#2D6A4F' }}>
                   {isDating ? '받은 만남 신청이 없어요' : '받은 테니스 신청이 없어요'}
                 </p>
-                <p className="text-xs" style={{ color: isDating ? 'rgba(183,110,121,0.55)' : 'rgba(45,106,79,0.55)' }}>
+                <p className="text-xs" style={{ color: isDating ? 'rgba(201,99,122,0.55)' : 'rgba(45,106,79,0.55)' }}>
                   {isDating ? '코트 등록 후 인연을 기다려보세요!' : '코트 등록 후 파트너를 기다려보세요!'}
                 </p>
               </div>
@@ -1723,10 +1723,10 @@ export default function Applications() {
           <div className="flex flex-col items-center justify-center py-20 gap-5">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ background: isDating ? 'rgba(183,110,121,0.1)' : 'rgba(27,67,50,0.08)', border: `1.5px solid ${isDating ? 'rgba(183,110,121,0.25)' : 'rgba(27,67,50,0.2)'}` }}
+              style={{ background: isDating ? 'rgba(201,99,122,0.08)' : 'rgba(27,67,50,0.08)', border: `1.5px solid ${isDating ? 'rgba(201,99,122,0.2)' : 'rgba(27,67,50,0.2)'}` }}
             >
               {isDating ? (
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#B76E79" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C9637A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13"/>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                 </svg>
@@ -1738,10 +1738,10 @@ export default function Applications() {
               )}
             </div>
             <div className="text-center">
-              <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#B76E79' : '#2D6A4F' }}>
+              <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#C9637A' : '#2D6A4F' }}>
                 {isDating ? '보낸 만남 신청이 없어요' : '보낸 테니스 신청이 없어요'}
               </p>
-              <p className="text-xs" style={{ color: isDating ? 'rgba(183,110,121,0.55)' : 'rgba(45,106,79,0.55)' }}>
+              <p className="text-xs" style={{ color: isDating ? 'rgba(201,99,122,0.55)' : 'rgba(45,106,79,0.55)' }}>
                 {isDating ? '마음에 드는 분께 먼저 말을 걸어보세요!' : '파트너를 찾아 신청해보세요!'}
               </p>
             </div>
@@ -1779,11 +1779,11 @@ export default function Applications() {
 
       {rejectTarget && (() => {
         const isDatingReject = rejectTarget.purpose === 'dating';
-        const accentColor = isDatingReject ? '#C0304A' : '#1A5C35';
-        const accentBorder = isDatingReject ? 'rgba(244,63,94,0.25)' : 'rgba(26,92,53,0.2)';
-        const accentBg = isDatingReject ? 'rgba(244,63,94,0.06)' : 'rgba(26,92,53,0.06)';
+        const accentColor = isDatingReject ? '#C9637A' : '#1A5C35';
+        const accentBorder = isDatingReject ? 'rgba(201,99,122,0.25)' : 'rgba(26,92,53,0.2)';
+        const accentBg = isDatingReject ? 'rgba(201,99,122,0.06)' : 'rgba(26,92,53,0.06)';
         const btnGradient = isDatingReject
-          ? 'linear-gradient(135deg, #F43F5E 0%, #B76E79 100%)'
+          ? 'linear-gradient(135deg, #C9637A 0%, #D4849A 100%)'
           : 'linear-gradient(135deg, #1A5C35 0%, #2D7A4A 100%)';
         const hasReason = rejectReason.trim().length > 0;
 
@@ -1851,7 +1851,7 @@ export default function Applications() {
               <button
                 onClick={() => { setRejectTarget(null); setRejectReason(''); }}
                 className="flex-1 rounded-2xl font-semibold text-sm transition active:scale-95"
-                style={{ background: isDatingReject ? 'rgba(183,110,121,0.1)' : 'rgba(26,92,53,0.08)', color: isDatingReject ? '#7C3D50' : '#2D6A4F', minHeight: '52px', border: `1px solid ${accentBorder}` }}
+                style={{ background: isDatingReject ? 'rgba(201,99,122,0.08)' : 'rgba(26,92,53,0.08)', color: isDatingReject ? '#A05570' : '#2D6A4F', minHeight: '52px', border: `1px solid ${accentBorder}` }}
               >
                 취소
               </button>
@@ -1915,45 +1915,55 @@ export default function Applications() {
         </div>
       )}
 
-      {deleteTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setDeleteTarget(null)}
-        >
+      {deleteTarget && (() => {
+        const isDatingDelete = deleteTarget.purpose === 'dating';
+        return (
           <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
-            style={{
-              background: '#fff',
-              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
-            }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-end justify-center"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setDeleteTarget(null)}
           >
-            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
-            <p className="font-bold text-gray-900 text-base mb-1">신청 삭제</p>
-            <p className="text-sm text-gray-400 mb-5">
-              이 신청을 삭제하시겠어요? 삭제 후에는 복구할 수 없습니다.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
-                style={{ background: '#F3F4F6', color: '#374151' }}
-              >
-                취소
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={deleteSubmitting}
-                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
-              >
-                {deleteSubmitting ? '삭제 중...' : '삭제하기'}
-              </button>
+            <div
+              className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
+              style={{
+                background: isDatingDelete ? '#FFF8F5' : '#fff',
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className="w-10 h-1 rounded-full mx-auto mb-4"
+                style={{ background: isDatingDelete ? 'rgba(234,153,166,0.35)' : '#E5E7EB' }}
+              />
+              <p className="font-bold text-gray-900 text-base mb-1">이 알림을 삭제할까요?</p>
+              <p className="text-sm mb-5" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>
+                삭제 후에는 다시 확인할 수 없습니다.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
+                  style={{
+                    background: isDatingDelete ? 'rgba(234,153,166,0.1)' : '#F3F4F6',
+                    color: isDatingDelete ? '#B76E79' : '#374151',
+                    border: isDatingDelete ? '1px solid rgba(234,153,166,0.25)' : 'none',
+                  }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={deleteSubmitting}
+                  className="flex-1 py-3.5 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
+                >
+                  {deleteSubmitting ? '삭제 중...' : '삭제하기'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
