@@ -311,65 +311,19 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* ── 공통 상단 탭 바 — 항상 핑크톤 ── */}
+        {/* ── 공통 상단 탭 바 — 핑크톤 ── */}
         <div
           className="flex-shrink-0 flex items-center justify-between px-4"
           style={{
             paddingTop: '14px',
-            paddingBottom: '10px',
-            background: 'rgba(255,240,245,0.96)',
+            paddingBottom: '12px',
+            background: 'rgba(255,240,245,0.97)',
             backdropFilter: 'blur(14px)',
-            borderBottom: '1px solid rgba(244,63,94,0.1)',
+            borderBottom: '1.5px solid rgba(244,63,94,0.12)',
             position: 'relative',
             zIndex: 30,
           }}
         >
-          {/* 탭 버튼 */}
-          <div className="flex gap-1.5 rounded-2xl p-1" style={{ background: 'rgba(244,63,94,0.07)' }}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setPage(1); }}
-              className="rounded-xl transition-all duration-200"
-              style={{
-                padding: '6px 18px',
-                fontSize: '13px',
-                fontWeight: 700,
-                color: page === 1 ? '#fff' : 'rgba(184,48,80,0.5)',
-                background: page === 1 ? 'linear-gradient(135deg,#F43F5E,#B76E79)' : 'transparent',
-                boxShadow: page === 1 ? '0 2px 10px rgba(244,63,94,0.35)' : 'none',
-                letterSpacing: '0.02em',
-              }}
-            >
-              사진
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setPage(2); }}
-              className="rounded-xl transition-all duration-200"
-              style={{
-                padding: '6px 18px',
-                fontSize: '13px',
-                fontWeight: 700,
-                color: page === 2 ? '#B83050' : 'rgba(184,48,80,0.5)',
-                background: page === 2 ? '#fff' : 'transparent',
-                boxShadow: page === 2 ? '0 2px 8px rgba(244,63,94,0.15)' : 'none',
-                letterSpacing: '0.02em',
-              }}
-            >
-              정보
-            </button>
-          </div>
-
-          {/* 이름 / 사진 카운트 */}
-          <div className="flex items-center gap-2">
-            {page === 1 && photos.length > 1 && (
-              <span className="text-xs font-semibold" style={{ color: '#B83050' }}>
-                {photoIdx + 1} / {photos.length}
-              </span>
-            )}
-            {page === 2 && (
-              <span className="text-sm font-bold" style={{ color: '#2D1820' }}>{applicant.name}</span>
-            )}
-          </div>
-
           {/* 닫기 버튼 */}
           <button
             onClick={onClose}
@@ -378,6 +332,53 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           >
             <X className="w-4 h-4" style={{ color: '#B83050' }} />
           </button>
+
+          {/* 탭 버튼 — 중앙 */}
+          <div className="flex gap-0 rounded-2xl p-1" style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.14)' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setPage(1); }}
+              className="rounded-xl transition-all duration-200"
+              style={{
+                padding: '7px 22px',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: page === 1 ? '#fff' : 'rgba(184,48,80,0.45)',
+                background: page === 1 ? 'linear-gradient(135deg,#F43F5E,#C0556E)' : 'transparent',
+                boxShadow: page === 1 ? '0 2px 12px rgba(244,63,94,0.4)' : 'none',
+                letterSpacing: '0.03em',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              사진
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setPage(2); }}
+              className="rounded-xl transition-all duration-200"
+              style={{
+                padding: '7px 22px',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: page === 2 ? '#C0304A' : 'rgba(184,48,80,0.45)',
+                background: page === 2 ? '#fff' : 'transparent',
+                boxShadow: page === 2 ? '0 2px 10px rgba(244,63,94,0.18)' : 'none',
+                letterSpacing: '0.03em',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              정보
+            </button>
+          </div>
+
+          {/* 이름 / 사진 카운트 */}
+          <div className="w-8 flex items-center justify-end">
+            {page === 1 && photos.length > 1 && (
+              <span className="text-xs font-semibold" style={{ color: '#B83050' }}>
+                {photoIdx + 1}/{photos.length}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* ── 사진 탭 ── */}
@@ -446,42 +447,18 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               </div>
             </div>
 
+            {/* 안내 문구 */}
+            <div
+              className="flex-shrink-0 px-5 py-3 flex items-center justify-center gap-2"
+              style={{ background: 'rgba(255,240,245,0.97)', borderTop: '1px solid rgba(244,63,94,0.08)' }}
+            >
+              <span style={{ fontSize: '11px', color: 'rgba(184,48,80,0.55)', fontWeight: 500, textAlign: 'center', letterSpacing: '0.01em' }}>
+                정보 탭에서 MBTI · 키 · 분위기를 살펴보고 편하게 대화를 시작해보세요
+              </span>
+            </div>
           </div>
         )}
 
-        {/* 사진 탭 — fixed CTA */}
-        {page === 1 && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
-              left: 0,
-              right: 0,
-              zIndex: 10000,
-              padding: '12px 20px 16px',
-              background: 'rgba(255,240,245,0.97)',
-              backdropFilter: 'blur(12px)',
-              borderTop: '1px solid rgba(244,63,94,0.12)',
-              boxShadow: '0 -4px 20px rgba(244,63,94,0.08)',
-            }}
-          >
-            <button
-              onClick={(e) => { e.stopPropagation(); setPage(2); }}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl font-semibold transition-all active:scale-95"
-              style={{
-                background: 'linear-gradient(135deg,#F43F5E,#B76E79)',
-                color: '#fff',
-                fontSize: '14px',
-                minHeight: '52px',
-                boxShadow: '0 4px 14px rgba(244,63,94,0.3)',
-                border: 'none',
-              }}
-            >
-              <span>정보 보기</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
         {/* ── 정보 탭 ── */}
         {page === 2 && (
@@ -647,91 +624,324 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
 
 function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg }: ApplicantModalProps) {
   const applicant = app.applicant!;
+  const [page, setPage] = useState<1 | 2>(1);
+
+  const photos: string[] = applicant.tennis_photo_urls?.length
+    ? applicant.tennis_photo_urls
+    : applicant.tennis_photo_url
+    ? [applicant.tennis_photo_url]
+    : applicant.photo_urls?.length
+    ? applicant.photo_urls
+    : applicant.photo_url
+    ? [applicant.photo_url]
+    : [];
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0 && page === 1) setPage(2);
+      else if (diff < 0 && page === 2) setPage(1);
+    }
+    touchStartX.current = null;
+  };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(0,0,0,0.85)' }}
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)' }}
       onClick={onClose}
     >
       <div
         className="w-full max-w-md relative flex flex-col"
         style={{
-          maxHeight: '96vh',
-          borderRadius: '24px 24px 0 0',
-          background: '#0d2218',
+          height: '96dvh',
+          maxHeight: '96dvh',
+          borderRadius: '28px 28px 0 0',
+          background: page === 1 ? '#000' : '#0f1c14',
           overflow: 'hidden',
         }}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        <div className="flex-shrink-0">
-          <ApplicantPhotoCarousel profile={applicant} />
+        {/* ── 상단 탭 바 — 딥그린톤 ── */}
+        <div
+          className="flex-shrink-0 flex items-center justify-between px-4"
+          style={{
+            paddingTop: '14px',
+            paddingBottom: '12px',
+            background: 'rgba(13,31,20,0.97)',
+            backdropFilter: 'blur(14px)',
+            borderBottom: '1.5px solid rgba(108,191,108,0.15)',
+            position: 'relative',
+            zIndex: 30,
+          }}
+        >
+          {/* 닫기 버튼 */}
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(108,191,108,0.12)', border: '1px solid rgba(108,191,108,0.25)' }}
+          >
+            <X className="w-4 h-4" style={{ color: '#6CBF6C' }} />
+          </button>
+
+          {/* 탭 버튼 — 중앙 */}
+          <div className="flex gap-0 rounded-2xl p-1" style={{ background: 'rgba(26,92,53,0.25)', border: '1px solid rgba(108,191,108,0.2)' }}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setPage(1); }}
+              className="rounded-xl transition-all duration-200"
+              style={{
+                padding: '7px 22px',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: page === 1 ? '#fff' : 'rgba(108,191,108,0.45)',
+                background: page === 1 ? 'linear-gradient(135deg,#1A5C35,#2D7A4A)' : 'transparent',
+                boxShadow: page === 1 ? '0 2px 12px rgba(26,92,53,0.5)' : 'none',
+                letterSpacing: '0.03em',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              사진
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setPage(2); }}
+              className="rounded-xl transition-all duration-200"
+              style={{
+                padding: '7px 22px',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: page === 2 ? '#6CBF6C' : 'rgba(108,191,108,0.45)',
+                background: page === 2 ? 'rgba(26,92,53,0.5)' : 'transparent',
+                boxShadow: page === 2 ? '0 2px 10px rgba(26,92,53,0.3)' : 'none',
+                letterSpacing: '0.03em',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              정보
+            </button>
+          </div>
+
+          {/* 사진 카운트 */}
+          <div className="w-8 flex items-center justify-end">
+            {page === 1 && photos.length > 1 && (
+              <span className="text-xs font-semibold" style={{ color: 'rgba(108,191,108,0.7)' }}>
+                {photoIdx + 1}/{photos.length}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 pt-4" style={{ background: '#111c16', paddingBottom: app.status === 'pending' ? 220 : 24 }}>
-          {errorMsg && (
-            <div
-              className="mb-3 px-4 py-3 rounded-xl text-sm font-medium"
-              style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#fca5a5' }}
-            >
-              {errorMsg}
-            </div>
-          )}
-
-          {app.message && (
-            <div
-              className="mb-4 px-4 py-3 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
-            >
-              <p className="text-xs font-semibold mb-1.5" style={{ color: '#C9A84C' }}>💬 신청 메시지</p>
-              <p className="text-sm text-white/80 leading-relaxed">{app.message}</p>
-            </div>
-          )}
-
-          {app.court && (
-            <div
-              className="mb-4 px-4 py-3 rounded-2xl"
-              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)' }}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <MapPin className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
-                <span className="text-xs font-semibold tracking-wider uppercase" style={{ color: '#C9A84C' }}>신청 코트</span>
+        {/* ── 사진 탭 ── */}
+        {page === 1 && (
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 relative overflow-hidden">
+              {photos.length === 0 ? (
+                <div
+                  className="w-full h-full flex flex-col items-center justify-center"
+                  style={{ background: 'linear-gradient(180deg, #0A1F14 0%, #0d1a10 100%)' }}
+                >
+                  <div
+                    className="w-28 h-28 rounded-full flex items-center justify-center font-bold"
+                    style={{ fontSize: '3.5rem', background: 'rgba(26,92,53,0.3)', color: '#6CBF6C', border: '2px solid rgba(108,191,108,0.3)' }}
+                  >
+                    {applicant.name?.charAt(0) || '?'}
+                  </div>
+                  <p className="text-sm mt-4 font-light" style={{ color: 'rgba(108,191,108,0.5)' }}>사진이 없습니다</p>
+                </div>
+              ) : (
+                <>
+                  <img
+                    key={photoIdx}
+                    src={photos[photoIdx]}
+                    alt={applicant.name}
+                    className="w-full h-full"
+                    style={{ objectFit: 'cover', objectPosition: 'center top' }}
+                  />
+                  {photos.length > 1 && (
+                    <>
+                      <div className="absolute top-4 left-0 right-0 flex justify-center gap-2 z-10">
+                        {photos.map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={(e) => { e.stopPropagation(); setPhotoIdx(i); }}
+                            className="rounded-full transition-all duration-300"
+                            style={{
+                              width: i === photoIdx ? '20px' : '7px',
+                              height: '7px',
+                              background: i === photoIdx ? '#6CBF6C' : 'rgba(255,255,255,0.35)',
+                              border: 'none',
+                              cursor: 'pointer',
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPhotoIdx((i) => (i - 1 + photos.length) % photos.length); }}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-10"
+                        style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
+                      >
+                        <ChevronLeft className="w-5 h-5 text-white" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setPhotoIdx((i) => (i + 1) % photos.length); }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-10"
+                        style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
+                      >
+                        <ChevronRight className="w-5 h-5 text-white" />
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+              <div
+                className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-20 pointer-events-none"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 100%)' }}
+              >
+                <div className="flex items-end gap-2.5 mb-2">
+                  <span className="text-white font-semibold tracking-wide" style={{ fontSize: '1.85rem' }}>
+                    {applicant.name}
+                  </span>
+                  {applicant.age && (
+                    <span className="text-white/80 text-xl font-light mb-0.5">{applicant.age}세</span>
+                  )}
+                  {(applicant.gender === 'male' || applicant.gender === '남성' || applicant.gender === 'female' || applicant.gender === '여성') && (
+                    <span className="text-xl font-bold mb-0.5" style={{ color: (applicant.gender === 'male' || applicant.gender === '남성') ? '#93C5FD' : '#FDA4AF' }}>
+                      {(applicant.gender === 'male' || applicant.gender === '남성') ? '♂' : '♀'}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {applicant.experience && (
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,168,76,0.25)', border: '1px solid rgba(201,168,76,0.5)', color: '#C9A84C' }}>
+                      구력 {applicant.experience}
+                    </span>
+                  )}
+                  {applicant.tennis_style && (
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(108,191,108,0.2)', border: '1px solid rgba(108,191,108,0.35)', color: '#6CBF6C' }}>
+                      {applicant.tennis_style}
+                    </span>
+                  )}
+                </div>
               </div>
-              <p className="text-white text-sm font-medium">{app.court.court_name}</p>
-              {app.court.date && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Calendar className="w-3 h-3 text-white/40" />
-                  <p className="text-xs text-white/50">
-                    {new Date(app.court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
-                    {app.court.start_time && ` · ${app.court.start_time}`}
-                  </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── 정보 탭 ── */}
+        {page === 2 && (
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {/* 프로필 헤더 */}
+            <div className="flex-shrink-0 px-5 pt-4 pb-4" style={{ borderBottom: '1px solid rgba(108,191,108,0.12)' }}>
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0"
+                  style={{ border: '2px solid rgba(108,191,108,0.3)' }}
+                >
+                  {photos.length > 0 ? (
+                    <img
+                      src={photos[0]}
+                      alt={applicant.name}
+                      className="w-full h-full"
+                      style={{ objectFit: 'cover', objectPosition: 'center top' }}
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center font-bold"
+                      style={{ background: 'rgba(26,92,53,0.3)', color: '#6CBF6C', fontSize: '1.4rem' }}
+                    >
+                      {applicant.name?.charAt(0) || '?'}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white" style={{ fontSize: '1.15rem' }}>{applicant.name}</span>
+                    {applicant.age && (
+                      <span className="font-medium text-white/60">{applicant.age}세</span>
+                    )}
+                    {(applicant.gender === 'male' || applicant.gender === '남성' || applicant.gender === 'female' || applicant.gender === '여성') && (
+                      <span style={{ color: (applicant.gender === 'male' || applicant.gender === '남성') ? '#93C5FD' : '#FDA4AF', fontWeight: 700 }}>
+                        {(applicant.gender === 'male' || applicant.gender === '남성') ? '♂' : '♀'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {applicant.experience && (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,168,76,0.18)', border: '1px solid rgba(201,168,76,0.4)', color: '#C9A84C' }}>
+                        구력 {applicant.experience}
+                      </span>
+                    )}
+                    {applicant.tennis_style && (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(108,191,108,0.15)', border: '1px solid rgba(108,191,108,0.3)', color: '#6CBF6C' }}>
+                        {applicant.tennis_style}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ paddingBottom: app.status === 'pending' ? 180 : 24 }}>
+              {errorMsg && (
+                <div className="px-4 py-3 rounded-2xl text-sm font-medium" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', color: '#fca5a5' }}>
+                  {errorMsg}
+                </div>
+              )}
+              {app.message && (
+                <div className="px-4 py-3.5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: '#C9A84C' }}>신청 메시지</p>
+                  <p className="text-sm text-white/75 leading-relaxed">{app.message}</p>
+                </div>
+              )}
+              {applicant.bio && (
+                <div className="px-4 py-3.5 rounded-2xl" style={{ background: 'rgba(108,191,108,0.07)', border: '1px solid rgba(108,191,108,0.15)' }}>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: '#6CBF6C' }}>자기소개</p>
+                  <p className="text-sm text-white/75 leading-relaxed">{applicant.bio}</p>
+                </div>
+              )}
+              {app.court && (
+                <div className="px-4 py-3 rounded-2xl" style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.22)' }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <MapPin className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
+                    <span className="text-xs font-semibold" style={{ color: '#C9A84C' }}>신청 코트</span>
+                  </div>
+                  <p className="text-sm font-medium text-white/90">{app.court.court_name}</p>
+                  {app.court.date && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Calendar className="w-3 h-3 text-white/30" />
+                      <p className="text-xs text-white/45">
+                        {new Date(app.court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                        {app.court.start_time && ` · ${app.court.start_time}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {app.status !== 'pending' && (
+                <div className="text-center py-3">
+                  {app.status === 'accepted' ? (
+                    <span className="font-semibold" style={{ color: '#C9A84C' }}>매칭 확정됨</span>
+                  ) : (
+                    <span className="text-white/40 font-semibold">거절됨</span>
+                  )}
                 </div>
               )}
             </div>
-          )}
-
-          {app.status !== 'pending' && (
-            <div className="text-center py-3">
-              {app.status === 'accepted' ? (
-                <span className="font-semibold" style={{ color: '#C9A84C' }}>매칭 확정됨</span>
-              ) : (
-                <span className="text-white/40 font-semibold">거절됨</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition z-20"
-          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)' }}
-        >
-          <X className="w-4 h-4 text-white" />
-        </button>
+          </div>
+        )}
       </div>
 
-      {/* Fixed CTA — 테니스 신청 수락/거절 */}
-      {app.status === 'pending' && (
+      {/* Fixed CTA — 테니스 신청 수락/거절 (정보 탭에서만 노출) */}
+      {app.status === 'pending' && page === 2 && (
         <div
           style={{
             position: 'fixed',
@@ -740,29 +950,28 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
             right: 0,
             zIndex: 10000,
             padding: '12px 20px 16px',
-            background: '#111c16',
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 -4px 20px rgba(0,0,0,0.3)',
+            background: '#0f1c14',
+            borderTop: '1px solid rgba(108,191,108,0.12)',
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
             display: 'flex',
-            flexDirection: 'column',
             gap: '10px',
           }}
         >
           <button
-            onClick={() => onAccept(app)}
-            disabled={processing}
-            className="w-full rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
-            style={{ background: '#C9A84C', color: '#fff', minHeight: '52px', border: 'none' }}
-          >
-            {processing ? '처리 중...' : '수락하기'}
-          </button>
-          <button
             onClick={() => onReject(app)}
             disabled={processing}
-            className="w-full rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
-            style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.15)', minHeight: '52px' }}
+            className="flex-1 rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
+            style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)', minHeight: '52px' }}
           >
             {processing ? '...' : '거절하기'}
+          </button>
+          <button
+            onClick={() => onAccept(app)}
+            disabled={processing}
+            className="flex-1 rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg,#1A5C35,#2D7A4A)', color: '#fff', boxShadow: '0 4px 14px rgba(26,92,53,0.4)', minHeight: '52px', border: 'none' }}
+          >
+            {processing ? '처리 중...' : '수락하기'}
           </button>
         </div>
       )}
@@ -1125,7 +1334,18 @@ export default function Applications() {
 
   const renderReceivedCard = (app: Application) => {
     const applicant = app.applicant;
-    const photos: string[] = applicant?.photo_urls?.length
+    const isTennisApp = app.purpose === 'tennis';
+    const photos: string[] = isTennisApp
+      ? applicant?.tennis_photo_urls?.length
+        ? applicant.tennis_photo_urls
+        : applicant?.tennis_photo_url
+        ? [applicant.tennis_photo_url]
+        : applicant?.photo_urls?.length
+        ? applicant.photo_urls
+        : applicant?.photo_url
+        ? [applicant.photo_url]
+        : []
+      : applicant?.photo_urls?.length
       ? applicant.photo_urls
       : applicant?.photo_url
       ? [applicant.photo_url]
@@ -1262,6 +1482,10 @@ export default function Applications() {
 
   const renderSentCard = (app: Application) => {
     const host = app.owner;
+    const isTennisApp = app.purpose === 'tennis';
+    const hostPhoto = isTennisApp
+      ? host?.tennis_photo_url || host?.photo_url
+      : host?.photo_url;
 
     return (
       <div
@@ -1279,10 +1503,10 @@ export default function Applications() {
             className="flex-shrink-0 relative overflow-hidden"
             style={{ width: '88px', minHeight: '100px' }}
           >
-            {host?.photo_url ? (
+            {hostPhoto ? (
               <img
-                src={host.photo_url}
-                alt={host.name}
+                src={hostPhoto}
+                alt={host?.name}
                 className="w-full h-full"
                 style={{ objectFit: 'cover', objectPosition: 'center top', background: '#F0F0F0' }}
               />

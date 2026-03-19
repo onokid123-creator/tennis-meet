@@ -554,8 +554,8 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
         {/* info strip */}
         <div style={{ padding: '12px 14px 14px' }}>
 
-          {/* meta row: 코트명 / 날짜 / 시간 / 매칭비 */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
+          {/* meta row: 코트명 / 날짜 / 시간 */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
             {court.court_name && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <MapPin style={{ width: 11, height: 11, color: A }} />
@@ -574,41 +574,41 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
                 <span style={{ fontSize: 12, color: M }}>{court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}</span>
               </div>
             )}
-            {court.court_fee != null && court.court_fee >= 0 && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(184,149,58,0.1)', border: '1px solid rgba(184,149,58,0.25)', color: G, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
-                {fmtFee(court.court_fee)}
-              </span>
-            )}
           </div>
 
-          {/* slots + fee pills */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {hasSlotsInfo && !isClosed && (
-              <>
-                {tm > 0 && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(74,144,217,0.08)', border: '1px solid rgba(74,144,217,0.18)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: '#4A90D9', fontWeight: 600 }}>
-                    남 {rm <= 0 ? '마감' : `${rm}명`}
-                  </span>
-                )}
-                {tf > 0 && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(229,122,138,0.08)', border: '1px solid rgba(229,122,138,0.18)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: '#E57A8A', fontWeight: 600 }}>
-                    여 {rf <= 0 ? '마감' : `${rf}명`}
-                  </span>
-                )}
-                {total > 0 && tm === 0 && tf === 0 && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', background: L, border: `1px solid rgba(108,191,108,0.2)`, borderRadius: 99, padding: '3px 9px', fontSize: 11, color: P, fontWeight: 600 }}>
-                    {remain}명 남음
-                  </span>
-                )}
-              </>
-            )}
-            {isClosed && (
-              <span style={{ background: L, border: `1px solid rgba(108,191,108,0.2)`, borderRadius: 99, padding: '3px 10px', fontSize: 11, color: M, fontWeight: 700 }}>모집 마감</span>
-            )}
-            {hasSlotsInfo && !isClosed && fill > 0 && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: L, border: `1px solid rgba(108,191,108,0.22)`, borderRadius: 99, padding: '3px 10px', fontSize: 11, color: P, fontWeight: 600 }}>
-                <Users style={{ width: 10, height: 10 }} />
-                {confirmedCount}/{total}명
+          {/* 모집 현황 + 매칭비 — 정보형 표시 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            {/* 모집 인원 */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {hasSlotsInfo && !isClosed && (
+                <>
+                  {tm > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(74,144,217,0.1)', border: '1px solid rgba(74,144,217,0.22)', borderRadius: 10, padding: '4px 10px', fontSize: 12, color: '#4A90D9', fontWeight: 700 }}>
+                      남 {rm <= 0 ? <span style={{ color: '#EF4444', fontWeight: 700 }}>마감</span> : `${rm}명 모집 중`}
+                    </span>
+                  )}
+                  {tf > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(229,122,138,0.1)', border: '1px solid rgba(229,122,138,0.22)', borderRadius: 10, padding: '4px 10px', fontSize: 12, color: '#E57A8A', fontWeight: 700 }}>
+                      여 {rf <= 0 ? <span style={{ color: '#EF4444', fontWeight: 700 }}>마감</span> : `${rf}명 모집 중`}
+                    </span>
+                  )}
+                  {total > 0 && tm === 0 && tf === 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: L, border: `1px solid rgba(108,191,108,0.25)`, borderRadius: 10, padding: '4px 10px', fontSize: 12, color: P, fontWeight: 700 }}>
+                      <Users style={{ width: 11, height: 11 }} />
+                      {remain}명 모집 중
+                    </span>
+                  )}
+                </>
+              )}
+              {isClosed && (
+                <span style={{ background: '#FEE2E2', border: `1px solid rgba(239,68,68,0.2)`, borderRadius: 10, padding: '4px 10px', fontSize: 12, color: '#EF4444', fontWeight: 700 }}>모집 마감</span>
+              )}
+            </div>
+
+            {/* 매칭비 */}
+            {court.court_fee != null && court.court_fee >= 0 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(184,149,58,0.1)', border: '1px solid rgba(184,149,58,0.28)', color: G, borderRadius: 10, padding: '4px 10px', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                매칭비 {fmtFee(court.court_fee)}
               </span>
             )}
           </div>
