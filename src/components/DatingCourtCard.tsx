@@ -220,7 +220,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
     <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ background: PAGE, borderRadius: '28px 28px 0 0', height: '94dvh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}
+        style={{ background: PAGE, borderRadius: '28px 28px 0 0', height: '94dvh', maxHeight: '94dvh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}
       >
         {/* handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px', flexShrink: 0 }}>
@@ -478,7 +478,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
           <div style={{
             flexShrink: 0,
             padding: '12px 14px',
-            paddingBottom: 'calc(max(env(safe-area-inset-bottom), 16px) + 4px)',
+            paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 8px)',
             background: PAGE,
             borderTop: '1px solid rgba(255,126,138,0.08)',
             zIndex: 20,
@@ -490,7 +490,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
             ) : (
               <PinkBtn onClick={() => { onClose(); onApply(); }}>
                 <Heart style={{ width: 17, height: 17, fill: WHITE, strokeWidth: 0 }} />
-                관심 있어요, 말 걸어볼게요
+                이 만남, 이어가볼까요?
               </PinkBtn>
             )}
           </div>
@@ -714,7 +714,7 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
                   onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
                 >
                   <Heart style={{ width: 14, height: 14, fill: WHITE, strokeWidth: 0 }} />
-                  관심 있어요
+                  이 만남, 이어가볼까요?
                 </button>
               )
             )}

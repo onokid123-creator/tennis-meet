@@ -159,7 +159,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ background: BG, borderRadius: '28px 28px 0 0', height: '94dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
+        style={{ background: BG, borderRadius: '28px 28px 0 0', height: '94dvh', maxHeight: '94dvh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}
       >
         {/* handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px', flexShrink: 0 }}>
@@ -426,7 +426,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
           <div style={{
             flexShrink: 0,
             padding: '12px 14px',
-            paddingBottom: 'calc(max(env(safe-area-inset-bottom), 16px) + 4px)',
+            paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 8px)',
             background: BG,
             borderTop: `1px solid ${L}`,
             zIndex: 20,
