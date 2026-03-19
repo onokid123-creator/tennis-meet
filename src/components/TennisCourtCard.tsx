@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Court } from '../types';
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock } from 'lucide-react';
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Users } from 'lucide-react';
 
 interface TennisCourtCardProps {
   court: Court;
@@ -30,12 +30,11 @@ function getCourtStatus(court: Court): 'open' | 'closing-soon' | 'closed' {
   return 'open';
 }
 
-const PRIMARY = '#1F5A3C';
-const SECONDARY = '#5FAF7B';
-const LIGHT_GREEN = '#B8D9C4';
-const CARD_BG = '#EEF6F1';
-const TEXT_PRIMARY = '#111C16';
-const TEXT_SECONDARY = '#6B8070';
+const PRIMARY = '#1A5C35';
+const ACCENT = '#6CBF6C';
+const LIGHT = '#E8F5EC';
+const TEXT = '#111C16';
+const MUTED = '#6B8070';
 const GOLD = '#B8953A';
 
 export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDelete }: TennisCourtCardProps) {
@@ -61,14 +60,18 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
   const totalFemale = court.female_count ?? 0;
   const confirmedMale = court.confirmed_male_slots ?? 0;
   const confirmedFemale = court.confirmed_female_slots ?? 0;
+  const totalSlots = totalMale + totalFemale;
+  const confirmedSlots = confirmedMale + confirmedFemale;
+  const remainSlots = Math.max(0, totalSlots - confirmedSlots);
   const remainMale = Math.max(0, totalMale - confirmedMale);
   const remainFemale = Math.max(0, totalFemale - confirmedFemale);
+  const hasSlotsInfo = totalSlots > 0;
+
+  const fillRatio = hasSlotsInfo ? confirmedSlots / totalSlots : 0;
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 
-  const prevPhoto = (e: React.MouseEvent) => { e.stopPropagation(); setPhotoIndex((i) => (i - 1 + photos.length) % photos.length); };
-  const nextPhoto = (e: React.MouseEvent) => { e.stopPropagation(); setPhotoIndex((i) => (i + 1) % photos.length); };
   const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
@@ -98,351 +101,255 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
       <div
         className="overflow-hidden select-none"
         style={{
-          background: '#FAFDF8',
+          background: '#fff',
           borderRadius: '20px',
-          boxShadow: '0 4px 24px rgba(31,90,60,0.10), 0 1px 4px rgba(0,0,0,0.05)',
-          border: `1px solid ${LIGHT_GREEN}`,
+          boxShadow: '0 2px 16px rgba(26,92,53,0.10), 0 1px 3px rgba(0,0,0,0.04)',
+          border: `1px solid ${LIGHT}`,
         }}
       >
-        {/* Owner controls */}
-        {isOwner && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 16px 0' }}>
-            <div style={{ display: 'flex', gap: 6 }}>
+        {/* 상단 헤더: 코트명 + 시간 */}
+        <div
+          style={{
+            background: `linear-gradient(135deg, ${PRIMARY} 0%, #2D7A4A 100%)`,
+            padding: isOwner ? '14px 16px 12px' : '16px 16px 12px',
+          }}
+        >
+          {isOwner && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8, gap: 6 }}>
               <button
                 onClick={onEdit}
                 style={{
-                  width: 30, height: 30,
-                  borderRadius: '50%',
+                  width: 28, height: 28, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'rgba(255,255,255,0.85)',
-                  border: `1px solid ${LIGHT_GREEN}`,
-                  boxShadow: '0 1px 4px rgba(31,90,60,0.10)',
+                  background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
                   cursor: 'pointer',
                 }}
               >
-                <Pencil style={{ width: 13, height: 13, color: PRIMARY }} />
+                <Pencil style={{ width: 12, height: 12, color: '#fff' }} />
               </button>
               <button
                 onClick={onDelete}
                 style={{
-                  width: 30, height: 30,
-                  borderRadius: '50%',
+                  width: 28, height: 28, borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'rgba(255,255,255,0.85)',
-                  border: '1px solid rgba(185,50,50,0.22)',
-                  boxShadow: '0 1px 4px rgba(185,50,50,0.10)',
+                  background: 'rgba(255,80,80,0.2)', border: '1px solid rgba(255,100,100,0.3)',
                   cursor: 'pointer',
                 }}
               >
-                <Trash2 style={{ width: 13, height: 13, color: '#B03030' }} />
+                <Trash2 style={{ width: 12, height: 12, color: '#ffaaaa' }} />
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 1. 상단 프로필 영역 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: isOwner ? '10px 16px 0' : '14px 16px 0' }}>
-          <div style={{ flexShrink: 0 }}>
-            {photos.length > 0 ? (
-              <img
-                src={photos[0]}
-                alt={profile?.name}
-                style={{
-                  width: 52, height: 52,
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  objectPosition: 'center top',
-                  border: `2px solid ${SECONDARY}`,
-                  cursor: 'pointer',
-                  display: 'block',
-                }}
-                onClick={() => openModal(0)}
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 52, height: 52,
-                  borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${PRIMARY} 0%, ${SECONDARY} 100%)`,
-                  border: `2px solid ${SECONDARY}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}
-              >
-                <span style={{ color: '#fff', fontWeight: 700, fontSize: 20 }}>{profile?.name?.charAt(0) || 'T'}</span>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                {isClosed && (
+                  <span style={{ background: 'rgba(255,80,80,0.22)', color: '#ffaaaa', borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700, letterSpacing: '0.02em' }}>
+                    마감
+                  </span>
+                )}
+                {isClosingSoon && !isClosed && (
+                  <span style={{ background: 'rgba(255,200,50,0.2)', color: '#FFD060', borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>
+                    마감 임박
+                  </span>
+                )}
+                {court.format && (
+                  <span style={{ background: 'rgba(108,191,108,0.2)', color: ACCENT, borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 600 }}>
+                    {court.format}
+                  </span>
+                )}
+                {court.level && (
+                  <span style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)', borderRadius: 99, padding: '2px 8px', fontSize: 10, fontWeight: 600 }}>
+                    {court.level}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-              <span style={{ fontWeight: 700, fontSize: 15.5, color: TEXT_PRIMARY, letterSpacing: '-0.02em' }}>
-                {profile?.name}
-              </span>
-              {isClosed && (
-                <span style={{ background: 'rgba(185,50,50,0.1)', color: '#B03030', borderRadius: 99, padding: '2px 8px', fontSize: 10.5, fontWeight: 600 }}>마감</span>
-              )}
-              {isClosingSoon && !isClosed && (
-                <span style={{ background: 'rgba(196,130,20,0.12)', color: '#9A7010', borderRadius: 99, padding: '2px 8px', fontSize: 10.5, fontWeight: 600 }}>마감 임박</span>
-              )}
+              <h2 style={{ color: '#fff', fontWeight: 800, fontSize: 18, letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {court.court_name}
+              </h2>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              {profile?.experience && (
-                <span style={{
-                  background: `${PRIMARY}12`, color: PRIMARY,
-                  border: `1px solid ${PRIMARY}28`,
-                  borderRadius: 99, padding: '2px 8px', fontSize: 10.5, fontWeight: 600,
-                }}>
-                  {profile.experience}
-                </span>
-              )}
-              {profile?.tennis_style && (
-                <span style={{
-                  background: `${SECONDARY}1A`, color: PRIMARY,
-                  border: `1px solid ${SECONDARY}45`,
-                  borderRadius: 99, padding: '2px 8px', fontSize: 10.5,
-                }}>
-                  {profile.tennis_style}
-                </span>
-              )}
-              {court.format && (
-                <span style={{
-                  background: PRIMARY, color: '#fff',
-                  borderRadius: 99, padding: '2px 9px', fontSize: 10.5, fontWeight: 600,
-                }}>
-                  {court.format}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-
-        {/* 3. 이미지 영역 */}
-        {photos.length > 0 && (
-          <div
-            className="relative"
-            style={{ margin: '12px 16px 0', borderRadius: 14, overflow: 'hidden' }}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div style={{ width: '100%', height: 260, overflow: 'hidden', borderRadius: 14 }}>
-              <img
-                key={photoIndex}
-                src={photos[photoIndex]}
-                alt={profile?.name}
-                style={{
-                  width: '100%', height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center top',
-                  display: 'block',
-                  cursor: 'pointer',
-                  borderRadius: 14,
-                }}
-                onClick={() => openModal(photoIndex)}
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            </div>
-
-            {photos.length > 1 && (
-              <>
-                <button
-                  onClick={prevPhoto}
-                  style={{
-                    position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-                    width: 36, height: 36, borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.32)', border: 'none',
-                    backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2,
-                  }}
-                >
-                  <ChevronLeft style={{ width: 18, height: 18, color: '#fff' }} />
-                </button>
-                <button
-                  onClick={nextPhoto}
-                  style={{
-                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                    width: 36, height: 36, borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.32)', border: 'none',
-                    backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 2,
-                  }}
-                >
-                  <ChevronRight style={{ width: 18, height: 18, color: '#fff' }} />
-                </button>
-                <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 2 }}>
-                  {photos.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={(e) => { e.stopPropagation(); setPhotoIndex(i); }}
-                      style={{
-                        width: i === photoIndex ? 18 : 6, height: 6,
-                        borderRadius: 99,
-                        background: i === photoIndex ? SECONDARY : 'rgba(255,255,255,0.5)',
-                        border: 'none', padding: 0, cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* 4. 정보 카드 영역 */}
-        <div style={{ padding: '14px 16px 18px' }}>
-          <div
-            style={{
-              background: CARD_BG,
-              borderRadius: 16,
-              padding: '14px 16px',
-              border: `1px solid ${LIGHT_GREEN}`,
-              display: 'flex', flexDirection: 'column', gap: 10,
-            }}
-          >
-            {/* 코트명 + 가격 */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-                <MapPin style={{ width: 14, height: 14, color: SECONDARY, flexShrink: 0 }} />
-                <span style={{ fontWeight: 700, fontSize: 14.5, color: TEXT_PRIMARY, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {court.court_name}
-                </span>
-              </div>
-              {court.court_fee != null && court.court_fee >= 0 && (
-                <span style={{ fontWeight: 600, fontSize: 13, color: GOLD, whiteSpace: 'nowrap', letterSpacing: '-0.01em', flexShrink: 0 }}>
+            {court.court_fee != null && court.court_fee >= 0 && (
+              <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                <span style={{ color: GOLD, fontWeight: 700, fontSize: 14, background: 'rgba(184,149,58,0.15)', padding: '3px 10px', borderRadius: 99, border: '1px solid rgba(184,149,58,0.3)' }}>
                   {court.court_fee === 0 ? '무료' : `${court.court_fee.toLocaleString()}원`}
                 </span>
-              )}
+              </div>
+            )}
+          </div>
+
+          {court.start_time && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+              <Clock style={{ width: 13, height: 13, color: ACCENT, flexShrink: 0 }} />
+              <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700, fontSize: 15, letterSpacing: '-0.01em' }}>
+                {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
+              </span>
             </div>
+          )}
+        </div>
 
-            {/* 날짜 · 시간 */}
-            {(court.date || court.start_time) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {court.date && (
+        {/* 인원 현황 (핵심 강조) */}
+        {hasSlotsInfo && (
+          <div style={{ padding: '12px 16px', borderBottom: `1px solid ${LIGHT}` }}>
+            {isClosed ? (
+              <div style={{ background: 'rgba(185,50,50,0.06)', border: '1px solid rgba(185,50,50,0.15)', borderRadius: 12, padding: '10px 14px', textAlign: 'center' }}>
+                <span style={{ fontWeight: 700, fontSize: 13, color: '#B03030' }}>모집 마감</span>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Calendar style={{ width: 13, height: 13, color: TEXT_SECONDARY, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12.5, color: TEXT_SECONDARY }}>{formatDate(court.date)}</span>
+                    <Users style={{ width: 14, height: 14, color: PRIMARY }} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: MUTED }}>현재 인원</span>
                   </div>
-                )}
-                {court.start_time && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Clock style={{ width: 13, height: 13, color: TEXT_SECONDARY, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12.5, color: TEXT_SECONDARY }}>
-                      {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                    <span style={{ fontWeight: 900, fontSize: 22, color: PRIMARY, letterSpacing: '-0.03em' }}>
+                      {confirmedSlots}
                     </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 소개글 */}
-            {court.description && (
-              <div style={{
-                borderTop: `1px solid ${LIGHT_GREEN}`,
-                paddingTop: 10,
-                display: 'flex', gap: 9, alignItems: 'flex-start',
-              }}>
-                <div style={{ width: 2, flexShrink: 0, borderRadius: 99, background: SECONDARY, alignSelf: 'stretch', minHeight: 18 }} />
-                <p style={{ fontSize: 13, color: '#4C5B52', lineHeight: 1.6, margin: 0 }}>
-                  {court.description}
-                </p>
-              </div>
-            )}
-
-            {/* 남은 인원 */}
-            {(totalMale > 0 || totalFemale > 0) && (
-              isClosed ? (
-                <div style={{
-                  background: 'rgba(185,50,50,0.06)',
-                  border: '1px solid rgba(185,50,50,0.15)',
-                  borderRadius: 10, padding: '8px 14px', textAlign: 'center',
-                }}>
-                  <span style={{ fontWeight: 600, fontSize: 12.5, color: '#B03030' }}>모집 마감</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: 7 }}>
-                  {totalMale > 0 && (
-                    <div style={{
-                      flex: 1,
-                      background: remainMale <= 0 ? 'rgba(185,50,50,0.05)' : '#fff',
-                      border: `1px solid ${remainMale <= 0 ? 'rgba(185,50,50,0.18)' : LIGHT_GREEN}`,
-                      borderRadius: 10,
-                      padding: '7px 11px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}>
-                      <span style={{ fontSize: 11, color: TEXT_SECONDARY, fontWeight: 500 }}>
-                        남성 <span style={{ opacity: 0.55 }}>{confirmedMale}/{totalMale}</span>
+                    <span style={{ fontWeight: 500, fontSize: 14, color: MUTED }}>/ {totalSlots}명</span>
+                    {remainSlots > 0 && (
+                      <span style={{
+                        marginLeft: 6,
+                        background: remainSlots <= 1 ? 'rgba(239,68,68,0.1)' : `rgba(108,191,108,0.15)`,
+                        color: remainSlots <= 1 ? '#DC2626' : PRIMARY,
+                        border: `1px solid ${remainSlots <= 1 ? 'rgba(239,68,68,0.25)' : 'rgba(108,191,108,0.35)'}`,
+                        borderRadius: 99,
+                        padding: '2px 9px',
+                        fontSize: 11,
+                        fontWeight: 700,
+                      }}>
+                        {remainSlots}명 남음
                       </span>
-                      <span style={{ fontWeight: 700, fontSize: 12.5, color: remainMale <= 0 ? '#B03030' : PRIMARY, letterSpacing: '-0.01em' }}>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ height: 7, background: LIGHT, borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${Math.min(fillRatio * 100, 100)}%`,
+                    background: fillRatio >= 0.8
+                      ? 'linear-gradient(90deg, #ef4444 0%, #f87171 100%)'
+                      : `linear-gradient(90deg, ${PRIMARY} 0%, ${ACCENT} 100%)`,
+                    borderRadius: 99,
+                    transition: 'width 0.4s ease',
+                  }} />
+                </div>
+
+                {(totalMale > 0 && totalFemale > 0) && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 7 }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: LIGHT, borderRadius: 9, padding: '5px 10px' }}>
+                      <span style={{ fontSize: 11, color: '#4A90D9', fontWeight: 600 }}>남 {confirmedMale}/{totalMale}</span>
+                      <span style={{ fontSize: 11, color: remainMale <= 0 ? '#B03030' : PRIMARY, fontWeight: 700 }}>
                         {remainMale <= 0 ? '마감' : `${remainMale}명 남음`}
                       </span>
                     </div>
-                  )}
-                  {totalFemale > 0 && (
-                    <div style={{
-                      flex: 1,
-                      background: remainFemale <= 0 ? 'rgba(185,50,50,0.05)' : '#fff',
-                      border: `1px solid ${remainFemale <= 0 ? 'rgba(185,50,50,0.18)' : LIGHT_GREEN}`,
-                      borderRadius: 10,
-                      padding: '7px 11px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}>
-                      <span style={{ fontSize: 11, color: TEXT_SECONDARY, fontWeight: 500 }}>
-                        여성 <span style={{ opacity: 0.55 }}>{confirmedFemale}/{totalFemale}</span>
-                      </span>
-                      <span style={{ fontWeight: 700, fontSize: 12.5, color: remainFemale <= 0 ? '#B03030' : PRIMARY, letterSpacing: '-0.01em' }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: LIGHT, borderRadius: 9, padding: '5px 10px' }}>
+                      <span style={{ fontSize: 11, color: '#E57A8A', fontWeight: 600 }}>여 {confirmedFemale}/{totalFemale}</span>
+                      <span style={{ fontSize: 11, color: remainFemale <= 0 ? '#B03030' : PRIMARY, fontWeight: 700 }}>
                         {remainFemale <= 0 ? '마감' : `${remainFemale}명 남음`}
                       </span>
                     </div>
-                  )}
-                </div>
-              )
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 추가 정보: 위치 / 날짜 */}
+        <div style={{ padding: '10px 16px', display: 'flex', flexWrap: 'wrap', gap: 10, borderBottom: `1px solid ${LIGHT}` }}>
+          {court.location && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <MapPin style={{ width: 13, height: 13, color: MUTED, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: MUTED, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{court.location}</span>
+            </div>
+          )}
+          {court.date && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Calendar style={{ width: 13, height: 13, color: MUTED, flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: MUTED }}>{formatDate(court.date)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* 참여자 썸네일 + 신청 버튼 */}
+        <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: -6 }}>
+            {photos.slice(0, 2).map((src, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 34, height: 34, borderRadius: '50%',
+                  overflow: 'hidden', border: '2px solid #fff',
+                  marginLeft: i > 0 ? -10 : 0,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  zIndex: 2 - i,
+                }}
+                onClick={() => openModal(i)}
+              >
+                <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+              </div>
+            ))}
+            {photos.length === 0 && (
+              <div style={{
+                width: 34, height: 34, borderRadius: '50%',
+                background: `linear-gradient(135deg, ${PRIMARY} 0%, ${ACCENT} 100%)`,
+                border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>{profile?.name?.charAt(0) || 'T'}</span>
+              </div>
+            )}
+            {profile?.name && (
+              <div style={{ marginLeft: photos.length > 0 ? 8 : 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: TEXT }}>{profile.name}</span>
+                {profile?.experience && (
+                  <span style={{ fontSize: 11, color: MUTED, marginLeft: 4 }}>{profile.experience}</span>
+                )}
+              </div>
             )}
           </div>
 
-          {/* CTA 버튼 */}
           {onApply && (
-            <div style={{ marginTop: 12 }}>
-              {isClosed ? (
-                <div style={{
-                  padding: '13px 0', textAlign: 'center',
-                  background: CARD_BG, borderRadius: 13,
-                  border: `1px solid ${LIGHT_GREEN}`,
-                }}>
-                  <span style={{ fontSize: 13, color: TEXT_SECONDARY, fontWeight: 500 }}>마감된 모임이에요</span>
-                </div>
-              ) : (
-                <button
-                  onClick={onApply}
-                  style={{
-                    width: '100%',
-                    padding: '13px 0',
-                    borderRadius: 13,
-                    border: 'none',
-                    background: `linear-gradient(135deg, ${SECONDARY} 0%, ${PRIMARY} 100%)`,
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: 13.5,
-                    letterSpacing: '0.01em',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 16px rgba(31,90,60,0.28)',
-                    transition: 'transform 0.12s',
-                  }}
-                  onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.982)')}
-                  onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                  onTouchStart={(e) => (e.currentTarget.style.transform = 'scale(0.982)')}
-                  onTouchEnd={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                >
-                  참여 신청하기
-                </button>
-              )}
-            </div>
+            isClosed ? (
+              <div style={{
+                padding: '9px 16px', borderRadius: 12,
+                background: LIGHT, border: `1px solid rgba(107,128,112,0.2)`,
+              }}>
+                <span style={{ fontSize: 12, color: MUTED, fontWeight: 500 }}>마감</span>
+              </div>
+            ) : (
+              <button
+                onClick={onApply}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 14,
+                  border: 'none',
+                  background: `linear-gradient(135deg, ${ACCENT} 0%, ${PRIMARY} 100%)`,
+                  color: '#fff',
+                  fontWeight: 800,
+                  fontSize: 13,
+                  letterSpacing: '0.01em',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(26,92,53,0.30)',
+                  transition: 'transform 0.12s',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+                onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
+                onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                onTouchStart={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
+                onTouchEnd={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+              >
+                참여 신청하기
+              </button>
+            )
           )}
         </div>
       </div>
 
-      {/* 풀스크린 모달 */}
       {modalOpen && photos.length > 0 && (
         <div
           onClick={() => setModalOpen(false)}
@@ -507,7 +414,7 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
                     style={{
                       width: i === modalIndex ? 20 : 8, height: 8,
                       borderRadius: 4,
-                      background: i === modalIndex ? SECONDARY : 'rgba(255,255,255,0.4)',
+                      background: i === modalIndex ? ACCENT : 'rgba(255,255,255,0.4)',
                       border: 'none', padding: 0, cursor: 'pointer', transition: 'all 0.2s',
                     }}
                   />
