@@ -228,7 +228,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         </div>
 
         {/* ── Scrollable area ── */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 100 : 16 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 160 : 24 }}>
 
         {/* ── Image slide ── */}
         <div
@@ -475,16 +475,15 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
 
       </div>
 
-      {/* ── Fixed CTA — 뷰포트 하단 고정 ── */}
+      {/* ── Fixed CTA — BottomNav(70px) + safe-area 위에 고정 ── */}
       {onApply && (
         <div style={{
           position: 'fixed',
-          bottom: 0,
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
           left: 0,
           right: 0,
           zIndex: 10000,
-          padding: '12px 16px',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+          padding: '12px 16px 16px',
           background: PAGE,
           borderTop: '1px solid rgba(255,126,138,0.1)',
           boxShadow: '0 -4px 20px rgba(255,126,138,0.1)',

@@ -454,12 +454,11 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           <div
             style={{
               position: 'fixed',
-              bottom: 0,
+              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
               left: 0,
               right: 0,
               zIndex: 10000,
-              padding: '12px 20px',
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+              padding: '12px 20px 16px',
               background: 'rgba(255,240,245,0.97)',
               backdropFilter: 'blur(12px)',
               borderTop: '1px solid rgba(244,63,94,0.12)',
@@ -544,7 +543,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
             </div>
 
             {/* 스크롤 콘텐츠 */}
-            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ paddingBottom: app.status === 'pending' ? 120 : 24 }}>
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ paddingBottom: app.status === 'pending' ? 180 : 24 }}>
               {errorMsg && (
                 <div className="px-4 py-3 rounded-2xl text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#DC2626' }}>
                   {errorMsg}
@@ -599,12 +598,11 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           <div
             style={{
               position: 'fixed',
-              bottom: 0,
+              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
               left: 0,
               right: 0,
               zIndex: 10000,
-              padding: '12px 20px',
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+              padding: '12px 20px 16px',
               background: 'rgba(255,240,245,0.97)',
               backdropFilter: 'blur(12px)',
               borderTop: '1px solid rgba(244,63,94,0.12)',
@@ -670,7 +668,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
           <ApplicantPhotoCarousel profile={applicant} />
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 pt-4" style={{ background: '#111c16', paddingBottom: app.status === 'pending' ? 120 : 24 }}>
+        <div className="overflow-y-auto flex-1 px-5 pt-4" style={{ background: '#111c16', paddingBottom: app.status === 'pending' ? 220 : 24 }}>
           {errorMsg && (
             <div
               className="mb-3 px-4 py-3 rounded-xl text-sm font-medium"
@@ -737,12 +735,11 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
         <div
           style={{
             position: 'fixed',
-            bottom: 0,
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
             left: 0,
             right: 0,
             zIndex: 10000,
-            padding: '12px 20px',
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+            padding: '12px 20px 16px',
             background: '#111c16',
             borderTop: '1px solid rgba(255,255,255,0.08)',
             boxShadow: '0 -4px 20px rgba(0,0,0,0.3)',
