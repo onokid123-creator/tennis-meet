@@ -607,7 +607,7 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
 
             {/* 매칭비 */}
             {court.court_fee != null && court.court_fee >= 0 && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(184,149,58,0.1)', border: '1px solid rgba(184,149,58,0.28)', color: G, borderRadius: 10, padding: '4px 10px', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: L, border: `1.5px solid rgba(108,191,108,0.3)`, color: P, borderRadius: 10, padding: '4px 10px', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
                 매칭비 {fmtFee(court.court_fee)}
               </span>
             )}

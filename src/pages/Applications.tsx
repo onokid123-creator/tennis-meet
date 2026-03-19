@@ -367,7 +367,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 cursor: 'pointer',
               }}
             >
-              정보
+              프로필
             </button>
           </div>
 
@@ -452,8 +452,8 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               className="flex-shrink-0 px-5 py-3 flex items-center justify-center gap-2"
               style={{ background: 'rgba(255,240,245,0.97)', borderTop: '1px solid rgba(244,63,94,0.08)' }}
             >
-              <span style={{ fontSize: '11px', color: 'rgba(184,48,80,0.55)', fontWeight: 500, textAlign: 'center', letterSpacing: '0.01em' }}>
-                정보 탭에서 MBTI · 키 · 분위기를 살펴보고 편하게 대화를 시작해보세요
+              <span style={{ fontSize: '11px', color: 'rgba(184,48,80,0.5)', fontWeight: 500, textAlign: 'center', letterSpacing: '0.01em' }}>
+                프로필에서 MBTI · 키 · 분위기를 살펴보고 편하게 말을 걸어보세요
               </span>
             </div>
           </div>
@@ -726,7 +726,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
                 cursor: 'pointer',
               }}
             >
-              정보
+              플레이
             </button>
           </div>
 
@@ -833,6 +833,16 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
                 </div>
               </div>
             </div>
+
+            {/* 안내 문구 */}
+            <div
+              className="flex-shrink-0 px-5 py-3 flex items-center justify-center"
+              style={{ background: 'rgba(13,31,20,0.97)', borderTop: '1px solid rgba(108,191,108,0.1)' }}
+            >
+              <span style={{ fontSize: '11px', color: 'rgba(108,191,108,0.5)', fontWeight: 500, textAlign: 'center' }}>
+                플레이 탭에서 구력 · 스타일을 확인하고 파트너로 맞는지 살펴보세요
+              </span>
+            </div>
           </div>
         )}
 
@@ -874,18 +884,9 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {applicant.experience && (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,168,76,0.18)', border: '1px solid rgba(201,168,76,0.4)', color: '#C9A84C' }}>
-                        구력 {applicant.experience}
-                      </span>
-                    )}
-                    {applicant.tennis_style && (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(108,191,108,0.15)', border: '1px solid rgba(108,191,108,0.3)', color: '#6CBF6C' }}>
-                        {applicant.tennis_style}
-                      </span>
-                    )}
-                  </div>
+                  {app.court && (
+                    <p className="text-xs mt-1" style={{ color: 'rgba(108,191,108,0.55)' }}>{app.court.court_name}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -902,9 +903,28 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
                   <p className="text-sm text-white/75 leading-relaxed">{app.message}</p>
                 </div>
               )}
-              {applicant.bio && (
+              {(applicant.experience || applicant.tennis_style) && (
                 <div className="px-4 py-3.5 rounded-2xl" style={{ background: 'rgba(108,191,108,0.07)', border: '1px solid rgba(108,191,108,0.15)' }}>
-                  <p className="text-xs font-semibold mb-1.5" style={{ color: '#6CBF6C' }}>자기소개</p>
+                  <p className="text-xs font-semibold mb-2" style={{ color: '#6CBF6C' }}>테니스 정보</p>
+                  <div className="flex flex-col gap-1.5">
+                    {applicant.experience && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white/40 w-14 flex-shrink-0">구력</span>
+                        <span className="text-sm text-white/85 font-medium">{applicant.experience}</span>
+                      </div>
+                    )}
+                    {applicant.tennis_style && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white/40 w-14 flex-shrink-0">스타일</span>
+                        <span className="text-sm text-white/85 font-medium">{applicant.tennis_style}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {applicant.bio && (
+                <div className="px-4 py-3.5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                  <p className="text-xs font-semibold mb-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>자기소개</p>
                   <p className="text-sm text-white/75 leading-relaxed">{applicant.bio}</p>
                 </div>
               )}
@@ -995,6 +1015,7 @@ export default function Applications() {
   const [rejectSubmitting, setRejectSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const [rejectionDetailApp, setRejectionDetailApp] = useState<Application | null>(null);
 
   const fetchApplications = useCallback(async () => {
     if (!user) return;
@@ -1300,7 +1321,7 @@ export default function Applications() {
   const filteredSent = sentApps.filter((a) => a.purpose === purposeTab);
   const pendingReceivedCount = filteredReceived.length;
 
-  const renderStatusBadge = (status: string, rejectionReason?: string | null) => {
+  const renderStatusBadge = (status: string) => {
     if (status === 'accepted') {
       return (
         <span
@@ -1315,9 +1336,9 @@ export default function Applications() {
       return (
         <span
           className="text-xs font-semibold px-2.5 py-1 rounded-full"
-          style={{ background: 'rgba(156,163,175,0.12)', color: '#9CA3AF', border: '1px solid rgba(156,163,175,0.25)' }}
+          style={{ background: 'rgba(239,68,68,0.1)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.22)' }}
         >
-          {rejectionReason ? `거절됨 - ${rejectionReason}` : '거절됨'}
+          거절됨
         </span>
       );
     }
@@ -1486,6 +1507,7 @@ export default function Applications() {
     const hostPhoto = isTennisApp
       ? host?.tennis_photo_url || host?.photo_url
       : host?.photo_url;
+    const hasRejectionReason = app.status === 'rejected' && !!app.rejection_reason;
 
     return (
       <div
@@ -1494,10 +1516,34 @@ export default function Applications() {
         style={{
           borderRadius: '18px',
           background: isDatingCard ? 'linear-gradient(160deg, #FFF9F6 0%, #FFF5F0 100%)' : '#fff',
-          border: isDatingCard ? '1px solid rgba(183,110,121,0.15)' : '1px solid #EBEBEB',
-          boxShadow: isDatingCard ? '0 2px 12px rgba(183,110,121,0.08)' : '0 2px 12px rgba(0,0,0,0.06)',
+          border: hasRejectionReason
+            ? '1.5px solid rgba(239,68,68,0.3)'
+            : isDatingCard ? '1px solid rgba(183,110,121,0.15)' : '1px solid #EBEBEB',
+          boxShadow: hasRejectionReason
+            ? '0 2px 14px rgba(239,68,68,0.1)'
+            : isDatingCard ? '0 2px 12px rgba(183,110,121,0.08)' : '0 2px 12px rgba(0,0,0,0.06)',
         }}
       >
+        {/* 거절 사유 알림 배너 */}
+        {hasRejectionReason && (
+          <button
+            onClick={() => setRejectionDetailApp(app)}
+            className="w-full flex items-center justify-between px-4 py-2.5 transition active:opacity-80"
+            style={{ background: 'rgba(239,68,68,0.07)', borderBottom: '1px solid rgba(239,68,68,0.12)' }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold" style={{ color: '#DC2626' }}>거절 사유 도착</span>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                style={{ background: '#DC2626', color: '#fff' }}
+              >
+                확인
+              </span>
+            </div>
+            <ChevronRight className="w-3.5 h-3.5" style={{ color: '#DC2626' }} />
+          </button>
+        )}
+
         <div className="flex items-stretch gap-0">
           <div
             className="flex-shrink-0 relative overflow-hidden"
@@ -1528,7 +1574,7 @@ export default function Applications() {
                   <span className="text-sm text-gray-500">{host.age}세</span>
                 )}
               </div>
-              {renderStatusBadge(app.status, app.rejection_reason)}
+              {renderStatusBadge(app.status)}
             </div>
 
             {app.court && (
@@ -1542,7 +1588,7 @@ export default function Applications() {
                 </div>
                 {app.court.date && (
                   <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3 text-white/30" />
+                    <Calendar className="w-3 h-3 text-gray-300" />
                     <p className="text-xs text-gray-400">
                       {new Date(app.court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
                       {app.court.start_time && ` · ${app.court.start_time}`}
@@ -1551,7 +1597,6 @@ export default function Applications() {
                 )}
               </div>
             )}
-
           </div>
         </div>
 
@@ -1732,60 +1777,140 @@ export default function Applications() {
         )
       )}
 
-      {rejectTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-          onClick={() => { setRejectTarget(null); setRejectReason(''); }}
-        >
+      {rejectTarget && (() => {
+        const isDatingReject = rejectTarget.purpose === 'dating';
+        const accentColor = isDatingReject ? '#C0304A' : '#1A5C35';
+        const accentBorder = isDatingReject ? 'rgba(244,63,94,0.25)' : 'rgba(26,92,53,0.2)';
+        const accentBg = isDatingReject ? 'rgba(244,63,94,0.06)' : 'rgba(26,92,53,0.06)';
+        const btnGradient = isDatingReject
+          ? 'linear-gradient(135deg, #F43F5E 0%, #B76E79 100%)'
+          : 'linear-gradient(135deg, #1A5C35 0%, #2D7A4A 100%)';
+        const hasReason = rejectReason.trim().length > 0;
+
+        return (
           <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
-            style={{
-              background: rejectTarget.purpose === 'dating' ? '#FFF8F5' : '#F4F8F5',
-              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
-            }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[9999] flex items-end justify-center"
+            style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(5px)' }}
+            onClick={() => { setRejectTarget(null); setRejectReason(''); }}
           >
             <div
-              className="w-10 h-1 rounded-full mx-auto mb-4"
-              style={{ background: rejectTarget.purpose === 'dating' ? 'rgba(183,110,121,0.3)' : 'rgba(27,67,50,0.25)' }}
-            />
-            <p className="font-bold text-gray-900 text-base mb-1">거절 사유 입력</p>
-            <p className="text-xs text-gray-400 mb-4">
-              {rejectTarget.purpose === 'dating'
-                ? '입력하신 사유가 신청자에게 메시지로 전달됩니다. (선택사항)'
-                : '입력하신 사유가 신청자에게 메시지로 전달됩니다. (선택사항)'}
-            </p>
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="거절 사유를 입력하세요..."
-              rows={3}
-              className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none"
+              className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl flex flex-col"
               style={{
-                background: '#fff',
-                border: `1.5px solid ${rejectTarget.purpose === 'dating' ? 'rgba(183,110,121,0.25)' : 'rgba(27,67,50,0.18)'}`,
-                color: '#1a1a1a',
-                marginBottom: '12px',
+                background: isDatingReject ? '#FFF8F5' : '#F4FAF6',
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
               }}
-            />
-            <div className="flex gap-2">
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className="w-10 h-1 rounded-full mx-auto mb-4"
+                style={{ background: isDatingReject ? 'rgba(183,110,121,0.3)' : 'rgba(26,92,53,0.25)' }}
+              />
+              <p className="font-bold text-gray-900 text-base mb-1">거절 사유 입력</p>
+              <p className="text-xs mb-4" style={{ color: isDatingReject ? 'rgba(184,48,80,0.6)' : 'rgba(26,92,53,0.55)' }}>
+                사유를 입력하면 신청자에게 전달됩니다. 거절 전 꼭 입력해주세요.
+              </p>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder={isDatingReject ? '예) 비슷한 분위기가 아닌 것 같아서요...' : '예) 구력 차이가 많이 나서요...'}
+                rows={4}
+                autoFocus
+                className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none mb-4"
+                style={{
+                  background: '#fff',
+                  border: `1.5px solid ${hasReason ? accentColor : accentBorder}`,
+                  color: '#1a1a1a',
+                  lineHeight: 1.6,
+                  transition: 'border-color 0.2s',
+                  boxShadow: hasReason ? `0 0 0 3px ${accentBg}` : 'none',
+                }}
+              />
+              {!hasReason && (
+                <p className="text-xs text-center mb-3" style={{ color: isDatingReject ? 'rgba(184,48,80,0.45)' : 'rgba(26,92,53,0.45)' }}>
+                  사유를 입력해야 거절할 수 있어요
+                </p>
+              )}
+            </div>
+
+            {/* Fixed 버튼 */}
+            <div
+              style={{
+                position: 'fixed',
+                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+                left: 0,
+                right: 0,
+                zIndex: 10001,
+                padding: '12px 20px 16px',
+                background: isDatingReject ? 'rgba(255,248,245,0.98)' : 'rgba(244,250,246,0.98)',
+                backdropFilter: 'blur(12px)',
+                borderTop: `1px solid ${accentBorder}`,
+                display: 'flex',
+                gap: '10px',
+              }}
+            >
               <button
                 onClick={() => { setRejectTarget(null); setRejectReason(''); }}
-                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
-                style={{ background: '#F3F4F6', color: '#374151' }}
+                className="flex-1 rounded-2xl font-semibold text-sm transition active:scale-95"
+                style={{ background: isDatingReject ? 'rgba(183,110,121,0.1)' : 'rgba(26,92,53,0.08)', color: isDatingReject ? '#7C3D50' : '#2D6A4F', minHeight: '52px', border: `1px solid ${accentBorder}` }}
               >
                 취소
               </button>
               <button
                 onClick={handleRejectConfirm}
-                disabled={rejectSubmitting}
-                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
-                style={{ background: rejectTarget.purpose === 'dating' ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+                disabled={rejectSubmitting || !hasReason}
+                className="flex-1 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-40"
+                style={{ background: btnGradient, minHeight: '52px', border: 'none', boxShadow: hasReason ? `0 4px 14px ${isDatingReject ? 'rgba(244,63,94,0.3)' : 'rgba(26,92,53,0.3)'}` : 'none' }}
               >
                 {rejectSubmitting ? '처리 중...' : '거절하기'}
               </button>
             </div>
+          </div>
+        );
+      })()}
+
+      {rejectionDetailApp && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setRejectionDetailApp(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
+            style={{
+              background: rejectionDetailApp.purpose === 'dating' ? '#FFF8F5' : '#F4FAF6',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-red-200" />
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                style={{ background: '#DC2626', flexShrink: 0 }}
+              >
+                X
+              </span>
+              <p className="font-bold text-gray-900 text-base">거절 사유</p>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">
+              {rejectionDetailApp.court?.court_name && `${rejectionDetailApp.court.court_name} · `}
+              {rejectionDetailApp.purpose === 'dating' ? '설레는 만남' : '오직테니스'}
+            </p>
+            <div
+              className="rounded-2xl px-4 py-4 mb-5"
+              style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)' }}
+            >
+              <p className="text-sm leading-relaxed" style={{ color: '#1a1a1a' }}>
+                {rejectionDetailApp.rejection_reason}
+              </p>
+            </div>
+            <button
+              onClick={() => setRejectionDetailApp(null)}
+              className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white transition active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #374151 0%, #1f2937 100%)' }}
+            >
+              확인
+            </button>
           </div>
         </div>
       )}
