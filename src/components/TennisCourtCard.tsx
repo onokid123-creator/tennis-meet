@@ -167,7 +167,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
         </div>
 
         {/* scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 100 : 16 }}>
 
           {/* photo */}
           {photo ? (
@@ -421,33 +421,38 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
           </div>
         </div>
 
-        {/* Fixed CTA */}
-        {onApply && (
-          <div style={{
-            flexShrink: 0,
-            padding: '12px 14px',
-            paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 8px)',
-            background: BG,
-            borderTop: `1px solid ${L}`,
-            zIndex: 20,
-          }}>
-            {isClosed ? (
-              <div style={{ padding: '16px', borderRadius: 18, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.2)` }}>
-                <span style={{ fontWeight: 600, fontSize: 14, color: M }}>이 코트는 모집이 마감되었어요</span>
-              </div>
-            ) : (
-              <button
-                onClick={() => { onClose(); onApply(); }}
-                style={{ width: '100%', padding: '18px', borderRadius: 18, border: 'none', background: `linear-gradient(135deg,${A},${P})`, color: WH, fontWeight: 800, fontSize: 16, letterSpacing: '0.02em', cursor: 'pointer', boxShadow: '0 6px 20px rgba(26,92,53,0.35)', display: 'block' }}
-                onPointerDown={(e) => (e.currentTarget.style.opacity = '0.9')}
-                onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
-              >
-                참여 신청하기
-              </button>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Fixed CTA — 뷰포트 하단에 고정, BottomNav보다 위 */}
+      {onApply && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10000,
+          padding: '12px 16px',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+          background: BG,
+          borderTop: `1px solid ${L}`,
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.12)',
+        }}>
+          {isClosed ? (
+            <div style={{ padding: '16px', borderRadius: 18, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.2)` }}>
+              <span style={{ fontWeight: 600, fontSize: 14, color: M }}>이 코트는 모집이 마감되었어요</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => { onClose(); onApply(); }}
+              style={{ width: '100%', padding: '18px', borderRadius: 18, border: 'none', background: `linear-gradient(135deg,${A},${P})`, color: WH, fontWeight: 800, fontSize: 16, letterSpacing: '0.02em', cursor: 'pointer', boxShadow: '0 6px 20px rgba(26,92,53,0.35)', display: 'block' }}
+              onPointerDown={(e) => (e.currentTarget.style.opacity = '0.9')}
+              onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
+            >
+              참여 신청하기
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

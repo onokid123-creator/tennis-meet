@@ -10,9 +10,10 @@ export default function TennisProfileSetup() {
   const location = useLocation();
   const { user, updateProfile } = useAuth();
   const from = (location.state as { from?: string })?.from;
+  const prefillPhotoUrl = (location.state as { prefillPhotoUrl?: string })?.prefillPhotoUrl ?? '';
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState('');
+  const [photoPreview, setPhotoPreview] = useState(prefillPhotoUrl);
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
@@ -77,7 +78,7 @@ export default function TennisProfileSetup() {
     setLoading(true);
     setError('');
     try {
-      let photoUrl = '';
+      let photoUrl = prefillPhotoUrl;
       if (photoFile) {
         photoUrl = await uploadPhoto(photoFile);
       }

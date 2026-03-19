@@ -311,29 +311,29 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* ── 공통 상단 탭 바 ── */}
+        {/* ── 공통 상단 탭 바 — 항상 핑크톤 ── */}
         <div
           className="flex-shrink-0 flex items-center justify-between px-4"
           style={{
             paddingTop: '14px',
             paddingBottom: '10px',
-            background: page === 1 ? 'rgba(0,0,0,0.55)' : 'rgba(255,248,248,0.95)',
-            backdropFilter: 'blur(12px)',
-            borderBottom: page === 2 ? '1px solid rgba(244,63,94,0.1)' : '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,240,245,0.96)',
+            backdropFilter: 'blur(14px)',
+            borderBottom: '1px solid rgba(244,63,94,0.1)',
             position: 'relative',
             zIndex: 30,
           }}
         >
           {/* 탭 버튼 */}
-          <div className="flex gap-1.5 rounded-2xl p-1" style={{ background: page === 1 ? 'rgba(255,255,255,0.08)' : 'rgba(244,63,94,0.07)' }}>
+          <div className="flex gap-1.5 rounded-2xl p-1" style={{ background: 'rgba(244,63,94,0.07)' }}>
             <button
               onClick={(e) => { e.stopPropagation(); setPage(1); }}
               className="rounded-xl transition-all duration-200"
               style={{
-                padding: '6px 16px',
+                padding: '6px 18px',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: page === 1 ? (page === 1 ? '#fff' : '#B83050') : 'rgba(176,100,120,0.55)',
+                color: page === 1 ? '#fff' : 'rgba(184,48,80,0.5)',
                 background: page === 1 ? 'linear-gradient(135deg,#F43F5E,#B76E79)' : 'transparent',
                 boxShadow: page === 1 ? '0 2px 10px rgba(244,63,94,0.35)' : 'none',
                 letterSpacing: '0.02em',
@@ -345,10 +345,10 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               onClick={(e) => { e.stopPropagation(); setPage(2); }}
               className="rounded-xl transition-all duration-200"
               style={{
-                padding: '6px 16px',
+                padding: '6px 18px',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: page === 2 ? '#B83050' : (page === 1 ? 'rgba(255,255,255,0.5)' : 'rgba(176,100,120,0.55)'),
+                color: page === 2 ? '#B83050' : 'rgba(184,48,80,0.5)',
                 background: page === 2 ? '#fff' : 'transparent',
                 boxShadow: page === 2 ? '0 2px 8px rgba(244,63,94,0.15)' : 'none',
                 letterSpacing: '0.02em',
@@ -361,7 +361,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           {/* 이름 / 사진 카운트 */}
           <div className="flex items-center gap-2">
             {page === 1 && photos.length > 1 && (
-              <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.55)' }}>
+              <span className="text-xs font-semibold" style={{ color: '#B83050' }}>
                 {photoIdx + 1} / {photos.length}
               </span>
             )}
@@ -374,9 +374,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ background: page === 1 ? 'rgba(255,255,255,0.14)' : 'rgba(244,63,94,0.09)', border: page === 1 ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(244,63,94,0.18)' }}
+            style={{ background: 'rgba(244,63,94,0.09)', border: '1px solid rgba(244,63,94,0.18)' }}
           >
-            <X className="w-4 h-4" style={{ color: page === 1 ? '#fff' : '#B83050' }} />
+            <X className="w-4 h-4" style={{ color: '#B83050' }} />
           </button>
         </div>
 
@@ -446,31 +446,41 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               </div>
             </div>
 
-            {/* 사진 탭 하단 — 정보 보기 버튼 */}
-            <div
-              className="flex-shrink-0 px-5"
+          </div>
+        )}
+
+        {/* 사진 탭 — fixed CTA */}
+        {page === 1 && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 10000,
+              padding: '12px 20px',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+              background: 'rgba(255,240,245,0.97)',
+              backdropFilter: 'blur(12px)',
+              borderTop: '1px solid rgba(244,63,94,0.12)',
+              boxShadow: '0 -4px 20px rgba(244,63,94,0.08)',
+            }}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); setPage(2); }}
+              className="w-full flex items-center justify-center gap-2 rounded-2xl font-semibold transition-all active:scale-95"
               style={{
-                paddingTop: '12px',
-                paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 8px)',
-                background: 'rgba(0,0,0,0.7)',
-                borderTop: '1px solid rgba(255,255,255,0.08)',
+                background: 'linear-gradient(135deg,#F43F5E,#B76E79)',
+                color: '#fff',
+                fontSize: '14px',
+                minHeight: '52px',
+                boxShadow: '0 4px 14px rgba(244,63,94,0.3)',
+                border: 'none',
               }}
             >
-              <button
-                onClick={(e) => { e.stopPropagation(); setPage(2); }}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl font-semibold transition-all active:scale-95"
-                style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  color: 'rgba(255,255,255,0.85)',
-                  fontSize: '14px',
-                  minHeight: '52px',
-                }}
-              >
-                <span>정보 보기</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+              <span>정보 보기</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         )}
 
@@ -534,7 +544,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
             </div>
 
             {/* 스크롤 콘텐츠 */}
-            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3" style={{ paddingBottom: app.status === 'pending' ? 120 : 24 }}>
               {errorMsg && (
                 <div className="px-4 py-3 rounded-2xl text-sm font-medium" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#DC2626' }}>
                   {errorMsg}
@@ -581,45 +591,55 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               )}
             </div>
 
-            {/* 정보 탭 하단 CTA */}
-            {app.status === 'pending' && (
-              <div
-                className="flex-shrink-0 flex gap-3 px-5"
-                style={{
-                  paddingTop: '12px',
-                  paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 8px)',
-                  borderTop: '1px solid rgba(244,63,94,0.12)',
-                  background: '#FFF2F4',
-                }}
-              >
-                <button
-                  onClick={() => onReject(app)}
-                  disabled={processing}
-                  className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
-                  style={{
-                    background: 'rgba(183,110,121,0.1)',
-                    color: '#7C3D50',
-                    border: '1.5px solid rgba(183,110,121,0.25)',
-                    minHeight: '52px',
-                  }}
-                >
-                  {processing ? '...' : '거절하기'}
-                </button>
-                <button
-                  onClick={() => onAccept(app)}
-                  disabled={processing}
-                  className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
-                  style={{
-                    background: 'linear-gradient(135deg, #F43F5E 0%, #B76E79 100%)',
-                    color: '#fff',
-                    boxShadow: '0 4px 14px rgba(244,63,94,0.35)',
-                    minHeight: '52px',
-                  }}
-                >
-                  {processing ? '처리 중...' : '수락하기'}
-                </button>
-              </div>
-            )}
+          </div>
+        )}
+
+        {/* 정보 탭 — fixed CTA */}
+        {page === 2 && app.status === 'pending' && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 10000,
+              padding: '12px 20px',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+              background: 'rgba(255,240,245,0.97)',
+              backdropFilter: 'blur(12px)',
+              borderTop: '1px solid rgba(244,63,94,0.12)',
+              boxShadow: '0 -4px 20px rgba(244,63,94,0.08)',
+              display: 'flex',
+              gap: '10px',
+            }}
+          >
+            <button
+              onClick={() => onReject(app)}
+              disabled={processing}
+              className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
+              style={{
+                background: 'rgba(183,110,121,0.1)',
+                color: '#7C3D50',
+                border: '1.5px solid rgba(183,110,121,0.25)',
+                minHeight: '52px',
+              }}
+            >
+              {processing ? '...' : '거절하기'}
+            </button>
+            <button
+              onClick={() => onAccept(app)}
+              disabled={processing}
+              className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
+              style={{
+                background: 'linear-gradient(135deg, #F43F5E 0%, #B76E79 100%)',
+                color: '#fff',
+                boxShadow: '0 4px 14px rgba(244,63,94,0.35)',
+                minHeight: '52px',
+                border: 'none',
+              }}
+            >
+              {processing ? '처리 중...' : '수락하기'}
+            </button>
           </div>
         )}
       </div>
@@ -650,7 +670,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
           <ApplicantPhotoCarousel profile={applicant} />
         </div>
 
-        <div className="overflow-y-auto flex-1 px-5 pt-4" style={{ background: '#111c16', paddingBottom: app.status === 'pending' ? '0' : '16px' }}>
+        <div className="overflow-y-auto flex-1 px-5 pt-4" style={{ background: '#111c16', paddingBottom: app.status === 'pending' ? 120 : 24 }}>
           {errorMsg && (
             <div
               className="mb-3 px-4 py-3 rounded-xl text-sm font-medium"
@@ -703,35 +723,6 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
           )}
         </div>
 
-        {app.status === 'pending' && (
-          <div
-            className="flex-shrink-0 flex flex-col gap-3 px-5"
-            style={{
-              paddingTop: '14px',
-              paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 8px)',
-              background: '#111c16',
-              borderTop: '1px solid rgba(255,255,255,0.08)',
-            }}
-          >
-            <button
-              onClick={() => onAccept(app)}
-              disabled={processing}
-              className="w-full rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
-              style={{ background: '#C9A84C', color: '#fff', minHeight: '52px' }}
-            >
-              {processing ? '처리 중...' : '수락하기'}
-            </button>
-            <button
-              onClick={() => onReject(app)}
-              disabled={processing}
-              className="w-full rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
-              style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.15)', minHeight: '52px' }}
-            >
-              {processing ? '...' : '거절하기'}
-            </button>
-          </div>
-        )}
-
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition z-20"
@@ -740,6 +731,44 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
           <X className="w-4 h-4 text-white" />
         </button>
       </div>
+
+      {/* Fixed CTA — 테니스 신청 수락/거절 */}
+      {app.status === 'pending' && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10000,
+            padding: '12px 20px',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+            background: '#111c16',
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <button
+            onClick={() => onAccept(app)}
+            disabled={processing}
+            className="w-full rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
+            style={{ background: '#C9A84C', color: '#fff', minHeight: '52px', border: 'none' }}
+          >
+            {processing ? '처리 중...' : '수락하기'}
+          </button>
+          <button
+            onClick={() => onReject(app)}
+            disabled={processing}
+            className="w-full rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
+            style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.15)', minHeight: '52px' }}
+          >
+            {processing ? '...' : '거절하기'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

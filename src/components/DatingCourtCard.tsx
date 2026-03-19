@@ -228,7 +228,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         </div>
 
         {/* ── Scrollable area ── */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 100 : 16 }}>
 
         {/* ── Image slide ── */}
         <div
@@ -473,29 +473,34 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         {/* ── end scrollable area ── */}
         </div>
 
-        {/* ── Fixed CTA at bottom ── */}
-        {onApply && (
-          <div style={{
-            flexShrink: 0,
-            padding: '12px 14px',
-            paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), 20px) + 8px)',
-            background: PAGE,
-            borderTop: '1px solid rgba(255,126,138,0.08)',
-            zIndex: 20,
-          }}>
-            {closed ? (
-              <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#F3F4F6', border: '1px solid #E5E7EB' }}>
-                <span style={{ fontWeight: 600, fontSize: 14, color: MUTED }}>이미 마감된 모임이에요</span>
-              </div>
-            ) : (
-              <PinkBtn onClick={() => { onClose(); onApply(); }}>
-                <Heart style={{ width: 17, height: 17, fill: WHITE, strokeWidth: 0 }} />
-                이 만남, 이어가볼까요?
-              </PinkBtn>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* ── Fixed CTA — 뷰포트 하단 고정 ── */}
+      {onApply && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10000,
+          padding: '12px 16px',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
+          background: PAGE,
+          borderTop: '1px solid rgba(255,126,138,0.1)',
+          boxShadow: '0 -4px 20px rgba(255,126,138,0.1)',
+        }}>
+          {closed ? (
+            <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#F3F4F6', border: '1px solid #E5E7EB' }}>
+              <span style={{ fontWeight: 600, fontSize: 14, color: MUTED }}>이미 마감된 모임이에요</span>
+            </div>
+          ) : (
+            <PinkBtn onClick={() => { onClose(); onApply(); }}>
+              <Heart style={{ width: 17, height: 17, fill: WHITE, strokeWidth: 0 }} />
+              이 만남, 이어가볼까요?
+            </PinkBtn>
+          )}
+        </div>
+      )}
 
       {lbOpen && <Lightbox photos={photos} index={lbIdx} onClose={() => setLbOpen(false)} onChange={setLbIdx} />}
     </div>

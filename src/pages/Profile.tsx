@@ -60,6 +60,7 @@ export default function Profile() {
   const tennisFileInputRef = useRef<HTMLInputElement>(null);
   const [showTennisCreatePopup, setShowTennisCreatePopup] = useState(false);
   const [showPhotoSelectPopup, setShowPhotoSelectPopup] = useState(false);
+  const [photoSelectMode, setPhotoSelectMode] = useState<'existing' | 'create'>('existing');
   const [savingTennisFromExisting, setSavingTennisFromExisting] = useState(false);
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [tennisImageLoaded, setTennisImageLoaded] = useState(false);
@@ -264,6 +265,7 @@ export default function Profile() {
   const handleUseExistingForTennisFromProfile = () => {
     if (!profile) return;
     setShowTennisSetupPopup(false);
+    setPhotoSelectMode('existing');
     setShowPhotoSelectPopup(true);
   };
 
@@ -996,7 +998,15 @@ export default function Profile() {
               기존 프로필 사용
             </button>
             <button
-              onClick={() => { setShowTennisSetupPopup(false); navigate('/tennis-profile-setup'); }}
+              onClick={() => {
+                setShowTennisSetupPopup(false);
+                if (allPhotos.length > 0) {
+                  setPhotoSelectMode('create');
+                  setShowPhotoSelectPopup(true);
+                } else {
+                  navigate('/tennis-profile-setup');
+                }
+              }}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
               style={{ background: '#C9A84C' }}
             >
@@ -1013,12 +1023,15 @@ export default function Profile() {
           onClick={() => !savingTennisFromExisting && setShowPhotoSelectPopup(false)}
         >
           <div
-            className="w-full max-w-md bg-white rounded-t-3xl px-6 pt-6 pb-10"
+            className="w-full max-w-md bg-white rounded-t-3xl px-6 pt-6"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-5" />
             <p className="text-lg font-bold text-gray-900 mb-1">사진 선택</p>
-            <p className="text-sm text-gray-500 mb-5">테니스 프로필에 사용할 사진을 선택해주세요</p>
+            <p className="text-sm text-gray-500 mb-5">
+              {photoSelectMode === 'create' ? '테니스 프로필에 사용할 설레는 만남 사진을 고르세요' : '테니스 프로필에 사용할 사진을 선택해주세요'}
+            </p>
             {allPhotos.length === 0 ? (
               <div className="py-8 text-center">
                 <p className="text-sm text-gray-400">등록된 사진이 없습니다.</p>
@@ -1038,7 +1051,14 @@ export default function Profile() {
                       key={idx}
                       type="button"
                       disabled={savingTennisFromExisting}
-                      onClick={() => handlePhotoSelectedForTennis(url)}
+                      onClick={() => {
+                        if (photoSelectMode === 'create') {
+                          setShowPhotoSelectPopup(false);
+                          navigate('/tennis-profile-setup', { state: { prefillPhotoUrl: url } });
+                        } else {
+                          handlePhotoSelectedForTennis(url);
+                        }
+                      }}
                       className="relative rounded-xl overflow-hidden border-2 border-transparent hover:border-[#C9A84C] transition disabled:opacity-50"
                       style={{ height: 110 }}
                     >
@@ -1057,6 +1077,15 @@ export default function Profile() {
                     </button>
                   ))}
                 </div>
+                {photoSelectMode === 'create' && (
+                  <button
+                    onClick={() => { setShowPhotoSelectPopup(false); navigate('/tennis-profile-setup'); }}
+                    className="w-full py-3.5 rounded-2xl font-semibold text-sm mb-2"
+                    style={{ background: '#C9A84C', color: '#fff' }}
+                  >
+                    사진 없이 계속하기
+                  </button>
+                )}
                 <button
                   onClick={() => setShowPhotoSelectPopup(false)}
                   disabled={savingTennisFromExisting}
