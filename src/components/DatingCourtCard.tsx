@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Court } from '../types';
-import { ChevronLeft, ChevronRight, X, Pencil, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Pencil, Trash2, MapPin, Calendar, Clock } from 'lucide-react';
 
 interface DatingCourtCardProps {
   court: Court;
@@ -254,14 +254,6 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
           </div>
         </div>
 
-        {/* 2. 한줄소개 이탤릭체 */}
-        {ownerBio && (
-          <div className="px-4 pt-2 pb-0">
-            <p style={{ fontSize: 13, fontStyle: 'italic', color: '#A07832', lineHeight: 1.5, margin: 0 }}>
-              "{ownerBio}"
-            </p>
-          </div>
-        )}
 
         {/* 3. 코트 사진 크게 */}
         <div
@@ -354,8 +346,8 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
                   borderBottomRightRadius: 12,
                 }}
               >
-                <span style={{ fontSize: 12, color: '#fff', fontWeight: 500, letterSpacing: 0.2, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                  📸 사진을 눌러서 확인해보세요 👆
+                <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.82)', fontWeight: 500, letterSpacing: 0.3, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+                  사진을 눌러서 크게 보기
                 </span>
               </div>
             </>
@@ -368,43 +360,106 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
 
         {/* 4. 정보 영역 (사진 아래) */}
         <div className="px-4 pt-4 pb-5">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {/* 📍 장소명 */}
-            <div className="flex items-center gap-2">
-              <span style={{ fontSize: 15 }}>📍</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }} className="truncate">{court.court_name}</span>
+          <div
+            style={{
+              background: '#FDF5E8',
+              borderRadius: 16,
+              padding: '14px 16px',
+              border: '1px solid rgba(201,168,76,0.22)',
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}
+          >
+            {/* 장소명 + 코트비 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                <MapPin style={{ width: 14, height: 14, color: '#C9A84C', flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, fontSize: 14.5, color: '#1a1a1a', letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {court.court_name}
+                </span>
+              </div>
+              {costLabel && (
+                <span style={{ fontSize: 12, color: '#A07832', whiteSpace: 'nowrap', flexShrink: 0, fontWeight: 500 }}>
+                  {costLabel}
+                </span>
+              )}
             </div>
 
-            {/* ⏰ 날짜 · 시작시간 ~ 종료시간 */}
+            {/* 날짜 · 시간 */}
             {court.start_time && (
-              <div className="flex items-center gap-2">
-                <span style={{ fontSize: 14 }}>⏰</span>
-                <span style={{ fontSize: 14, color: '#4B5563' }}>{dateFormatted} · {court.start_time} ~ {court.end_time}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {dateFormatted && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Calendar style={{ width: 13, height: 13, color: '#9CA3AF', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12.5, color: '#6B7280' }}>{dateFormatted}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <Clock style={{ width: 13, height: 13, color: '#9CA3AF', flexShrink: 0 }} />
+                  <span style={{ fontSize: 12.5, color: '#6B7280' }}>
+                    {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
+                  </span>
+                </div>
               </div>
             )}
 
-            {/* 👥 남 N명 · 여 N명 모집중 */}
+            {/* 모집 상태 */}
             {isClosed ? (
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#C9A84C' }}>✅ 모집 마감</span>
+              <div style={{
+                background: 'rgba(201,168,76,0.08)',
+                border: '1px solid rgba(201,168,76,0.25)',
+                borderRadius: 10, padding: '7px 14px', textAlign: 'center',
+              }}>
+                <span style={{ fontWeight: 600, fontSize: 12.5, color: '#A07832' }}>모집 마감</span>
+              </div>
             ) : showRecruitment ? (
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#C9A84C' }}>
-                {(() => {
-                  const hasAnyConfirmed = (court.confirmed_male_slots ?? 0) > 0 || (court.confirmed_female_slots ?? 0) > 0;
-                  const malePart = totalMale > 0
-                    ? (displayMale <= 0 ? '남 마감' : `남 ${displayMale}명${hasAnyConfirmed ? ' 남음' : ''}`)
-                    : null;
-                  const femalePart = totalFemale > 0
-                    ? (displayFemale <= 0 ? '여 마감' : `여 ${displayFemale}명${hasAnyConfirmed ? ' 남음' : ''}`)
-                    : null;
-                  const parts = [malePart, femalePart].filter(Boolean).join(' · ');
-                  return `👥 ${parts} 모집중`;
-                })()}
-              </span>
+              <div style={{ display: 'flex', gap: 7 }}>
+                {totalMale > 0 && (
+                  <div style={{
+                    flex: 1,
+                    background: displayMale <= 0 ? 'rgba(239,68,68,0.05)' : '#fff',
+                    border: `1px solid ${displayMale <= 0 ? 'rgba(239,68,68,0.18)' : 'rgba(201,168,76,0.25)'}`,
+                    borderRadius: 10, padding: '7px 11px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
+                    <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 500 }}>
+                      남성 <span style={{ opacity: 0.65 }}>{confirmedMale}/{totalMale}</span>
+                    </span>
+                    <span style={{ fontWeight: 700, fontSize: 12.5, color: displayMale <= 0 ? '#ef4444' : '#C9A84C', letterSpacing: '-0.01em' }}>
+                      {displayMale <= 0 ? '마감' : `${displayMale}명 남음`}
+                    </span>
+                  </div>
+                )}
+                {totalFemale > 0 && (
+                  <div style={{
+                    flex: 1,
+                    background: displayFemale <= 0 ? 'rgba(239,68,68,0.05)' : '#fff',
+                    border: `1px solid ${displayFemale <= 0 ? 'rgba(239,68,68,0.18)' : 'rgba(201,168,76,0.25)'}`,
+                    borderRadius: 10, padding: '7px 11px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
+                    <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 500 }}>
+                      여성 <span style={{ opacity: 0.65 }}>{confirmedFemale}/{totalFemale}</span>
+                    </span>
+                    <span style={{ fontWeight: 700, fontSize: 12.5, color: displayFemale <= 0 ? '#ef4444' : '#C9A84C', letterSpacing: '-0.01em' }}>
+                      {displayFemale <= 0 ? '마감' : `${displayFemale}명 남음`}
+                    </span>
+                  </div>
+                )}
+              </div>
             ) : null}
 
-            {/* 💰 코트비 */}
-            {costLabel && (
-              <span style={{ fontSize: 13, color: '#6B7280' }}>💰 코트비 · {costLabel}</span>
+            {/* 소개글 */}
+            {ownerBio && (
+              <div style={{
+                borderTop: '1px solid rgba(201,168,76,0.18)',
+                paddingTop: 10,
+                display: 'flex', gap: 9, alignItems: 'flex-start',
+              }}>
+                <div style={{ width: 2, flexShrink: 0, borderRadius: 99, background: '#C9A84C', alignSelf: 'stretch', minHeight: 18 }} />
+                <p style={{ fontSize: 13, color: '#7A6030', lineHeight: 1.6, margin: 0 }}>
+                  {ownerBio}
+                </p>
+              </div>
             )}
           </div>
 

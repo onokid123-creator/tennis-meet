@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Court } from '../types';
-import { Pencil, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock } from 'lucide-react';
 
 interface TennisCourtCardProps {
   court: Court;
@@ -217,15 +217,6 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           </div>
         </div>
 
-        {/* 2. 소개글 */}
-        {court.description && (
-          <div style={{ padding: '10px 16px 0', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <div style={{ width: 2.5, flexShrink: 0, borderRadius: 99, background: SECONDARY, alignSelf: 'stretch', minHeight: 16 }} />
-            <p style={{ fontSize: 13.5, color: '#4C5B52', lineHeight: 1.55, margin: 0, fontStyle: 'italic' }}>
-              "{court.description}"
-            </p>
-          </div>
-        )}
 
         {/* 3. 이미지 영역 */}
         {photos.length > 0 && (
@@ -312,11 +303,14 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           >
             {/* 코트명 + 가격 */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: 15, color: TEXT_PRIMARY, letterSpacing: '-0.02em', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                📍 {court.court_name}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                <MapPin style={{ width: 14, height: 14, color: SECONDARY, flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, fontSize: 14.5, color: TEXT_PRIMARY, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {court.court_name}
+                </span>
+              </div>
               {court.court_fee != null && court.court_fee >= 0 && (
-                <span style={{ fontWeight: 600, fontSize: 13.5, color: GOLD, whiteSpace: 'nowrap', letterSpacing: '-0.01em', flexShrink: 0 }}>
+                <span style={{ fontWeight: 600, fontSize: 13, color: GOLD, whiteSpace: 'nowrap', letterSpacing: '-0.01em', flexShrink: 0 }}>
                   {court.court_fee === 0 ? '무료' : `${court.court_fee.toLocaleString()}원`}
                 </span>
               )}
@@ -324,11 +318,36 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
 
             {/* 날짜 · 시간 */}
             {(court.date || court.start_time) && (
-              <span style={{ fontSize: 13, color: TEXT_SECONDARY, letterSpacing: '0.01em' }}>
-                ⏰ {court.date ? formatDate(court.date) : ''}
-                {court.date && court.start_time ? '  ·  ' : ''}
-                {court.start_time ? `${court.start_time}${court.end_time ? ` – ${court.end_time}` : ''}` : ''}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {court.date && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Calendar style={{ width: 13, height: 13, color: TEXT_SECONDARY, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12.5, color: TEXT_SECONDARY }}>{formatDate(court.date)}</span>
+                  </div>
+                )}
+                {court.start_time && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Clock style={{ width: 13, height: 13, color: TEXT_SECONDARY, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12.5, color: TEXT_SECONDARY }}>
+                      {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 소개글 */}
+            {court.description && (
+              <div style={{
+                borderTop: `1px solid ${LIGHT_GREEN}`,
+                paddingTop: 10,
+                display: 'flex', gap: 9, alignItems: 'flex-start',
+              }}>
+                <div style={{ width: 2, flexShrink: 0, borderRadius: 99, background: SECONDARY, alignSelf: 'stretch', minHeight: 18 }} />
+                <p style={{ fontSize: 13, color: '#4C5B52', lineHeight: 1.6, margin: 0 }}>
+                  {court.description}
+                </p>
+              </div>
             )}
 
             {/* 남은 인원 */}
