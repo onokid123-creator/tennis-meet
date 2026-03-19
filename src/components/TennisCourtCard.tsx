@@ -371,10 +371,10 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
                   {confirmedProfiles.map((p, idx) => (
                     <div key={p.user_id || idx} style={{ display: 'flex', alignItems: 'center', gap: 12, background: BG, borderRadius: 12, padding: '10px 12px', border: `1px solid ${L}` }}>
                       <Avatar src={p.tennis_photo_url || p.photo_url} name={p.name} size={42} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontWeight: 700, fontSize: 14, color: T }}>{p.name}</span>
-                        {p.experience && <div style={{ fontSize: 12, color: M, marginTop: 2 }}>구력 {p.experience}</div>}
-                        {p.tennis_style && <div style={{ fontSize: 11, color: A, fontWeight: 600, marginTop: 2 }}>{p.tennis_style}</div>}
+                      <div style={{ flex: 1, minWidth: 0, overflow: 'visible' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: T, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                        {p.experience && <div style={{ fontSize: 12, color: M, marginTop: 3, whiteSpace: 'nowrap' }}>구력 {p.experience}</div>}
+                        {p.tennis_style && <div style={{ fontSize: 11, color: A, fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap' }}>{p.tennis_style}</div>}
                       </div>
                     </div>
                   ))}

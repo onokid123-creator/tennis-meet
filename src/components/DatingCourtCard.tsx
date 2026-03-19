@@ -401,10 +401,10 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                 ) : (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                     {confirmed.map((pr, i) => (
-                      <div key={pr.user_id ?? i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 58 }}>
+                      <div key={pr.user_id ?? i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 64 }}>
                         <Avatar src={pr.photo_urls?.[0] ?? pr.photo_url} name={pr.name} size={48} ring={`2px solid ${PINK2}`} />
                         <span style={{ fontSize: 11, fontWeight: 600, color: DARK, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pr.name}</span>
-                        {pr.experience && <span style={{ fontSize: 10, color: MUTED, marginTop: -2 }}>{pr.experience}</span>}
+                        {pr.experience && <span style={{ fontSize: 10, color: MUTED, marginTop: -2, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pr.experience}</span>}
                       </div>
                     ))}
                   </div>

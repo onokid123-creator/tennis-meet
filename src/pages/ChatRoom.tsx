@@ -1537,7 +1537,16 @@ const closeAllPickers = () => {
     }
     await supabase.from('chats').update({ confirmed_user_ids: [] }).eq('id', chatId!);
     if (otherUser) {
-      await supabase.from('chat_participants').update({ is_confirmed: false }).eq('chat_id', chatId!).eq('user_id', otherUser.user_id || otherUser.id);
+      const otherUserId = otherUser.user_id || otherUser.id;
+      await supabase.from('chat_participants').update({ is_confirmed: false }).eq('chat_id', chatId!).eq('user_id', otherUserId);
+      if (courtId) {
+        await supabase
+          .from('applications')
+          .update({ status: 'pending' })
+          .eq('court_id', courtId)
+          .eq('applicant_id', otherUserId)
+          .eq('status', 'accepted');
+      }
     }
     setConfirmedParticipants([]);
     setMatchConfirmed(false);
@@ -1592,6 +1601,15 @@ const closeAllPickers = () => {
         .update({ is_confirmed: false })
         .eq('chat_id', chatId!)
         .eq('user_id', participantId);
+
+      if (courtId) {
+        await supabase
+          .from('applications')
+          .update({ status: 'pending' })
+          .eq('court_id', courtId)
+          .eq('applicant_id', participantId)
+          .eq('status', 'accepted');
+      }
 
       setGroupAvatars((prev) =>
         prev.map((av) => av.user_id === participantId ? { ...av, is_confirmed: false } : av)

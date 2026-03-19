@@ -17,18 +17,20 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://tennis-meet-app-nv53.bolt.host/reset-password',
+      const redirectTo = `${window.location.origin}/reset-password`;
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo,
       });
 
       if (resetError) {
-        console.error(resetError);
         if (resetError.message.includes('security purposes') || resetError.message.includes('60 seconds')) {
           setError('60초 후에 다시 시도해주세요.');
-        } else if (resetError.message.includes('User not found')) {
+        } else if (resetError.message.includes('User not found') || resetError.message.includes('user_not_found')) {
           setError('등록되지 않은 이메일입니다.');
+        } else if (resetError.message.includes('rate limit') || resetError.message.includes('too many')) {
+          setError('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
         } else {
-          setError(resetError.message);
+          setError(`오류: ${resetError.message}`);
         }
         return;
       }

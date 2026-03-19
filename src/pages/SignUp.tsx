@@ -7,7 +7,7 @@ type ModalType = 'terms' | 'privacy' | null;
 
 const TERMS_CONTENT = [
   { title: '제1조', text: '본 약관은 Tennis Meet가 제공하는 테니스 파트너 매칭 서비스의 이용 조건을 규정합니다.' },
-  { title: '제2조', text: '만 17세 이상이면 누구나 이용 가능합니다.' },
+  { title: '제2조', text: '만 18세 이상이면 누구나 이용 가능합니다.' },
   { title: '제3조', text: '허위 프로필, 음란물, 사기 행위를 금지하며 위반 시 이용이 제한됩니다.' },
   { title: '제4조', text: '서비스: 오직테니스(테니스 파트너 매칭), 설레는 만남(이성 매칭), 채팅 및 매칭 기능.' },
   { title: '제5조', text: '회사는 이용자 간 매칭 결과 및 만남에 대해 책임을 지지 않습니다.' },
@@ -158,10 +158,11 @@ export default function SignUp() {
 
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [agreeAge, setAgreeAge] = useState(false);
   const [modal, setModal] = useState<ModalType>(null);
   const [toast, setToast] = useState('');
 
-  const allAgreed = agreeTerms && agreePrivacy;
+  const allAgreed = agreeTerms && agreePrivacy && agreeAge;
 
   const ageFromBirthdate = formData.birthdate ? (() => {
     const today = new Date();
@@ -172,12 +173,13 @@ export default function SignUp() {
     return age;
   })() : null;
 
-  const isUnderAge = ageFromBirthdate !== null && ageFromBirthdate < 17;
+  const isUnderAge = ageFromBirthdate !== null && ageFromBirthdate < 18;
 
   const toggleAll = () => {
     const next = !allAgreed;
     setAgreeTerms(next);
     setAgreePrivacy(next);
+    setAgreeAge(next);
   };
 
   const showToast = (msg: string) => {
@@ -202,8 +204,12 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreeTerms || !agreePrivacy) {
-      showToast('이용약관 및 개인정보처리방침에 동의해주세요.');
+    if (!agreeTerms || !agreePrivacy || !agreeAge) {
+      showToast('이용약관, 개인정보처리방침 및 연령 확인에 동의해주세요.');
+      return;
+    }
+    if (isUnderAge) {
+      showToast('이 서비스는 만 18세 이상만 이용 가능합니다.');
       return;
     }
     setError('');
@@ -362,8 +368,8 @@ export default function SignUp() {
                 required
               />
               {isUnderAge && (
-                <p className="mt-2 text-sm" style={{ color: '#FCA5A5', fontWeight: 500 }}>
-                  Tennis Meet는 만 17세 이상만 이용 가능합니다.
+                <p className="mt-2 text-sm" style={{ color: '#EF4444', fontWeight: 500 }}>
+                  이 서비스는 만 18세 이상만 이용 가능합니다.
                 </p>
               )}
             </div>
@@ -437,12 +443,33 @@ export default function SignUp() {
                 badge="필수"
                 onView={() => setModal('privacy')}
               />
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setAgreeAge(!agreeAge)}
+                  className="flex items-center gap-2.5 flex-1 min-w-0"
+                >
+                  <div
+                    className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center transition"
+                    style={{
+                      background: agreeAge ? '#C9A84C' : 'rgba(255,255,255,0.08)',
+                      border: `2px solid ${agreeAge ? '#C9A84C' : 'rgba(255,255,255,0.3)'}`,
+                    }}
+                  >
+                    {agreeAge && <Check className="w-3 h-3" style={{ color: '#fff', strokeWidth: 3 }} />}
+                  </div>
+                  <span style={{ fontSize: 14, color: 'rgba(27,67,50,0.8)' }}>
+                    만 18세 이상입니다{' '}
+                    <span style={{ fontSize: 12, color: '#EF4444', fontWeight: 600 }}>(필수)</span>
+                  </span>
+                </button>
+              </div>
             </div>
 
             <div className="pt-1">
               <button
                 type="submit"
-                disabled={loading || !formData.gender || !allAgreed || isUnderAge}
+                disabled={loading || !formData.gender || !allAgreed || (isUnderAge ?? false)}
                 className="w-full py-4 font-bold tracking-widest uppercase transition active:scale-[0.98] disabled:opacity-40"
                 style={{
                   background: '#C9A84C',
