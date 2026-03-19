@@ -355,7 +355,7 @@ export default function GroupChatRoom() {
     await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
-      content: isDating ? `${participant.profile?.name ?? '참여자'}님이 입장했어요 😊` : `${participant.profile?.name ?? '참여자'}님이 참여했어요 🎾`,
+      content: isDating ? `💕 매칭 확정! 설레는 만남 기대해요 🥂` : `🎾 라인업 확정!`,
       type: 'system',
       is_read: false,
     });
@@ -428,7 +428,7 @@ export default function GroupChatRoom() {
       .from('court_group_chats')
       .update({ confirmed_user_ids: confirmedIds })
       .eq('id', groupChatId!);
-    const msg = isDating ? '멤버 구성이 완료됐어요. 즐거운 시간 되세요!' : '멤버 구성이 완료됐어요. 좋은 경기 하세요!';
+    const msg = isDating ? '💕 매칭 확정! 설레는 만남 기대해요 🥂' : '🎾 라인업 확정!';
     const ok = await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,

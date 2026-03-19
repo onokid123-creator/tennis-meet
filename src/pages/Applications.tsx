@@ -1238,8 +1238,8 @@ export default function Applications() {
       if (useGroupChat && targetChatId) {
         const entryMsg =
           courtPurpose === 'dating'
-            ? `${applicantName}님이 입장했어요 😊`
-            : `${applicantName}님이 참여했어요 🎾`;
+            ? `${applicantName}님이 입장했어요 💕`
+            : `${applicantName}님이 입장했어요 🎾`;
         await supabase.from('court_group_chat_messages').insert({
           group_chat_id: targetChatId,
           sender_id: null,
@@ -1250,8 +1250,8 @@ export default function Applications() {
       } else if (!useGroupChat && isNewChat && targetChatId) {
         const welcomeMsg =
           courtPurpose === 'dating'
-            ? '매칭됐어요! 식사나 커피 한 잔 어때요?'
-            : '매칭됐어요! 코트에서 좋은 경기 해요.';
+            ? '채팅방이 열렸어요. 경기 전 가볍게 인사해보세요 💕'
+            : '채팅방이 열렸어요. 경기 전 가볍게 소통해보세요 🎾';
         await supabase.from('messages').insert({
           chat_id: targetChatId,
           sender_id: null,
@@ -1619,7 +1619,7 @@ export default function Applications() {
   const isDating = purposeTab === 'dating';
   const activeColor = isDating ? '#C9637A' : '#1B4332';
   const activeBg = isDating
-    ? 'linear-gradient(160deg, #8C3A50 0%, #A84E65 100%)'
+    ? 'linear-gradient(160deg, #5A2635 0%, #7A3348 100%)'
     : 'linear-gradient(160deg, #0A1F14 0%, #1B4332 100%)';
   const pageBg = isDating
     ? 'linear-gradient(180deg, #FFF5F7 0%, #FFF0F3 100%)'
@@ -1927,8 +1927,7 @@ export default function Applications() {
               className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
               style={{
                 background: isDatingDelete ? '#FFF8F5' : '#fff',
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
-                marginBottom: 0,
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
