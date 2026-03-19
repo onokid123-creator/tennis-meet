@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Court } from '../types';
-import { ChevronLeft, ChevronRight, X, Pencil, Trash2, MapPin, Calendar, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Pencil, Trash2, MapPin, Calendar, Clock, Maximize2 } from 'lucide-react';
 
 interface DatingCourtCardProps {
   court: Court;
@@ -116,13 +116,13 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
   const genderColor = ownerGender === '남성' ? '#60A5FA' : '#F472B6';
   const genderSymbol = ownerGender === '남성' ? '♂' : '♀';
 
-  const costLabel = court.cost === 'dutch' ? '같이 나눠요 💑' : court.cost === 'host' ? '제가 낼게요 😊' : null;
+  const costLabel = court.cost === 'dutch' ? '같이 나눠요' : court.cost === 'host' ? '제가 낼게요' : null;
 
   const activeBadgeSource = court.format ?? court.match_type ?? null;
   const formatBadgeLabel = (() => {
     if (!activeBadgeSource) return null;
-    if (activeBadgeSource === '단식') return '단식 (1대1 미팅 💑)';
-    if (activeBadgeSource === '혼복') return '혼복 (2대2 미팅 👫👫)';
+    if (activeBadgeSource === '단식') return '단식 · 1대1 미팅';
+    if (activeBadgeSource === '혼복') return '혼복 · 2대2 미팅';
     return activeBadgeSource;
   })();
 
@@ -147,8 +147,8 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
         style={{
           background: '#FDF8F0',
           borderRadius: '20px',
-          boxShadow: '0 8px 32px rgba(201,168,76,0.14), 0 2px 8px rgba(0,0,0,0.08)',
-          border: '1px solid rgba(201,168,76,0.18)',
+          boxShadow: '0 8px 32px rgba(201,168,76,0.13), 0 2px 8px rgba(0,0,0,0.07)',
+          border: '1px solid rgba(201,168,76,0.16)',
         }}
       >
         {/* Owner controls */}
@@ -174,7 +174,7 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
         )}
 
         {/* 1. 상단 프로필 영역 */}
-        <div className="flex items-center gap-3 px-4 pt-3 pb-0">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: isOwner ? '10px 16px 0' : '16px 16px 0' }}>
           {/* 동그란 프로필 사진 */}
           <div className="relative flex-shrink-0">
             {primaryPhoto ? (
@@ -182,7 +182,7 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
                 src={primaryPhoto}
                 alt={ownerName}
                 className="w-14 h-14 rounded-full object-cover object-top"
-                style={{ border: '2px solid #C9A84C', cursor: 'pointer' }}
+                style={{ border: '2px solid rgba(201,168,76,0.6)', cursor: 'pointer' }}
                 loading="eager"
                 decoding="sync"
                 fetchPriority="high"
@@ -192,7 +192,7 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
             ) : (
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-white"
-                style={{ background: 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)', border: '2px solid #C9A84C', fontSize: 22 }}
+                style={{ background: 'linear-gradient(135deg, #e8a5b4 0%, #c97d91 100%)', border: '2px solid rgba(201,168,76,0.4)', fontSize: 22 }}
               >
                 {ownerName?.charAt(0) || '?'}
               </div>
@@ -200,62 +200,56 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
             {ownerGender && (
               <div
                 className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: genderColor }}
+                style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: genderColor, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
               >
                 {genderSymbol}
               </div>
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
-            {/* 이름 + 나이 */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-gray-900" style={{ fontSize: 16 }}>{ownerName}</span>
+          <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+            {/* 이름 + 나이 + 마감 배지 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: 5 }}>
+              <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1a1a', letterSpacing: '-0.02em' }}>{ownerName}</span>
               {ownerAge && (
-                <span style={{ fontSize: 15, color: '#6B7280' }}>{ownerAge}세</span>
+                <span style={{ fontSize: 14, color: '#6B7280', fontWeight: 400 }}>{ownerAge}세</span>
+              )}
+              {ownerHeight && (
+                <span style={{ fontSize: 13, color: '#9CA3AF' }}>{ownerHeight}cm</span>
               )}
               {isClosed && (
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>마감</span>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>마감</span>
               )}
             </div>
-            {/* 구력 뱃지 + MBTI 뱃지 + 키 */}
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+
+            {/* 구력 + MBTI + 경기방식 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               {ownerExperience && (
                 <span
-                  className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                  style={{ background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.5)', color: '#A07832' }}
+                  style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11.5, fontWeight: 600, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.35)', color: '#9A6F20' }}
                 >
                   {ownerExperience}
                 </span>
               )}
               {ownerMbti && (
                 <span
-                  className="px-2 py-0.5 rounded-full text-xs font-bold"
-                  style={{ background: 'transparent', border: '1.5px solid #C9A84C', color: '#C9A84C' }}
+                  style={{ padding: '2px 9px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, background: 'transparent', border: '1.5px solid rgba(201,168,76,0.55)', color: '#B8922A' }}
                 >
                   {ownerMbti}
                 </span>
               )}
-              {ownerHeight && (
-                <span style={{ fontSize: 12, color: '#9CA3AF' }}>{ownerHeight}cm</span>
-              )}
-            </div>
-            {/* 경기방식 뱃지 */}
-            {formatBadgeLabel && (
-              <div className="mt-1">
+              {formatBadgeLabel && (
                 <span
-                  className="font-bold px-2.5 py-0.5 rounded-full"
-                  style={{ background: '#C9A84C', color: '#fff', fontSize: 12 }}
+                  style={{ padding: '2px 10px', borderRadius: 99, fontSize: 11.5, fontWeight: 600, background: 'linear-gradient(135deg, #C9A84C 0%, #E8A598 100%)', color: '#fff' }}
                 >
                   {formatBadgeLabel}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
-
-        {/* 3. 코트 사진 크게 */}
+        {/* 2. 사진 영역 */}
         <div
           className="relative mx-4 mt-3"
           style={{ borderRadius: 14, overflow: 'hidden' }}
@@ -264,7 +258,7 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
         >
           {photos.length > 0 ? (
             <>
-              <div style={{ width: '100%', height: '280px', overflow: 'hidden', borderRadius: '12px' }}>
+              <div style={{ width: '100%', height: '288px', overflow: 'hidden', borderRadius: '14px' }}>
                 <img
                   key={photoIndex}
                   src={photos[photoIndex] || ''}
@@ -277,7 +271,7 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
                     height: '100%',
                     objectFit: 'cover',
                     objectPosition: 'center top',
-                    borderRadius: '12px',
+                    borderRadius: '14px',
                     display: 'block',
                     cursor: 'pointer',
                   }}
@@ -285,46 +279,47 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
                   onClick={() => openModal(photoIndex)}
                 />
               </div>
+
+              {/* 사진 탐색 버튼 */}
               {photos.length > 1 && (
                 <>
                   <button
                     onClick={prevPhoto}
                     className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center z-10"
                     style={{
-                      width: 40, height: 40,
+                      width: 36, height: 36,
                       borderRadius: '50%',
-                      background: 'rgba(0,0,0,0.35)',
-                      backdropFilter: 'blur(4px)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                      border: 'none',
+                      background: 'rgba(0,0,0,0.3)',
+                      backdropFilter: 'blur(6px)',
+                      border: '1px solid rgba(255,255,255,0.15)',
                     }}
                   >
-                    <ChevronLeft className="w-5 h-5 text-white" />
+                    <ChevronLeft className="w-4 h-4 text-white" />
                   </button>
                   <button
                     onClick={nextPhoto}
                     className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center z-10"
                     style={{
-                      width: 40, height: 40,
+                      width: 36, height: 36,
                       borderRadius: '50%',
-                      background: 'rgba(0,0,0,0.35)',
-                      backdropFilter: 'blur(4px)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                      border: 'none',
+                      background: 'rgba(0,0,0,0.3)',
+                      backdropFilter: 'blur(6px)',
+                      border: '1px solid rgba(255,255,255,0.15)',
                     }}
                   >
-                    <ChevronRight className="w-5 h-5 text-white" />
+                    <ChevronRight className="w-4 h-4 text-white" />
                   </button>
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                  {/* 페이지 인디케이터 */}
+                  <div className="absolute bottom-9 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                     {photos.map((_, i) => (
                       <button
                         key={i}
                         onClick={(e) => { e.stopPropagation(); setPhotoIndex(i); }}
                         className="rounded-full transition-all duration-200"
                         style={{
-                          width: i === photoIndex ? 18 : 6,
-                          height: 6,
-                          background: i === photoIndex ? '#C9A84C' : 'rgba(255,255,255,0.55)',
+                          width: i === photoIndex ? 16 : 5,
+                          height: 5,
+                          background: i === photoIndex ? '#C9A84C' : 'rgba(255,255,255,0.5)',
                           border: 'none',
                           padding: 0,
                         }}
@@ -333,44 +328,63 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
                   </div>
                 </>
               )}
-              <div className="absolute bottom-2 right-2 z-10">
-                <div className="text-xl">{applied ? '💚' : '🤍'}</div>
-              </div>
+
+              {/* 하단 그라디언트 + 크게보기 라벨 */}
               <div
-                className="absolute bottom-0 left-0 right-0 flex items-center justify-center z-10"
+                className="absolute bottom-0 left-0 right-0 z-10"
                 style={{
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)',
-                  paddingBottom: 8,
-                  paddingTop: 20,
-                  borderBottomLeftRadius: 12,
-                  borderBottomRightRadius: 12,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)',
+                  paddingBottom: 10,
+                  paddingTop: 36,
+                  borderBottomLeftRadius: 14,
+                  borderBottomRightRadius: 14,
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'flex-start',
+                  paddingLeft: 12,
                 }}
               >
-                <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.82)', fontWeight: 500, letterSpacing: 0.3, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                  사진을 눌러서 크게 보기
-                </span>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    background: 'rgba(0,0,0,0.28)',
+                    backdropFilter: 'blur(6px)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    borderRadius: 99,
+                    padding: '4px 10px',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => openModal(photoIndex)}
+                >
+                  <Maximize2 style={{ width: 11, height: 11, color: 'rgba(255,255,255,0.85)' }} />
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: 0.2 }}>
+                    크게 보기
+                  </span>
+                </div>
               </div>
             </>
           ) : (
-            <div className="w-full flex items-center justify-center" style={{ height: '280px', background: 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)', borderRadius: '12px' }}>
+            <div className="w-full flex items-center justify-center" style={{ height: '288px', background: 'linear-gradient(135deg, #e8a5b4 0%, #c97d91 100%)', borderRadius: '14px' }}>
               <span className="text-white text-6xl font-bold opacity-60">{ownerName?.charAt(0) || '?'}</span>
             </div>
           )}
         </div>
 
-        {/* 4. 정보 영역 (사진 아래) */}
-        <div className="px-4 pt-4 pb-5">
+        {/* 3. 정보 영역 */}
+        <div style={{ padding: '14px 16px 18px' }}>
           <div
             style={{
-              background: '#FDF5E8',
+              background: 'rgba(253,248,240,0.7)',
               borderRadius: 16,
               padding: '14px 16px',
-              border: '1px solid rgba(201,168,76,0.22)',
-              display: 'flex', flexDirection: 'column', gap: 10,
+              border: '1px solid rgba(201,168,76,0.2)',
+              display: 'flex', flexDirection: 'column', gap: 0,
             }}
           >
             {/* 장소명 + 코트비 */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
                 <MapPin style={{ width: 14, height: 14, color: '#C9A84C', flexShrink: 0 }} />
                 <span style={{ fontWeight: 700, fontSize: 14.5, color: '#1a1a1a', letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -378,53 +392,61 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
                 </span>
               </div>
               {costLabel && (
-                <span style={{ fontSize: 12, color: '#A07832', whiteSpace: 'nowrap', flexShrink: 0, fontWeight: 500 }}>
+                <span style={{ fontSize: 11.5, color: '#A07832', whiteSpace: 'nowrap', flexShrink: 0, fontWeight: 500, padding: '2px 8px', borderRadius: 99, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.22)' }}>
                   {costLabel}
                 </span>
               )}
             </div>
 
             {/* 날짜 · 시간 */}
-            {court.start_time && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {(dateFormatted || court.start_time) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
                 {dateFormatted && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Calendar style={{ width: 13, height: 13, color: '#9CA3AF', flexShrink: 0 }} />
+                    <Calendar style={{ width: 12, height: 12, color: '#B0B8C1', flexShrink: 0 }} />
                     <span style={{ fontSize: 12.5, color: '#6B7280' }}>{dateFormatted}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Clock style={{ width: 13, height: 13, color: '#9CA3AF', flexShrink: 0 }} />
-                  <span style={{ fontSize: 12.5, color: '#6B7280' }}>
-                    {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
-                  </span>
-                </div>
+                {court.start_time && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Clock style={{ width: 12, height: 12, color: '#B0B8C1', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12.5, color: '#6B7280' }}>
+                      {court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}
+                    </span>
+                  </div>
+                )}
               </div>
+            )}
+
+            {/* 구분선 */}
+            {(showRecruitment || ownerBio) && (
+              <div style={{ height: 1, background: 'rgba(201,168,76,0.14)', marginBottom: 10 }} />
             )}
 
             {/* 모집 상태 */}
             {isClosed ? (
               <div style={{
-                background: 'rgba(201,168,76,0.08)',
-                border: '1px solid rgba(201,168,76,0.25)',
+                background: 'rgba(201,168,76,0.07)',
+                border: '1px solid rgba(201,168,76,0.2)',
                 borderRadius: 10, padding: '7px 14px', textAlign: 'center',
+                marginBottom: ownerBio ? 10 : 0,
               }}>
                 <span style={{ fontWeight: 600, fontSize: 12.5, color: '#A07832' }}>모집 마감</span>
               </div>
             ) : showRecruitment ? (
-              <div style={{ display: 'flex', gap: 7 }}>
+              <div style={{ display: 'flex', gap: 7, marginBottom: ownerBio ? 10 : 0 }}>
                 {totalMale > 0 && (
                   <div style={{
                     flex: 1,
-                    background: displayMale <= 0 ? 'rgba(239,68,68,0.05)' : '#fff',
-                    border: `1px solid ${displayMale <= 0 ? 'rgba(239,68,68,0.18)' : 'rgba(201,168,76,0.25)'}`,
+                    background: displayMale <= 0 ? 'rgba(239,68,68,0.04)' : '#fff',
+                    border: `1px solid ${displayMale <= 0 ? 'rgba(239,68,68,0.15)' : 'rgba(201,168,76,0.22)'}`,
                     borderRadius: 10, padding: '7px 11px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
                     <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 500 }}>
-                      남성 <span style={{ opacity: 0.65 }}>{confirmedMale}/{totalMale}</span>
+                      남성 <span style={{ opacity: 0.6 }}>{confirmedMale}/{totalMale}</span>
                     </span>
-                    <span style={{ fontWeight: 700, fontSize: 12.5, color: displayMale <= 0 ? '#ef4444' : '#C9A84C', letterSpacing: '-0.01em' }}>
+                    <span style={{ fontWeight: 700, fontSize: 12, color: displayMale <= 0 ? '#ef4444' : '#C9A84C' }}>
                       {displayMale <= 0 ? '마감' : `${displayMale}명 남음`}
                     </span>
                   </div>
@@ -432,15 +454,15 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
                 {totalFemale > 0 && (
                   <div style={{
                     flex: 1,
-                    background: displayFemale <= 0 ? 'rgba(239,68,68,0.05)' : '#fff',
-                    border: `1px solid ${displayFemale <= 0 ? 'rgba(239,68,68,0.18)' : 'rgba(201,168,76,0.25)'}`,
+                    background: displayFemale <= 0 ? 'rgba(239,68,68,0.04)' : '#fff',
+                    border: `1px solid ${displayFemale <= 0 ? 'rgba(239,68,68,0.15)' : 'rgba(201,168,76,0.22)'}`,
                     borderRadius: 10, padding: '7px 11px',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
                     <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 500 }}>
-                      여성 <span style={{ opacity: 0.65 }}>{confirmedFemale}/{totalFemale}</span>
+                      여성 <span style={{ opacity: 0.6 }}>{confirmedFemale}/{totalFemale}</span>
                     </span>
-                    <span style={{ fontWeight: 700, fontSize: 12.5, color: displayFemale <= 0 ? '#ef4444' : '#C9A84C', letterSpacing: '-0.01em' }}>
+                    <span style={{ fontWeight: 700, fontSize: 12, color: displayFemale <= 0 ? '#ef4444' : '#C9A84C' }}>
                       {displayFemale <= 0 ? '마감' : `${displayFemale}명 남음`}
                     </span>
                   </div>
@@ -450,33 +472,39 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
 
             {/* 소개글 */}
             {ownerBio && (
-              <div style={{
-                borderTop: '1px solid rgba(201,168,76,0.18)',
-                paddingTop: 10,
-                display: 'flex', gap: 9, alignItems: 'flex-start',
-              }}>
-                <div style={{ width: 2, flexShrink: 0, borderRadius: 99, background: '#C9A84C', alignSelf: 'stretch', minHeight: 18 }} />
-                <p style={{ fontSize: 13, color: '#7A6030', lineHeight: 1.6, margin: 0 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ width: 2, flexShrink: 0, borderRadius: 99, background: 'linear-gradient(to bottom, #C9A84C, #E8A598)', alignSelf: 'stretch', minHeight: 20 }} />
+                <p style={{ fontSize: 13.5, color: '#6B5520', lineHeight: 1.65, margin: 0, fontWeight: 400 }}>
                   {ownerBio}
                 </p>
               </div>
             )}
           </div>
 
-          {/* 5. 신청 버튼 */}
+          {/* 신청 버튼 */}
           {onApply && (
-            <div className="mt-4">
+            <div style={{ marginTop: 12 }}>
               {isClosed ? (
-                <div className="w-full py-3 rounded-xl text-center text-sm font-medium text-gray-400" style={{ background: '#F0EDE7' }}>
+                <div style={{ width: '100%', padding: '13px 0', borderRadius: 14, textAlign: 'center', fontSize: 13.5, fontWeight: 500, color: '#B0B8C1', background: '#F0EDE7' }}>
                   마감된 모임이에요
                 </div>
               ) : (
                 <button
                   onClick={handleApply}
-                  className="w-full py-3 rounded-xl font-bold text-sm text-white transition active:scale-[0.98]"
-                  style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #E8A598 100%)' }}
+                  className="w-full font-bold text-white transition active:scale-[0.98]"
+                  style={{
+                    padding: '13px 0',
+                    borderRadius: 14,
+                    fontSize: 14,
+                    background: applied
+                      ? 'linear-gradient(135deg, #a8d5b8 0%, #d4a0a8 100%)'
+                      : 'linear-gradient(135deg, #C9A84C 0%, #E8A598 100%)',
+                    border: 'none',
+                    letterSpacing: '-0.01em',
+                    boxShadow: '0 2px 10px rgba(201,168,76,0.25)',
+                  }}
                 >
-                  💚 코트 위 설레는 만남 신청하기
+                  코트 위 설레는 만남 신청하기
                 </button>
               )}
             </div>
@@ -486,7 +514,7 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
 
       {showToast && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-[#2D6A4F] text-white px-6 py-3 rounded-lg shadow-lg z-50">
-          코트 위 설레는 만남을 신청했어요 💚
+          코트 위 설레는 만남을 신청했어요
         </div>
       )}
 
