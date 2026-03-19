@@ -1958,27 +1958,36 @@ export default function Applications() {
         const isDatingDelete = deleteTarget.purpose === 'dating';
         return (
           <div
-            className="fixed inset-0 z-50 flex items-end justify-center"
+            className="fixed inset-0 z-[9999] flex items-end justify-center"
             style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
             onClick={() => setDeleteTarget(null)}
           >
             <div
-              className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
+              className="w-full max-w-md rounded-t-3xl shadow-2xl flex flex-col"
               style={{
                 background: isDatingDelete ? '#FFF8F5' : '#fff',
-                paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 28px)',
+                maxHeight: '80dvh',
               }}
               onClick={(e) => e.stopPropagation()}
             >
+              <div className="px-5 pt-5 pb-2">
+                <div
+                  className="w-10 h-1 rounded-full mx-auto mb-4"
+                  style={{ background: isDatingDelete ? 'rgba(234,153,166,0.35)' : '#E5E7EB' }}
+                />
+                <p className="font-bold text-gray-900 text-base mb-1">이 알림을 삭제할까요?</p>
+                <p className="text-sm" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>
+                  삭제 후에는 다시 확인할 수 없습니다.
+                </p>
+              </div>
               <div
-                className="w-10 h-1 rounded-full mx-auto mb-4"
-                style={{ background: isDatingDelete ? 'rgba(234,153,166,0.35)' : '#E5E7EB' }}
-              />
-              <p className="font-bold text-gray-900 text-base mb-1">이 알림을 삭제할까요?</p>
-              <p className="text-sm mb-5" style={{ color: '#9CA3AF', lineHeight: 1.6 }}>
-                삭제 후에는 다시 확인할 수 없습니다.
-              </p>
-              <div className="flex gap-2">
+                className="flex gap-2 px-5 py-4"
+                style={{
+                  borderTop: '1px solid rgba(0,0,0,0.06)',
+                  background: isDatingDelete ? '#FFF8F5' : '#fff',
+                  paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 20px)',
+                }}
+              >
                 <button
                   onClick={() => setDeleteTarget(null)}
                   className="flex-1 py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"

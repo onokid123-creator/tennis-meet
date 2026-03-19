@@ -109,7 +109,8 @@ export default function Home() {
   }, [user, profile]);
 
   useEffect(() => {
-    if (profile?.purpose) {
+    const saved = localStorage.getItem('home_category_tab');
+    if (!saved && profile?.purpose) {
       setCategoryTab(profile.purpose as CategoryTab);
     }
   }, [profile?.purpose]);
@@ -567,22 +568,31 @@ export default function Home() {
 
       {deleteConfirmId && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
+          className="fixed inset-0 z-[9999] flex items-end justify-center"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
           onClick={() => setDeleteConfirmId(null)}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
-            style={{ background: '#fff', paddingBottom: 'max(env(safe-area-inset-bottom), 24px)' }}
+            className="w-full max-w-md rounded-t-3xl shadow-2xl flex flex-col"
+            style={{ background: '#fff', maxHeight: '80dvh' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
-            <p className="font-bold text-gray-900 text-base mb-1">게시글 삭제</p>
-            <p className="text-sm text-gray-400 mb-5">이 게시글을 삭제하시겠어요? 삭제 후에는 복구할 수 없습니다.</p>
-            <div className="flex gap-2">
+            <div className="px-5 pt-5 pb-2">
+              <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
+              <p className="font-bold text-gray-900 text-base mb-1">게시글 삭제</p>
+              <p className="text-sm text-gray-400">이 게시글을 삭제하시겠어요? 삭제 후에는 복구할 수 없습니다.</p>
+            </div>
+            <div
+              className="flex gap-2 px-5 py-4"
+              style={{
+                borderTop: '1px solid rgba(0,0,0,0.06)',
+                background: '#fff',
+                paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 20px)',
+              }}
+            >
               <button
                 onClick={() => setDeleteConfirmId(null)}
-                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition active:scale-95"
+                className="flex-1 py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
                 style={{ background: '#F3F4F6', color: '#374151' }}
               >
                 취소
@@ -590,7 +600,7 @@ export default function Home() {
               <button
                 onClick={handleDeleteConfirm}
                 disabled={deleteLoading}
-                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
+                className="flex-1 py-3.5 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
                 style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
               >
                 {deleteLoading ? '삭제 중...' : '삭제하기'}
@@ -602,47 +612,56 @@ export default function Home() {
 
       {applyTargetCourt && (() => {
         const isDatingApply = applyTargetCourt.purpose === 'dating';
+        const sheetBg = isDatingApply ? 'linear-gradient(160deg, #FB7185 0%, #FECDD3 100%)' : '#1B4332';
         return (
           <div
-            className="fixed inset-0 z-50 flex items-end justify-center"
+            className="fixed inset-0 z-[9999] flex items-end justify-center"
             style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
             onClick={() => setApplyTargetCourt(null)}
           >
             <div
-              className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
-              style={{
-                background: isDatingApply ? 'linear-gradient(160deg, #FB7185 0%, #FECDD3 100%)' : '#1B4332',
-                paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 24px)',
-              }}
+              className="w-full max-w-md rounded-t-3xl shadow-xl flex flex-col"
+              style={{ background: sheetBg, maxHeight: '90dvh' }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: isDatingApply ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)' }} />
-              <p className="font-bold text-lg text-center mb-4 text-white">
-                {isDatingApply ? '🥂 설레는 첫 인사를 보내보세요' : '🎾 테니스 신청 메시지'}
-              </p>
-              <textarea
-                value={applyMessage}
-                onChange={(e) => setApplyMessage(e.target.value)}
-                placeholder={isDatingApply
-                  ? '예) 안녕하세요 😊 코트에서 만나고 싶어요!'
-                  : '예) 안녕하세요! 같이 테니스 치고 싶어요 💪'}
-                rows={4}
-                className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none transition"
+              <div className="px-5 pt-5 flex-1 overflow-y-auto">
+                <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: isDatingApply ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)' }} />
+                <p className="font-bold text-lg text-center mb-4 text-white">
+                  {isDatingApply ? '🥂 설레는 첫 인사를 보내보세요' : '🎾 테니스 신청 메시지'}
+                </p>
+                <textarea
+                  value={applyMessage}
+                  onChange={(e) => setApplyMessage(e.target.value)}
+                  placeholder={isDatingApply
+                    ? '예) 안녕하세요 😊 코트에서 만나고 싶어요!'
+                    : '예) 안녕하세요! 같이 테니스 치고 싶어요 💪'}
+                  rows={4}
+                  className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none transition"
+                  style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    border: isDatingApply ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.2)',
+                    fontSize: '16px',
+                  }}
+                />
+              </div>
+              <div
+                className="px-5 py-4"
                 style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  color: '#fff',
-                  border: isDatingApply ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.2)',
-                  fontSize: '16px',
+                  background: sheetBg,
+                  borderTop: isDatingApply ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.1)',
+                  paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 20px)',
                 }}
-              />
-              <button
-                onClick={handleApplySubmit}
-                disabled={applyLoading}
-                className="w-full mt-4 py-4 rounded-2xl font-bold text-sm transition active:scale-95 disabled:opacity-60"
-                style={{ background: isDatingApply ? '#F43F5E' : accentGold, color: '#fff', boxShadow: isDatingApply ? '0 4px 12px rgba(244,63,94,0.35)' : '0 4px 12px rgba(201,168,76,0.35)' }}
               >
-                {applyLoading ? '신청 중...' : '신청하기'}
-              </button>
+                <button
+                  onClick={handleApplySubmit}
+                  disabled={applyLoading}
+                  className="w-full py-4 rounded-2xl font-bold text-sm transition active:scale-95 disabled:opacity-60"
+                  style={{ background: isDatingApply ? '#F43F5E' : accentGold, color: '#fff', boxShadow: isDatingApply ? '0 4px 12px rgba(244,63,94,0.35)' : '0 4px 12px rgba(201,168,76,0.35)' }}
+                >
+                  {applyLoading ? '신청 중...' : '신청하기'}
+                </button>
+              </div>
             </div>
           </div>
         );
