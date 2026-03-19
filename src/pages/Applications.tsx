@@ -18,6 +18,112 @@ interface ApplicantModalProps {
   errorMsg: string | null;
 }
 
+function PhotoCarousel({ profile, dotColor }: { profile: Profile; dotColor: string }) {
+  const [idx, setIdx] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+
+  const photos: string[] = profile.photo_urls?.length
+    ? profile.photo_urls
+    : profile.photo_url
+    ? [profile.photo_url]
+    : [];
+
+  const prev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIdx((i) => (i - 1 + photos.length) % photos.length);
+  };
+  const next = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIdx((i) => (i + 1) % photos.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40 && photos.length > 1) {
+      if (diff > 0) setIdx((i) => (i + 1) % photos.length);
+      else setIdx((i) => (i - 1 + photos.length) % photos.length);
+    }
+    touchStartX.current = null;
+  };
+
+  if (photos.length === 0) {
+    return (
+      <div
+        className="w-full flex flex-col items-center justify-center"
+        style={{ height: '55vw', maxHeight: '260px', background: 'linear-gradient(180deg, #FDE8EC 0%, #F9C5CE 100%)' }}
+      >
+        <div
+          className="w-24 h-24 rounded-full flex items-center justify-center font-bold border-2"
+          style={{ fontSize: '3rem', background: 'rgba(244,63,94,0.12)', borderColor: 'rgba(244,63,94,0.3)', color: '#F43F5E' }}
+        >
+          {profile.name?.charAt(0) || '?'}
+        </div>
+        <p className="text-sm mt-3 font-light" style={{ color: 'rgba(183,110,121,0.7)' }}>사진이 없습니다</p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative w-full select-none"
+      style={{ height: '55vw', maxHeight: '260px' }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <img
+        key={idx}
+        src={photos[idx]}
+        alt={profile.name}
+        className="w-full h-full"
+        style={{ objectFit: 'cover', objectPosition: 'center top' }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%)' }}
+      />
+      {photos.length > 1 && (
+        <>
+          <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+            {photos.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.stopPropagation(); setIdx(i); }}
+                className="rounded-full transition-all duration-300"
+                style={{
+                  width: i === idx ? '18px' : '6px',
+                  height: '6px',
+                  background: i === idx ? dotColor : 'rgba(255,255,255,0.5)',
+                }}
+              />
+            ))}
+          </div>
+          <button
+            onClick={prev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}
+          >
+            <ChevronLeft className="w-4 h-4 text-white" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)' }}
+          >
+            <ChevronRight className="w-4 h-4 text-white" />
+          </button>
+        </>
+      )}
+      {photos.length > 1 && (
+        <span className="absolute bottom-2 right-3 text-xs text-white/60">{idx + 1} / {photos.length}</span>
+      )}
+    </div>
+  );
+}
+
 function ApplicantPhotoCarousel({ profile }: { profile: Profile }) {
   const [idx, setIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -150,6 +256,191 @@ function ApplicantPhotoCarousel({ profile }: { profile: Profile }) {
             <span className="text-xs text-white/50 font-light">{idx + 1} / {photos.length}</span>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg }: ApplicantModalProps) {
+  const applicant = app.applicant!;
+  const isMale = applicant.gender === 'male' || applicant.gender === '남성';
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(45,10,20,0.82)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md relative flex flex-col"
+        style={{
+          maxHeight: '96vh',
+          borderRadius: '28px 28px 0 0',
+          background: 'linear-gradient(180deg, #FFF8F8 0%, #FFF2F4 100%)',
+          overflow: 'hidden',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center z-20"
+          style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)' }}
+        >
+          <X className="w-4 h-4 text-white" />
+        </button>
+
+        <div className="flex-shrink-0 relative">
+          <PhotoCarousel profile={applicant} dotColor="#F43F5E" />
+          <div
+            className="absolute bottom-0 left-0 right-0 px-5 pb-4 pt-10 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(255,242,244,1) 0%, rgba(255,242,244,0.7) 60%, transparent 100%)' }}
+          >
+            <div className="flex items-end gap-2 pointer-events-none">
+              <span className="font-bold tracking-wide" style={{ fontSize: '1.55rem', color: '#2D1820' }}>
+                {applicant.name}
+              </span>
+              {applicant.age && (
+                <span className="text-lg font-medium mb-0.5" style={{ color: '#7C3D50' }}>{applicant.age}세</span>
+              )}
+              {(applicant.gender === 'male' || applicant.gender === '남성' || applicant.gender === 'female' || applicant.gender === '여성') && (
+                <span
+                  className="text-lg font-bold mb-0.5"
+                  style={{ color: isMale ? '#93C5FD' : '#F9A8B8' }}
+                >
+                  {isMale ? '♂' : '♀'}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 pt-2 pb-2 flex flex-wrap gap-2">
+          {applicant.experience && (
+            <span
+              className="px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ background: 'rgba(201,168,76,0.14)', border: '1px solid rgba(201,168,76,0.5)', color: '#9A7A2A' }}
+            >
+              구력 {applicant.experience}
+            </span>
+          )}
+          {applicant.mbti && (
+            <span
+              className="px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', color: '#B83050' }}
+            >
+              {applicant.mbti}
+            </span>
+          )}
+          {applicant.height && (
+            <span
+              className="px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{ background: 'rgba(183,110,121,0.1)', border: '1px solid rgba(183,110,121,0.3)', color: '#7C3D50' }}
+            >
+              {applicant.height}cm
+            </span>
+          )}
+        </div>
+
+        <div className="overflow-y-auto flex-1 px-5 pt-1" style={{ paddingBottom: app.status === 'pending' ? '0' : '20px' }}>
+          {errorMsg && (
+            <div
+              className="mb-3 px-4 py-3 rounded-2xl text-sm font-medium"
+              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#DC2626' }}
+            >
+              {errorMsg}
+            </div>
+          )}
+
+          {app.message && (
+            <div
+              className="mb-3 px-4 py-3.5 rounded-2xl"
+              style={{ background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.18)' }}
+            >
+              <p className="text-xs font-semibold mb-1.5" style={{ color: '#B83050' }}>첫 인사</p>
+              <p className="text-sm leading-relaxed" style={{ color: '#2D1820' }}>{app.message}</p>
+            </div>
+          )}
+
+          {applicant.bio && (
+            <div
+              className="mb-3 px-4 py-3.5 rounded-2xl"
+              style={{ background: 'rgba(183,110,121,0.06)', border: '1px solid rgba(183,110,121,0.15)' }}
+            >
+              <p className="text-xs font-semibold mb-1.5" style={{ color: '#7C3D50' }}>자기소개</p>
+              <p className="text-sm leading-relaxed" style={{ color: '#4A2030' }}>{applicant.bio}</p>
+            </div>
+          )}
+
+          {app.court && (
+            <div
+              className="mb-3 px-4 py-3 rounded-2xl"
+              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)' }}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <MapPin className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
+                <span className="text-xs font-semibold" style={{ color: '#9A7A2A' }}>신청 코트</span>
+              </div>
+              <p className="text-sm font-medium" style={{ color: '#2D1820' }}>{app.court.court_name}</p>
+              {app.court.date && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Calendar className="w-3 h-3" style={{ color: '#C9A84C' }} />
+                  <p className="text-xs" style={{ color: '#7C6030' }}>
+                    {new Date(app.court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                    {app.court.start_time && ` · ${app.court.start_time}`}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {app.status !== 'pending' && (
+            <div className="text-center py-3">
+              {app.status === 'accepted' ? (
+                <span className="font-semibold" style={{ color: '#B83050' }}>매칭 확정됨</span>
+              ) : (
+                <span className="font-semibold" style={{ color: '#9CA3AF' }}>거절됨</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {app.status === 'pending' && (
+          <div
+            className="flex-shrink-0 flex gap-3 px-5 py-4"
+            style={{
+              borderTop: '1px solid rgba(244,63,94,0.12)',
+              background: 'linear-gradient(180deg, rgba(255,248,248,0) 0%, #FFF2F4 100%)',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
+            }}
+          >
+            <button
+              onClick={() => onReject(app)}
+              disabled={processing}
+              className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
+              style={{
+                background: 'rgba(183,110,121,0.1)',
+                color: '#7C3D50',
+                border: '1.5px solid rgba(183,110,121,0.25)',
+                minHeight: '52px',
+              }}
+            >
+              {processing ? '...' : '거절하기'}
+            </button>
+            <button
+              onClick={() => onAccept(app)}
+              disabled={processing}
+              className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
+              style={{
+                background: 'linear-gradient(135deg, #F43F5E 0%, #B76E79 100%)',
+                color: '#fff',
+                boxShadow: '0 4px 14px rgba(244,63,94,0.35)',
+                minHeight: '52px',
+              }}
+            >
+              {processing ? '처리 중...' : '수락하기'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -984,14 +1275,25 @@ export default function Applications() {
       <BottomNav active="applications" />
 
       {selectedApp && selectedApp.applicant && (
-        <ApplicantModal
-          app={selectedApp}
-          onClose={() => { setSelectedApp(null); setAcceptError(null); }}
-          onAccept={handleAccept}
-          onReject={handleReject}
-          processing={processingId === selectedApp.id}
-          errorMsg={acceptError}
-        />
+        selectedApp.purpose === 'dating' ? (
+          <DatingApplicantModal
+            app={selectedApp}
+            onClose={() => { setSelectedApp(null); setAcceptError(null); }}
+            onAccept={handleAccept}
+            onReject={handleReject}
+            processing={processingId === selectedApp.id}
+            errorMsg={acceptError}
+          />
+        ) : (
+          <ApplicantModal
+            app={selectedApp}
+            onClose={() => { setSelectedApp(null); setAcceptError(null); }}
+            onAccept={handleAccept}
+            onReject={handleReject}
+            processing={processingId === selectedApp.id}
+            errorMsg={acceptError}
+          />
+        )
       )}
 
       {rejectTarget && (
