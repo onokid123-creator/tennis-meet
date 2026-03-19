@@ -159,7 +159,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ background: BG, borderRadius: '28px 28px 0 0', maxHeight: '94dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
+        style={{ background: BG, borderRadius: '28px 28px 0 0', height: '94dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
       >
         {/* handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px', flexShrink: 0 }}>
@@ -210,13 +210,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
                 <X style={{ width: 16, height: 16, color: WH }} />
               </button>
 
-              {/* fee badge */}
-              {court.court_fee != null && court.court_fee >= 0 && (
-                <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(8px)', borderRadius: 10, padding: '5px 10px', border: '1px solid rgba(184,149,58,0.4)' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(184,149,58,0.85)', fontWeight: 600, letterSpacing: '0.04em' }}>매칭비</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: G, lineHeight: 1 }}>{fmtFee(court.court_fee)}</div>
-                </div>
-              )}
             </div>
           ) : (
             <div style={{ position: 'relative', margin: '4px 14px 0' }}>
@@ -535,13 +528,6 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
                 )}
               </div>
 
-              {/* fee badge top-right */}
-              {court.court_fee != null && court.court_fee >= 0 && (
-                <div style={{ position: 'absolute', top: 11, right: 11, zIndex: 3, background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(6px)', borderRadius: 10, padding: '4px 8px', border: '1px solid rgba(184,149,58,0.35)' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(184,149,58,0.85)', fontWeight: 600, letterSpacing: '0.04em' }}>매칭비</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: G, lineHeight: 1 }}>{fmtFee(court.court_fee)}</div>
-                </div>
-              )}
             </>
           ) : (
             <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 18, background: `linear-gradient(135deg,${P},${P2})`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
@@ -555,17 +541,30 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
         <div style={{ padding: '12px 14px 14px' }}>
 
           {/* meta row */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
             {court.date && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <Calendar style={{ width: 11, height: 11, color: A }} />
                 <span style={{ fontSize: 12, color: M }}>{fmtDate(court.date)}</span>
               </div>
             )}
+            {court.start_time && !photo && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Clock style={{ width: 11, height: 11, color: A }} />
+                <span style={{ fontSize: 12, color: M }}>{court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}</span>
+              </div>
+            )}
             {court.location && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <MapPin style={{ width: 11, height: 11, color: A }} />
                 <span style={{ fontSize: 12, color: M, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{court.location}</span>
+              </div>
+            )}
+            {court.court_fee != null && court.court_fee >= 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(184,149,58,0.1)', border: '1px solid rgba(184,149,58,0.25)', color: G, borderRadius: 99, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
+                  {fmtFee(court.court_fee)}
+                </span>
               </div>
             )}
           </div>

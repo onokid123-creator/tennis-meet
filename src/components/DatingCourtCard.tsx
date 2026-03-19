@@ -220,7 +220,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
     <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ background: PAGE, borderRadius: '28px 28px 0 0', maxHeight: '94dvh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}
+        style={{ background: PAGE, borderRadius: '28px 28px 0 0', height: '94dvh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}
       >
         {/* handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px', flexShrink: 0 }}>
