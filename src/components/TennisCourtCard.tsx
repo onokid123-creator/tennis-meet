@@ -126,25 +126,49 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
     let mounted = true;
     async function load() {
       setLoadingParticipants(true);
-      const { data: apps } = await supabase
-        .from('applications')
-        .select('applicant_id')
+
+      const confirmedIds: string[] = [];
+
+      const { data: chats } = await supabase
+        .from('chats')
+        .select('id')
         .eq('court_id', court.id)
-        .eq('status', 'accepted');
+        .eq('is_group', false);
+
+      if (chats && chats.length > 0) {
+        const chatIds = chats.map((c) => c.id);
+        const { data: participants } = await supabase
+          .from('chat_participants')
+          .select('user_id')
+          .in('chat_id', chatIds)
+          .eq('is_confirmed', true);
+        if (participants) {
+          participants.forEach((p) => { if (!confirmedIds.includes(p.user_id)) confirmedIds.push(p.user_id); });
+        }
+      }
+
+      const { data: groupChat } = await supabase
+        .from('court_group_chats')
+        .select('confirmed_user_ids')
+        .eq('court_id', court.id)
+        .maybeSingle();
+
+      if (groupChat?.confirmed_user_ids?.length) {
+        groupChat.confirmed_user_ids.forEach((id: string) => { if (!confirmedIds.includes(id)) confirmedIds.push(id); });
+      }
 
       if (!mounted) return;
 
-      if (!apps || apps.length === 0) {
+      if (confirmedIds.length === 0) {
         setConfirmedProfiles([]);
         setLoadingParticipants(false);
         return;
       }
 
-      const ids = apps.map((a) => a.applicant_id);
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id,name,photo_url,tennis_photo_url,experience,tennis_style')
-        .in('user_id', ids);
+        .in('user_id', confirmedIds);
 
       if (mounted) {
         setConfirmedProfiles(profiles ?? []);
@@ -170,7 +194,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
         </div>
 
         {/* scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 'calc(var(--bottom-nav-height) + 80px)' : '24px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: '24px' }}>
 
           {/* photo */}
           {photo ? (
@@ -403,42 +427,36 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
               </div>
             )}
 
-            {/* 소유자 액션 — fixed CTA로 이동됨 */}
-
           </div>
         </div>
 
-      </div>
+        {/* CTA — 시트 하단 고정 (flex-shrink: 0) */}
+        {onApply && (
+          <div style={{
+            flexShrink: 0,
+            padding: '12px 16px 16px',
+            background: BG,
+            borderTop: `1px solid ${L}`,
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.12)',
+          }}>
+            {isClosed ? (
+              <div style={{ padding: '16px', borderRadius: 18, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.2)` }}>
+                <span style={{ fontWeight: 600, fontSize: 14, color: M }}>이 코트는 모집이 마감되었어요</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => { onClose(); onApply!(); }}
+                style={{ width: '100%', padding: '18px', borderRadius: 18, border: 'none', background: `linear-gradient(135deg,${A},${P})`, color: WH, fontWeight: 800, fontSize: 16, letterSpacing: '0.02em', cursor: 'pointer', boxShadow: '0 6px 20px rgba(26,92,53,0.35)', display: 'block' }}
+                onPointerDown={(e) => (e.currentTarget.style.opacity = '0.9')}
+                onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
+              >
+                참여 신청하기
+              </button>
+            )}
+          </div>
+        )}
 
-      {/* Fixed CTA — BottomNav 위에 고정 */}
-      {onApply && (
-        <div style={{
-          position: 'fixed',
-          bottom: 'var(--bottom-nav-height)',
-          left: 0,
-          right: 0,
-          zIndex: 10000,
-          padding: '12px 16px 16px',
-          background: BG,
-          borderTop: `1px solid ${L}`,
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.12)',
-        }}>
-          {isClosed ? (
-            <div style={{ padding: '16px', borderRadius: 18, textAlign: 'center', background: L, border: `1px solid rgba(107,128,112,0.2)` }}>
-              <span style={{ fontWeight: 600, fontSize: 14, color: M }}>이 코트는 모집이 마감되었어요</span>
-            </div>
-          ) : (
-            <button
-              onClick={() => { onClose(); onApply!(); }}
-              style={{ width: '100%', padding: '18px', borderRadius: 18, border: 'none', background: `linear-gradient(135deg,${A},${P})`, color: WH, fontWeight: 800, fontSize: 16, letterSpacing: '0.02em', cursor: 'pointer', boxShadow: '0 6px 20px rgba(26,92,53,0.35)', display: 'block' }}
-              onPointerDown={(e) => (e.currentTarget.style.opacity = '0.9')}
-              onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
-            >
-              참여 신청하기
-            </button>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
