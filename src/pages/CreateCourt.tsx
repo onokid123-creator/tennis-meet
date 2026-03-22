@@ -263,7 +263,6 @@ export default function CreateCourt() {
         return `${String(parseInt(h) + 1).padStart(2, '0')}:00`;
       })();
 
-      const tennisProfile = JSON.parse(localStorage.getItem('tennis_profile') || '{}');
       const datingProfile = JSON.parse(localStorage.getItem('dating_profile') || localStorage.getItem('optimistic_profile') || '{}');
 
       const rawDatingPhotos: string[] = (() => {
@@ -279,9 +278,17 @@ export default function CreateCourt() {
         )
       );
 
-      const tennisPhotoUrl = (purpose === 'tennis')
-        ? (tennisProfile?.photos?.[0] || tennisProfile?.photo_url || null)
-        : (datingPhotos[0] || null);
+      let tennisPhotoUrl: string | null = null;
+      if (purpose === 'tennis') {
+        const { data: myProfile } = await supabase
+          .from('profiles')
+          .select('tennis_photo_url, photo_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        tennisPhotoUrl = myProfile?.tennis_photo_url || myProfile?.photo_url || null;
+      } else {
+        tennisPhotoUrl = datingPhotos[0] || null;
+      }
 
       const courtData: Record<string, unknown> = {
         user_id: user.id,

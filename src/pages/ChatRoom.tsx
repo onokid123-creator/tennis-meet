@@ -860,7 +860,9 @@ const closeAllPickers = () => {
         m.content.includes('매칭 확정됐어요') ||
         m.content.includes('라인업이 확정됐어요') ||
         m.content.includes('매칭 성공') ||
-        m.content.includes('라인업 확정')
+        m.content.includes('라인업 확정') ||
+        m.content.includes('라인업이 확정됐어요') ||
+        (m.content.includes('확정됐어요') && !m.content.includes('취소'))
       ))) {
         setMatchConfirmed(true);
       }
@@ -1622,8 +1624,8 @@ const closeAllPickers = () => {
 
       const cancelMsg =
         chatPurpose === 'dating'
-          ? `😢 ${participantName}님의 매칭이 취소됐어요.`
-          : `😢 ${participantName}님의 라인업 확정이 취소됐어요.`;
+          ? `😢 ${participantName}님 매칭이 취소됐어요.`
+          : `😢 ${participantName}님 라인업 확정이 취소됐어요.`;
       await sendMessage(cancelMsg, 'system');
     } finally {
       setCancellingId(null);
@@ -1703,8 +1705,8 @@ const closeAllPickers = () => {
 
       const confirmMsg =
         chatPurpose === 'dating'
-          ? `💕 매칭 확정! 설레는 만남 기대해요 🥂`
-          : `🎾 라인업 확정!`;
+          ? `💕 ${participantName}님 매칭이 확정됐어요!`
+          : `🎾 ${participantName}님 라인업이 확정됐어요!`;
       await sendMessage(confirmMsg, 'system');
     } finally {
       setConfirmingId(null);

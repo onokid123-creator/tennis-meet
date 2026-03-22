@@ -83,7 +83,7 @@ export default function TennisProfileSetup() {
         photoUrl = await uploadPhoto(photoFile);
       }
 
-      await supabase.from('profiles').upsert(
+      const { error: upsertError } = await supabase.from('profiles').upsert(
         {
           id: user!.id,
           user_id: user!.id,
@@ -94,10 +94,16 @@ export default function TennisProfileSetup() {
           tennis_style: tennisStyle,
           purpose: 'tennis',
           profile_completed: true,
-          tennis_photo_url: photoUrl || undefined,
+          ...(photoUrl ? { tennis_photo_url: photoUrl } : {}),
         },
         { onConflict: 'user_id' }
       );
+
+      if (upsertError) {
+        console.error('[TennisProfileSetup] upsert error:', upsertError);
+        setError(`저장에 실패했습니다: ${upsertError.message}`);
+        return;
+      }
 
       const tennisProfile = {
         photo_url: photoUrl || undefined,
@@ -117,7 +123,7 @@ export default function TennisProfileSetup() {
         tennis_style: tennisStyle,
         purpose: 'tennis',
         profile_completed: true,
-        tennis_photo_url: photoUrl || undefined,
+        ...(photoUrl ? { tennis_photo_url: photoUrl } : {}),
       });
 
       if (from === 'create-court') {
@@ -125,7 +131,8 @@ export default function TennisProfileSetup() {
       } else {
         navigate('/home', { replace: true });
       }
-    } catch {
+    } catch (err) {
+      console.error('[TennisProfileSetup] unexpected error:', err);
       setError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);

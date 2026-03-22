@@ -1238,10 +1238,10 @@ export default function Applications() {
       if (useGroupChat && targetChatId) {
         const entryMsg =
           courtPurpose === 'dating'
-            ? `${applicantName}님이 입장했어요 💕`
-            : `${applicantName}님이 입장했어요 🎾`;
-        await supabase.from('court_group_chat_messages').insert({
-          group_chat_id: targetChatId,
+            ? `${applicantName}님이 입장했어요 😊`
+            : `${applicantName}님이 참여했어요 🎾`;
+        await supabase.from('messages').insert({
+          chat_id: targetChatId,
           sender_id: null,
           content: entryMsg,
           is_read: false,
