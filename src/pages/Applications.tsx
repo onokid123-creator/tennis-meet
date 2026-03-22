@@ -575,7 +575,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           <div
             style={{
               position: 'fixed',
-              bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+              bottom: 'var(--bottom-nav-height)',
               left: 0,
               right: 0,
               zIndex: 10000,
@@ -965,7 +965,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
         <div
           style={{
             position: 'fixed',
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+            bottom: 'var(--bottom-nav-height)',
             left: 0,
             right: 0,
             zIndex: 10000,
@@ -1626,7 +1626,7 @@ export default function Applications() {
     : 'linear-gradient(180deg, #F0F7F2 0%, #EBF4EE 100%)';
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: pageBg }}>
+    <div className="min-h-screen" style={{ background: pageBg, paddingBottom: 'var(--page-bottom-pad)' }}>
       <header className="sticky top-0 z-10" style={{ background: activeBg, boxShadow: '0 2px 20px rgba(0,0,0,0.25)' }}>
         <div className="px-5 pt-4 pb-3">
           <h1 className="text-xl font-bold text-white tracking-tight">신청 목록</h1>
@@ -1811,7 +1811,7 @@ export default function Applications() {
               className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl flex flex-col"
               style={{
                 background: sheetBg,
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+                paddingBottom: 'calc(var(--page-bottom-pad) + 8px)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -1875,7 +1875,7 @@ export default function Applications() {
             <div
               style={{
                 position: 'fixed',
-                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+                bottom: 'var(--bottom-nav-height)',
                 left: 0,
                 right: 0,
                 zIndex: 10001,
@@ -1917,7 +1917,7 @@ export default function Applications() {
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
             style={{
               background: rejectionDetailApp.purpose === 'dating' ? '#FFF8F5' : '#F4FAF6',
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 28px)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1985,7 +1985,7 @@ export default function Applications() {
                 style={{
                   borderTop: '1px solid rgba(0,0,0,0.06)',
                   background: isDatingDelete ? '#FFF8F5' : '#fff',
-                  paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 20px)',
+                  paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
                 }}
               >
                 <button

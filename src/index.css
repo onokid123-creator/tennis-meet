@@ -4,6 +4,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bottom-nav-icon-area: 60px;
+  --bottom-nav-height: calc(var(--bottom-nav-icon-area) + max(env(safe-area-inset-bottom, 0px), 12px));
+  --page-bottom-pad: calc(var(--bottom-nav-height) + 8px);
+}
+
 body {
   font-family: 'Inter', sans-serif;
 }

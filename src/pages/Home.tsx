@@ -345,7 +345,7 @@ export default function Home() {
   const accentGold = '#C9A84C';
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: pageBg }}>
+    <div className="min-h-screen" style={{ background: pageBg, paddingBottom: 'var(--page-bottom-pad)' }}>
       <header
         className="sticky top-0 z-10"
         style={{ background: headerBg, boxShadow: isDating ? '0 4px 24px rgba(251,113,133,0.3)' : '0 4px 24px rgba(26,74,58,0.3)' }}
@@ -524,7 +524,7 @@ export default function Home() {
           >
             <div
               className="w-full max-w-md rounded-t-3xl px-5 pt-5"
-              style={{ background: '#fff', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+              style={{ background: '#fff', paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 24px)' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
@@ -588,7 +588,7 @@ export default function Home() {
               style={{
                 borderTop: '1px solid rgba(0,0,0,0.06)',
                 background: '#fff',
-                paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 20px)',
+                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
               }}
             >
               <button
@@ -651,7 +651,7 @@ export default function Home() {
                 style={{
                   background: sheetBg,
                   borderTop: isDatingApply ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.1)',
-                  paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 20px)',
+                  paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
                 }}
               >
                 <button

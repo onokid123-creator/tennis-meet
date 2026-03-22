@@ -304,8 +304,9 @@ export default function Chats() {
 
   return (
     <div
-      className="min-h-screen pb-24 relative"
+      className="min-h-screen relative"
       style={{
+        paddingBottom: 'var(--page-bottom-pad)',
         background: isDatingTab
           ? 'linear-gradient(160deg, #FFF4F7 0%, #FFF8F2 50%, #FFF5EC 100%)'
           : '#F0F4F1',

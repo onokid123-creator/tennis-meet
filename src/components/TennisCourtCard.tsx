@@ -132,15 +132,18 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
         .eq('court_id', court.id)
         .eq('status', 'accepted');
 
-      if (!mounted || !apps || apps.length === 0) {
-        if (mounted) setLoadingParticipants(false);
+      if (!mounted) return;
+
+      if (!apps || apps.length === 0) {
+        setConfirmedProfiles([]);
+        setLoadingParticipants(false);
         return;
       }
 
       const ids = apps.map((a) => a.applicant_id);
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('*')
+        .select('user_id,name,photo_url,tennis_photo_url,experience,tennis_style')
         .in('user_id', ids);
 
       if (mounted) {
@@ -150,7 +153,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
     }
     load();
     return () => { mounted = false; };
-  }, [court.id]);
+  }, [court.id, court.confirmed_male_slots, court.confirmed_female_slots]);
 
   return (
     <div
@@ -167,7 +170,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
         </div>
 
         {/* scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 160 : 24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 'calc(var(--bottom-nav-height) + 80px)' : '24px' }}>
 
           {/* photo */}
           {photo ? (
@@ -407,11 +410,11 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
 
       </div>
 
-      {/* Fixed CTA — BottomNav(70px) + safe-area 위에 고정 */}
+      {/* Fixed CTA — BottomNav 위에 고정 */}
       {onApply && (
         <div style={{
           position: 'fixed',
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+          bottom: 'var(--bottom-nav-height)',
           left: 0,
           right: 0,
           zIndex: 10000,

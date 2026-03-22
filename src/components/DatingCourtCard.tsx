@@ -174,13 +174,14 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
     let live = true;
     (async () => {
       const { data: apps } = await supabase.from('applications').select('applicant_id').eq('court_id', court.id).eq('status', 'accepted');
-      if (!live || !apps?.length) return;
+      if (!live) return;
+      if (!apps?.length) { setConfirmed([]); return; }
       const ids = apps.map((a) => a.applicant_id);
-      const { data: profs } = await supabase.from('profiles').select('*').in('user_id', ids);
+      const { data: profs } = await supabase.from('profiles').select('user_id,name,photo_url,photo_urls,experience').in('user_id', ids);
       if (live) setConfirmed(profs ?? []);
     })();
     return () => { live = false; };
-  }, [court.id]);
+  }, [court.id, court.confirmed_male_slots, court.confirmed_female_slots]);
 
   const swipe = (e: React.TouchEvent, setCb: (i: number) => void, len: number, cur: number) => {
     if (tx.current === null) return;
@@ -228,7 +229,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         </div>
 
         {/* ── Scrollable area ── */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 160 : 24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 'calc(var(--bottom-nav-height) + 80px)' : '24px' }}>
 
         {/* ── Image slide ── */}
         <div
@@ -465,11 +466,11 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
 
       </div>
 
-      {/* ── Fixed CTA — BottomNav(70px) + safe-area 위에 고정 ── */}
+      {/* ── Fixed CTA — BottomNav 위에 고정 ── */}
       {onApply && (
         <div style={{
           position: 'fixed',
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+          bottom: 'var(--bottom-nav-height)',
           left: 0,
           right: 0,
           zIndex: 10000,
