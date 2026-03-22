@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Profile } from '../types';
@@ -16,45 +16,53 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const FETCH_TIMEOUT_MS = 8000;
+const PROFILE_FIELDS = 'user_id,id,name,age,gender,purpose,profile_completed,photo_url,photo_urls,experience,tennis_style,bio,mbti,height,tennis_photo_url,phone_number';
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
-  ]);
+const profileCache: { [userId: string]: { data: Profile; ts: number } } = {};
+const CACHE_TTL_MS = 30_000;
+
+async function fetchProfileById(userId: string): Promise<Profile | null> {
+  const cached = profileCache[userId];
+  if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.data;
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(PROFILE_FIELDS)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error || !data) return null;
+    profileCache[userId] = { data: data as Profile, ts: Date.now() };
+    return data as Profile;
+  } catch {
+    return null;
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const fetchProfile = async (userId: string): Promise<Profile | null> => {
-    try {
-      const queryPromise = supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle();
-      const { data, error } = await withTimeout(queryPromise as unknown as Promise<{ data: Profile | null; error: unknown }>, FETCH_TIMEOUT_MS);
-      if (error) {
-        console.error('프로필 가져오기 실패:', error);
-        return null;
-      }
-      return data;
-    } catch {
-      console.warn('프로필 fetch 타임아웃 또는 실패');
-      return null;
-    }
-  };
+  const initDone = useRef(false);
 
   const refreshProfile = async () => {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (currentUser) {
-      const profileData = await fetchProfile(currentUser.id);
+      if (profileCache[currentUser.id]) delete profileCache[currentUser.id];
+      const profileData = await fetchProfileById(currentUser.id);
       setProfile(profileData);
     }
   };
 
   const updateProfile = (updates: Partial<Profile>) => {
-    setProfile((prev) => (prev ? { ...prev, ...updates } : prev));
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...updates };
+      if (prev.user_id && profileCache[prev.user_id]) {
+        profileCache[prev.user_id] = { data: next, ts: Date.now() };
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -62,23 +70,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const init = async () => {
       try {
-        const { data: { user: verifiedUser } } = await withTimeout(
-          supabase.auth.getUser(),
-          FETCH_TIMEOUT_MS
-        );
+        const { data: { session } } = await supabase.auth.getSession();
 
         if (cancelled) return;
 
-        if (!verifiedUser) {
+        if (!session?.user) {
           setUser(null);
           setProfile(null);
           setLoading(false);
           return;
         }
 
-        setUser(verifiedUser);
+        const sessionUser = session.user;
+        setUser(sessionUser);
 
-        const profileData = await fetchProfile(verifiedUser.id);
+        const profileData = await fetchProfileById(sessionUser.id);
         if (cancelled) return;
         setProfile(profileData);
       } catch (err) {
@@ -88,13 +94,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(null);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          initDone.current = true;
+        }
       }
     };
 
     init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!initDone.current) return;
+
       (async () => {
         if (!session?.user) {
           setUser(null);
@@ -104,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setUser(session.user);
-        const profileData = await fetchProfile(session.user.id);
+        const profileData = await fetchProfileById(session.user.id);
         setProfile(profileData);
         setLoading(false);
       })();
@@ -177,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    Object.keys(profileCache).forEach((k) => delete profileCache[k]);
     setProfile(null);
     setUser(null);
   };

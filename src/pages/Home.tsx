@@ -102,11 +102,16 @@ export default function Home() {
 
   const userRef = useRef(user);
   const profileRef = useRef(profile);
+  const blockedIdsRef = useRef<string[]>([]);
 
   useEffect(() => {
     userRef.current = user;
     profileRef.current = profile;
   }, [user, profile]);
+
+  useEffect(() => {
+    blockedIdsRef.current = blockedUserIds;
+  }, [blockedUserIds]);
 
   useEffect(() => {
     const saved = localStorage.getItem('home_category_tab');
@@ -130,6 +135,9 @@ export default function Home() {
     });
   }, [user]);
 
+  const COURT_FIELDS = 'id,user_id,purpose,status,court_name,date,start_time,end_time,format,match_type,description,male_slots,female_slots,male_count,female_count,confirmed_male_slots,confirmed_female_slots,current_participants,capacity,cost,experience_wanted,court_fee,tennis_photo_url,owner_photo,owner_photos,owner_name,owner_age,owner_gender,owner_mbti,owner_height,owner_bio,owner_experience,court_intro,created_at';
+  const PROFILE_FIELDS = 'user_id,name,photo_url,tennis_photo_url,experience,tennis_style,age,gender,purpose';
+
   const fetchCourts = useCallback(async (purpose: CategoryTab, tab: Tab) => {
     const currentUser = userRef.current;
 
@@ -144,7 +152,7 @@ export default function Home() {
     try {
       let query = supabase
         .from('courts')
-        .select('*')
+        .select(COURT_FIELDS)
         .eq('purpose', purpose)
         .order('created_at', { ascending: false });
 
@@ -168,7 +176,7 @@ export default function Home() {
         const hostIds = Array.from(new Set(result.map((c) => c.user_id).filter(Boolean)));
         const { data: profilesData } = await supabase
           .from('profiles')
-          .select('*')
+          .select(PROFILE_FIELDS)
           .in('user_id', hostIds);
         const profileMap: Record<string, unknown> = {};
         (profilesData ?? []).forEach((p) => { profileMap[p.user_id] = p; });
@@ -184,22 +192,12 @@ export default function Home() {
         });
       }
 
-      if (tab === 'others' && blockedUserIds.length > 0) {
-        result = result.filter((c) => !blockedUserIds.includes(c.user_id));
+      const currentBlocked = blockedIdsRef.current;
+      if (tab === 'others' && currentBlocked.length > 0) {
+        result = result.filter((c) => !currentBlocked.includes(c.user_id));
       }
 
       setCourts(result);
-
-      result.forEach((court) => {
-        if (court.purpose === 'dating') {
-          const photos: string[] = court.owner_photos?.length
-            ? court.owner_photos
-            : [court.owner_photo].filter(Boolean) as string[];
-          photos.forEach((src) => {
-            if (src) { const img = new window.Image(); img.src = src; }
-          });
-        }
-      });
     } catch (err) {
       console.error('코트 가져오기 오류:', err);
       setCourts([]);
@@ -207,7 +205,10 @@ export default function Home() {
       clearTimeout(timeoutId);
       setLoading(false);
     }
-  }, [blockedUserIds]);
+  }, []);
+
+  const fetchCourtsRef = useRef(fetchCourts);
+  useEffect(() => { fetchCourtsRef.current = fetchCourts; }, [fetchCourts]);
 
   useEffect(() => {
     if (!user) return;
@@ -216,7 +217,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) return;
-    fetchCourts(categoryTab, activeTab);
+    fetchCourtsRef.current(categoryTab, activeTab);
   }, [refreshKey]);
 
   useEffect(() => {
@@ -226,12 +227,12 @@ export default function Home() {
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'courts' }, () => {
-        fetchCourts(categoryTab, activeTab);
+        fetchCourtsRef.current(categoryTab, activeTab);
       })
       .subscribe();
 
     const handleVisibilityChange = () => {
-      if (!document.hidden) fetchCourts(categoryTab, activeTab);
+      if (!document.hidden) fetchCourtsRef.current(categoryTab, activeTab);
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -240,7 +241,7 @@ export default function Home() {
       supabase.removeChannel(channel);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user, categoryTab, activeTab, fetchCourts]);
+  }, [user, categoryTab, activeTab]);
 
   const handleCategoryTab = (tab: CategoryTab) => {
     if (tab === categoryTab) return;

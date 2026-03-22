@@ -1,22 +1,24 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CourtsProvider } from './contexts/CourtsContext';
 
 import Splash from './pages/Splash';
 import Login from './pages/Login';
-import SignUp from './pages/SignUp';
-import ForgotPassword from './pages/ForgotPassword';
-import PurposeSelection from './pages/PurposeSelection';
-import ProfileSetup from './pages/ProfileSetup';
-import Home from './pages/Home';
-import CreateCourt from './pages/CreateCourt';
-import Applications from './pages/Applications';
-import Chats from './pages/Chats';
-import ChatRoom from './pages/ChatRoom';
-import GroupChatRoom from './pages/GroupChatRoom';
-import Profile from './pages/Profile';
-import TennisProfileSetup from './pages/TennisProfileSetup';
-import DatingProfileSetup from './pages/DatingProfileSetup';
+
+const SignUp = lazy(() => import('./pages/SignUp'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const PurposeSelection = lazy(() => import('./pages/PurposeSelection'));
+const ProfileSetup = lazy(() => import('./pages/ProfileSetup'));
+const Home = lazy(() => import('./pages/Home'));
+const CreateCourt = lazy(() => import('./pages/CreateCourt'));
+const Applications = lazy(() => import('./pages/Applications'));
+const Chats = lazy(() => import('./pages/Chats'));
+const ChatRoom = lazy(() => import('./pages/ChatRoom'));
+const GroupChatRoom = lazy(() => import('./pages/GroupChatRoom'));
+const Profile = lazy(() => import('./pages/Profile'));
+const TennisProfileSetup = lazy(() => import('./pages/TennisProfileSetup'));
+const DatingProfileSetup = lazy(() => import('./pages/DatingProfileSetup'));
 
 function LoadingScreen() {
   return (
@@ -70,121 +72,123 @@ function PurposeSelectionGuard() {
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <AuthRedirect>
-            <Splash />
-          </AuthRedirect>
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          <AuthRedirect>
-            <Login />
-          </AuthRedirect>
-        }
-      />
-      <Route
-        path="/signup"
-        element={
-          <AuthRedirect>
-            <SignUp />
-          </AuthRedirect>
-        }
-      />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route
-        path="/purpose-selection"
-        element={
-          <ProtectedRoute requireComplete={false}>
-            <PurposeSelectionGuard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile-setup"
-        element={
-          <ProtectedRoute requireComplete={false}>
-            <ProfileSetup />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/home"
-        element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/create-court"
-        element={
-          <ProtectedRoute>
-            <CreateCourt />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/applications"
-        element={
-          <ProtectedRoute>
-            <Applications />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/chats"
-        element={
-          <ProtectedRoute>
-            <Chats />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/chat/:chatId"
-        element={
-          <ProtectedRoute>
-            <ChatRoom />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/group-chat/:groupChatId"
-        element={
-          <ProtectedRoute>
-            <GroupChatRoom />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tennis-profile-setup"
-        element={
-          <ProtectedRoute requireComplete={false}>
-            <TennisProfileSetup />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dating-profile-setup"
-        element={
-          <ProtectedRoute requireComplete={false}>
-            <DatingProfileSetup />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <AuthRedirect>
+              <Splash />
+            </AuthRedirect>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <AuthRedirect>
+              <Login />
+            </AuthRedirect>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <AuthRedirect>
+              <SignUp />
+            </AuthRedirect>
+          }
+        />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/purpose-selection"
+          element={
+            <ProtectedRoute requireComplete={false}>
+              <PurposeSelectionGuard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile-setup"
+          element={
+            <ProtectedRoute requireComplete={false}>
+              <ProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-court"
+          element={
+            <ProtectedRoute>
+              <CreateCourt />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/applications"
+          element={
+            <ProtectedRoute>
+              <Applications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chats"
+          element={
+            <ProtectedRoute>
+              <Chats />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat/:chatId"
+          element={
+            <ProtectedRoute>
+              <ChatRoom />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/group-chat/:groupChatId"
+          element={
+            <ProtectedRoute>
+              <GroupChatRoom />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tennis-profile-setup"
+          element={
+            <ProtectedRoute requireComplete={false}>
+              <TennisProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dating-profile-setup"
+          element={
+            <ProtectedRoute requireComplete={false}>
+              <DatingProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Suspense>
   );
 }
 
