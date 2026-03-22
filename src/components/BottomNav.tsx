@@ -139,8 +139,7 @@ export default function BottomNav({ active }: BottomNavProps) {
         background: '#F8F9F4',
         borderTop: '1px solid #E0E0E0',
         zIndex: 9999,
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
-        minHeight: 'var(--bottom-nav-icon-area)',
+        paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
         pointerEvents: 'auto',
       }}
     >

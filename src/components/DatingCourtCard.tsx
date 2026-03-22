@@ -173,47 +173,14 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
   useEffect(() => {
     let live = true;
     (async () => {
-      const confirmedIds: string[] = [];
-
-      const { data: chats } = await supabase
-        .from('chats')
-        .select('id')
-        .eq('court_id', court.id)
-        .eq('is_group', false);
-
-      if (chats && chats.length > 0) {
-        const chatIds = chats.map((c) => c.id);
-        const { data: participants } = await supabase
-          .from('chat_participants')
-          .select('user_id')
-          .in('chat_id', chatIds)
-          .eq('is_confirmed', true);
-        if (participants) {
-          participants.forEach((p) => { if (!confirmedIds.includes(p.user_id)) confirmedIds.push(p.user_id); });
-        }
-      }
-
-      const { data: groupChat } = await supabase
-        .from('court_group_chats')
-        .select('confirmed_user_ids')
-        .eq('court_id', court.id)
-        .maybeSingle();
-
-      if (groupChat?.confirmed_user_ids?.length) {
-        groupChat.confirmed_user_ids.forEach((id: string) => { if (!confirmedIds.includes(id)) confirmedIds.push(id); });
-      }
-
-      if (!live) return;
-      if (confirmedIds.length === 0) { setConfirmed([]); return; }
-
-      const { data: profs } = await supabase
-        .from('profiles')
-        .select('user_id,name,photo_url,photo_urls,experience')
-        .in('user_id', confirmedIds);
+      const { data: apps } = await supabase.from('applications').select('applicant_id').eq('court_id', court.id).eq('status', 'accepted');
+      if (!live || !apps?.length) return;
+      const ids = apps.map((a) => a.applicant_id);
+      const { data: profs } = await supabase.from('profiles').select('*').in('user_id', ids);
       if (live) setConfirmed(profs ?? []);
     })();
     return () => { live = false; };
-  }, [court.id, court.confirmed_male_slots, court.confirmed_female_slots]);
+  }, [court.id]);
 
   const swipe = (e: React.TouchEvent, setCb: (i: number) => void, len: number, cur: number) => {
     if (tx.current === null) return;
@@ -261,7 +228,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         </div>
 
         {/* ── Scrollable area ── */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: '24px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 160 : 24 }}>
 
         {/* ── Image slide ── */}
         <div
@@ -496,29 +463,33 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         {/* ── end scrollable area ── */}
         </div>
 
-        {/* ── CTA — 시트 하단 고정 (flex-shrink: 0) ── */}
-        {onApply && (
-          <div style={{
-            flexShrink: 0,
-            padding: '12px 16px 16px',
-            background: PAGE,
-            borderTop: '1px solid rgba(234,153,166,0.18)',
-            boxShadow: '0 -4px 20px rgba(234,153,166,0.12)',
-          }}>
-            {closed ? (
-              <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#FDF2F4', border: '1px solid rgba(234,153,166,0.2)' }}>
-                <span style={{ fontWeight: 600, fontSize: 14, color: MUTED }}>이미 마감된 모임이에요</span>
-              </div>
-            ) : (
-              <PinkBtn onClick={() => { onClose(); onApply!(); }}>
-                <Heart style={{ width: 17, height: 17, fill: WHITE, strokeWidth: 0 }} />
-                이 만남, 이어가볼까요?
-              </PinkBtn>
-            )}
-          </div>
-        )}
-
       </div>
+
+      {/* ── Fixed CTA — BottomNav(70px) + safe-area 위에 고정 ── */}
+      {onApply && (
+        <div style={{
+          position: 'fixed',
+          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+          left: 0,
+          right: 0,
+          zIndex: 10000,
+          padding: '12px 16px 16px',
+          background: PAGE,
+          borderTop: '1px solid rgba(234,153,166,0.18)',
+          boxShadow: '0 -4px 20px rgba(234,153,166,0.12)',
+        }}>
+          {closed ? (
+            <div style={{ width: '100%', padding: '15px', borderRadius: 18, textAlign: 'center', background: '#FDF2F4', border: '1px solid rgba(234,153,166,0.2)' }}>
+              <span style={{ fontWeight: 600, fontSize: 14, color: MUTED }}>이미 마감된 모임이에요</span>
+            </div>
+          ) : (
+            <PinkBtn onClick={() => { onClose(); onApply!(); }}>
+              <Heart style={{ width: 17, height: 17, fill: WHITE, strokeWidth: 0 }} />
+              이 만남, 이어가볼까요?
+            </PinkBtn>
+          )}
+        </div>
+      )}
 
       {lbOpen && <Lightbox photos={photos} index={lbIdx} onClose={() => setLbOpen(false)} onChange={setLbIdx} />}
     </div>

@@ -7,7 +7,7 @@ import BottomNav from '../components/BottomNav';
 
 function ProfileSkeleton() {
   return (
-    <div className="min-h-screen bg-[#F8F9F4] animate-pulse" style={{ paddingBottom: 'var(--page-bottom-pad)' }}>
+    <div className="min-h-screen bg-[#F8F9F4] pb-20 animate-pulse">
       <div className="w-full h-[350px] bg-gray-200" />
       <div className="px-6 py-6">
         <div className="h-7 w-32 bg-gray-200 rounded mb-2" />
@@ -326,7 +326,7 @@ export default function Profile() {
   if (!profileLoaded) return <ProfileSkeleton />;
 
   return (
-    <div className="min-h-screen bg-[#F8F9F4]" style={{ paddingBottom: 'var(--page-bottom-pad)' }}>
+    <div className="min-h-screen bg-[#F8F9F4] pb-20">
       <header className="bg-white border-b border-gray-200 px-6 pt-4 pb-0 sticky top-0 z-10">
         <h1 className="text-2xl font-['Playfair_Display'] mb-3" style={{ color: '#1B3A2D' }}>프로필</h1>
         <div className="flex">
