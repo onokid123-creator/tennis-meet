@@ -126,21 +126,42 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
     let mounted = true;
     async function load() {
       setLoadingParticipants(true);
-      const { data: apps } = await supabase
-        .from('applications')
-        .select('applicant_id')
-        .eq('court_id', court.id)
-        .eq('status', 'accepted');
 
-      if (!mounted || !apps || apps.length === 0) {
-        if (mounted) setLoadingParticipants(false);
+      const { data: groupChat } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('court_id', court.id)
+        .eq('is_group', true)
+        .maybeSingle();
+
+      let ids: string[] = [];
+
+      if (groupChat?.id) {
+        const { data: participants } = await supabase
+          .from('chat_participants')
+          .select('user_id')
+          .eq('chat_id', groupChat.id);
+        ids = (participants ?? []).map((p) => p.user_id);
+      } else {
+        const { data: apps } = await supabase
+          .from('applications')
+          .select('applicant_id')
+          .eq('court_id', court.id)
+          .eq('status', 'accepted');
+        ids = (apps ?? []).map((a) => a.applicant_id);
+      }
+
+      if (!mounted) return;
+
+      if (ids.length === 0) {
+        setConfirmedProfiles([]);
+        setLoadingParticipants(false);
         return;
       }
 
-      const ids = apps.map((a) => a.applicant_id);
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('*')
+        .select('user_id,name,photo_url,tennis_photo_url,experience,tennis_style')
         .in('user_id', ids);
 
       if (mounted) {
@@ -167,7 +188,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
         </div>
 
         {/* scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 160 : 24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 'calc(env(safe-area-inset-bottom, 16px) + 140px)' : 24 }}>
 
           {/* photo */}
           {photo ? (
@@ -407,11 +428,11 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
 
       </div>
 
-      {/* Fixed CTA — BottomNav(70px) + safe-area 위에 고정 */}
+      {/* Fixed CTA — BottomNav(64px) + safe-area 위에 고정 */}
       {onApply && (
         <div style={{
           position: 'fixed',
-          bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
+          bottom: 'calc(env(safe-area-inset-bottom, 16px) + 64px)',
           left: 0,
           right: 0,
           zIndex: 10000,

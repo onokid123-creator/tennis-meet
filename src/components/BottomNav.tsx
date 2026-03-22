@@ -134,12 +134,14 @@ export default function BottomNav({ active }: BottomNavProps) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 px-6 pt-3"
+      className="fixed bottom-0 left-0 right-0 px-6"
       style={{
         background: '#F8F9F4',
         borderTop: '1px solid #E0E0E0',
         zIndex: 9999,
-        paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
+        paddingTop: 10,
+        paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)',
+        minHeight: 64,
         pointerEvents: 'auto',
       }}
     >
