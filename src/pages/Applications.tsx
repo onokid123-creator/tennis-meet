@@ -1017,33 +1017,49 @@ export default function Applications() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [rejectionDetailApp, setRejectionDetailApp] = useState<Application | null>(null);
   const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string; receiver_name?: string; court_id: string | null }>>([]);
+  const [resultMealProposals, setResultMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; receiver_name?: string; status: string; rejection_reason?: string | null }>>([]);
   const [mealRejectProposalId, setMealRejectProposalId] = useState<string | null>(null);
   const [mealRejectReason, setMealRejectReason] = useState('');
   const [mealRejectSubmitting, setMealRejectSubmitting] = useState(false);
   const [showMealRejectPopup, setShowMealRejectPopup] = useState(false);
+  const [showMealAcceptPopup, setShowMealAcceptPopup] = useState(false);
 
   const fetchMealProposals = useCallback(async () => {
     if (!user) return;
-    const { data: proposals } = await supabase
-      .from('meal_proposals')
-      .select('id, sender_id, receiver_id, court_id')
-      .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
-      .eq('status', 'pending');
-    if (!proposals || proposals.length === 0) {
-      setPendingMealProposals([]);
-      return;
-    }
-    const userIds = [...new Set([
-      ...proposals.map((p) => p.sender_id),
-      ...proposals.map((p) => p.receiver_id),
+
+    const [{ data: pendingRaw }, { data: resultRaw }] = await Promise.all([
+      supabase
+        .from('meal_proposals')
+        .select('id, sender_id, receiver_id, court_id')
+        .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
+        .eq('status', 'pending'),
+      supabase
+        .from('meal_proposals')
+        .select('id, sender_id, receiver_id, status, rejection_reason')
+        .eq('sender_id', user.id)
+        .eq('sender_seen', false)
+        .in('status', ['accepted', 'rejected']),
+    ]);
+
+    const pending = pendingRaw ?? [];
+    const results = resultRaw ?? [];
+
+    const allUserIds = [...new Set([
+      ...pending.map((p) => p.sender_id),
+      ...pending.map((p) => p.receiver_id),
+      ...results.map((p) => p.receiver_id),
     ])];
-    const { data: profilesData } = await supabase
-      .from('profiles')
-      .select('user_id, name')
-      .in('user_id', userIds);
-    const nameMap: Record<string, string> = {};
-    (profilesData ?? []).forEach((p) => { nameMap[p.user_id] = p.name; });
-    setPendingMealProposals(proposals.map((p) => ({
+
+    let nameMap: Record<string, string> = {};
+    if (allUserIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, name')
+        .in('user_id', allUserIds);
+      (profilesData ?? []).forEach((p) => { nameMap[p.user_id] = p.name; });
+    }
+
+    setPendingMealProposals(pending.map((p) => ({
       id: p.id,
       sender_id: p.sender_id,
       receiver_id: p.receiver_id,
@@ -1051,11 +1067,26 @@ export default function Applications() {
       sender_name: nameMap[p.sender_id],
       receiver_name: nameMap[p.receiver_id],
     })));
+
+    setResultMealProposals(results.map((p) => ({
+      id: p.id,
+      sender_id: p.sender_id,
+      receiver_id: p.receiver_id,
+      receiver_name: nameMap[p.receiver_id],
+      status: p.status,
+      rejection_reason: p.rejection_reason ?? null,
+    })));
   }, [user]);
 
   const handleMealProposalAccept = async (proposalId: string) => {
     await supabase.from('meal_proposals').update({ status: 'accepted' }).eq('id', proposalId);
     setPendingMealProposals((prev) => prev.filter((p) => p.id !== proposalId));
+    setShowMealAcceptPopup(true);
+  };
+
+  const handleDismissResultMeal = async (proposalId: string) => {
+    await supabase.from('meal_proposals').update({ sender_seen: true }).eq('id', proposalId);
+    setResultMealProposals((prev) => prev.filter((p) => p.id !== proposalId));
   };
 
   const handleMealProposalReject = async () => {
@@ -1380,7 +1411,10 @@ export default function Applications() {
 
   const filteredReceived = receivedApps.filter((a) => a.purpose === purposeTab && a.status === 'pending');
   const filteredSent = sentApps.filter((a) => a.purpose === purposeTab);
-  const pendingReceivedCount = filteredReceived.length;
+  const mealProposalReceivedCount = purposeTab === 'dating' ? pendingMealProposals.filter((p) => p.receiver_id === user?.id).length : 0;
+  const mealProposalResultCount = purposeTab === 'dating' ? resultMealProposals.length : 0;
+  const pendingReceivedCount = filteredReceived.length + mealProposalReceivedCount;
+  const pendingSentCount = mealProposalResultCount;
 
   const renderStatusBadge = (status: string) => {
     if (status === 'accepted') {
@@ -1730,10 +1764,18 @@ export default function Applications() {
           </button>
           <button
             onClick={() => setDirectionTab('sent')}
-            className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
+            className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative flex items-center justify-center gap-1.5"
             style={{ color: directionTab === 'sent' ? '#fff' : isDating ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.45)' }}
           >
             보낸 신청
+            {pendingSentCount > 0 && (
+              <span
+                className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold"
+                style={{ background: '#E05C8A', color: '#fff' }}
+              >
+                {pendingSentCount}
+              </span>
+            )}
             {directionTab === 'sent' && (
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full" style={{ width: '40%', background: '#C9A84C' }} />
             )}
@@ -1742,56 +1784,119 @@ export default function Applications() {
       </header>
 
       {isDating && directionTab === 'received' && pendingMealProposals.some((p) => p.receiver_id === user?.id) && (
-        <div className="px-4 pt-4 flex flex-col gap-2">
+        <div className="px-4 pt-4 flex flex-col gap-2.5">
           {pendingMealProposals.filter((p) => p.receiver_id === user?.id).map((proposal) => (
             <div
               key={proposal.id}
-              className="rounded-2xl px-4 py-3 flex items-center gap-3"
-              style={{ background: 'linear-gradient(135deg, #FFF8EC 0%, #FFF0D4 100%)', border: '1px solid rgba(201,168,76,0.4)' }}
+              className="rounded-2xl px-4 py-4 flex items-start gap-3"
+              style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE8F0 100%)', border: '1.5px solid rgba(224,92,138,0.28)', boxShadow: '0 2px 12px rgba(224,92,138,0.1)' }}
             >
-              <UtensilsCrossed className="w-5 h-5 flex-shrink-0" style={{ color: '#C9A84C' }} />
-              <p className="flex-1 text-sm font-medium leading-snug" style={{ color: '#8B6914' }}>
-                <span className="font-bold">{proposal.sender_name ?? '호스트'}</span>님이 경기 후 식사를 제안했어요
-              </p>
-              <div className="flex gap-1.5 flex-shrink-0">
-                <button
-                  onClick={() => handleMealProposalAccept(proposal.id)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }}
-                >
-                  수락
-                </button>
-                <button
-                  onClick={() => { setMealRejectProposalId(proposal.id); setShowMealRejectPopup(true); }}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold transition active:scale-95"
-                  style={{ background: 'rgba(0,0,0,0.06)', color: '#6B7280' }}
-                >
-                  거절
-                </button>
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)' }}
+              >
+                <UtensilsCrossed className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold leading-snug mb-2.5" style={{ color: '#7C2D5E' }}>
+                  <span style={{ color: '#C9547A' }}>{proposal.sender_name ?? '호스트'}</span>님이<br />경기 후 식사를 제안했어요 :)
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleMealProposalAccept(proposal.id)}
+                    className="flex-1 py-2 rounded-xl text-xs font-bold text-white transition active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 2px 8px rgba(224,92,138,0.35)' }}
+                  >
+                    수락하기
+                  </button>
+                  <button
+                    onClick={() => { setMealRejectProposalId(proposal.id); setShowMealRejectPopup(true); }}
+                    className="flex-1 py-2 rounded-xl text-xs font-semibold transition active:scale-95"
+                    style={{ background: 'rgba(156,28,67,0.07)', color: '#9C1C43', border: '1px solid rgba(156,28,67,0.15)' }}
+                  >
+                    다음에요
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {isDating && directionTab === 'sent' && pendingMealProposals.some((p) => p.sender_id === user?.id) && (
-        <div className="px-4 pt-4 flex flex-col gap-2">
+      {isDating && directionTab === 'sent' && (resultMealProposals.length > 0 || pendingMealProposals.some((p) => p.sender_id === user?.id)) && (
+        <div className="px-4 pt-4 flex flex-col gap-2.5">
+          {resultMealProposals.map((proposal) => (
+            <div
+              key={proposal.id}
+              className="rounded-2xl px-4 py-4 flex items-start gap-3"
+              style={{
+                background: proposal.status === 'accepted'
+                  ? 'linear-gradient(135deg, #FFF0F5 0%, #FFE8F0 100%)'
+                  : 'linear-gradient(135deg, #FFF5F5 0%, #FFF0F0 100%)',
+                border: proposal.status === 'accepted'
+                  ? '1.5px solid rgba(224,92,138,0.28)'
+                  : '1.5px solid rgba(220,80,80,0.22)',
+                boxShadow: proposal.status === 'accepted'
+                  ? '0 2px 12px rgba(224,92,138,0.1)'
+                  : '0 2px 8px rgba(220,80,80,0.08)',
+              }}
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{
+                  background: proposal.status === 'accepted'
+                    ? 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)'
+                    : 'rgba(220,80,80,0.15)',
+                }}
+              >
+                <UtensilsCrossed className="w-4 h-4" style={{ color: proposal.status === 'accepted' ? '#fff' : '#DC5050' }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold leading-snug mb-1" style={{ color: proposal.status === 'accepted' ? '#7C2D5E' : '#7F1D1D' }}>
+                  {proposal.status === 'accepted' ? (
+                    <><span style={{ color: '#C9547A' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />경기 후 식사 제안을 수락했어요 :)</>
+                  ) : (
+                    <><span style={{ color: '#DC5050' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />식사 제안을 거절했어요</>
+                  )}
+                </p>
+                {proposal.status === 'rejected' && proposal.rejection_reason && (
+                  <p className="text-xs mt-1 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(220,80,80,0.07)', color: '#9B1C1C' }}>
+                    "{proposal.rejection_reason}"
+                  </p>
+                )}
+                <button
+                  onClick={() => handleDismissResultMeal(proposal.id)}
+                  className="mt-2.5 text-xs font-medium transition active:scale-95"
+                  style={{ color: proposal.status === 'accepted' ? '#C9547A' : '#DC5050', opacity: 0.7 }}
+                >
+                  확인했어요
+                </button>
+              </div>
+            </div>
+          ))}
           {pendingMealProposals.filter((p) => p.sender_id === user?.id).map((proposal) => (
             <div
               key={proposal.id}
-              className="rounded-2xl px-4 py-3 flex items-center gap-3"
-              style={{ background: 'linear-gradient(135deg, #FFF8EC 0%, #FFF0D4 100%)', border: '1px solid rgba(201,168,76,0.4)' }}
+              className="rounded-2xl px-4 py-4 flex items-start gap-3"
+              style={{ background: 'linear-gradient(135deg, #FFF5FB 0%, #FFF0F8 100%)', border: '1.5px solid rgba(224,92,138,0.18)', boxShadow: '0 2px 8px rgba(224,92,138,0.07)' }}
             >
-              <UtensilsCrossed className="w-5 h-5 flex-shrink-0" style={{ color: '#C9A84C' }} />
-              <p className="flex-1 text-sm font-medium leading-snug" style={{ color: '#8B6914' }}>
-                <span className="font-bold">{proposal.receiver_name ?? '참여자'}</span>님에게 경기 후 식사를 제안했어요
-              </p>
-              <span
-                className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
-                style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.3)' }}
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{ background: 'rgba(224,92,138,0.12)' }}
               >
-                대기 중
-              </span>
+                <UtensilsCrossed className="w-4 h-4" style={{ color: '#E05C8A' }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold leading-snug" style={{ color: '#7C2D5E' }}>
+                  <span style={{ color: '#C9547A' }}>{proposal.receiver_name ?? '참여자'}</span>님에게<br />경기 후 식사를 제안했어요
+                </p>
+                <span
+                  className="inline-block mt-2 text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(224,92,138,0.1)', color: '#C9547A', border: '1px solid rgba(224,92,138,0.25)' }}
+                >
+                  답장 기다리는 중...
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -2129,6 +2234,39 @@ export default function Applications() {
           </div>
         );
       })()}
+
+      {showMealAcceptPopup && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setShowMealAcceptPopup(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl px-7 py-8 flex flex-col items-center gap-4"
+            style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)', boxShadow: '0 4px 20px rgba(244,114,182,0.4)' }}
+            >
+              <UtensilsCrossed className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold mb-1" style={{ color: '#7C2D5E' }}>경기 후 약속,</p>
+              <p className="text-lg font-bold mb-2" style={{ color: '#C9547A' }}>미리 잡아봐요 :)</p>
+              <p className="text-sm" style={{ color: 'rgba(124,45,94,0.65)' }}>수락이 전달됐어요. 경기 후 함께해요!</p>
+            </div>
+            <button
+              onClick={() => setShowMealAcceptPopup(false)}
+              className="w-full py-3 rounded-2xl text-sm font-bold text-white transition active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 4px 16px rgba(224,92,138,0.4)' }}
+            >
+              좋아요!
+            </button>
+          </div>
+        </div>
+      )}
 
       {showMealRejectPopup && mealRejectProposalId && (
         <div

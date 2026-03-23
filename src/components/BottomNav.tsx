@@ -59,7 +59,21 @@ export default function BottomNav({ active }: BottomNavProps) {
       .select('*', { count: 'exact', head: true })
       .eq('owner_id', user.id)
       .eq('status', 'pending');
-    setPendingApps(appsCount || 0);
+
+    const { count: mealReceivedCount } = await supabase
+      .from('meal_proposals')
+      .select('*', { count: 'exact', head: true })
+      .eq('receiver_id', user.id)
+      .eq('status', 'pending');
+
+    const { count: mealResultCount } = await supabase
+      .from('meal_proposals')
+      .select('*', { count: 'exact', head: true })
+      .eq('sender_id', user.id)
+      .eq('sender_seen', false)
+      .in('status', ['accepted', 'rejected']);
+
+    setPendingApps((appsCount || 0) + (mealReceivedCount || 0) + (mealResultCount || 0));
   }, [user]);
 
   useEffect(() => {
@@ -119,9 +133,26 @@ export default function BottomNav({ active }: BottomNavProps) {
       )
       .subscribe();
 
+    const mealChannel = supabase
+      .channel(`bottomnav_meal_proposals_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'meal_proposals',
+        },
+        () => {
+          const currentActiveChatId = locationRef.current.match(/^\/chat\/(.+)$/)?.[1] ?? null;
+          fetchUnreadCounts(currentActiveChatId);
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(appsChannel);
+      supabase.removeChannel(mealChannel);
     };
   }, [user, fetchUnreadCounts]);
 

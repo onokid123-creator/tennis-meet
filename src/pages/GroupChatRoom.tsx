@@ -54,6 +54,8 @@ export default function GroupChatRoom() {
   const [mealRejectReason, setMealRejectReason] = useState('');
   const [mealRejectSubmitting, setMealRejectSubmitting] = useState(false);
   const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string }>>([]);
+  const [showMealSentPopup, setShowMealSentPopup] = useState(false);
+  const [showMealAcceptPopup, setShowMealAcceptPopup] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const showToastMsg = (msg: string) => {
@@ -670,7 +672,7 @@ export default function GroupChatRoom() {
         status: 'pending',
       });
       setShowMealProposalPicker(false);
-      showToastMsg('식사 제안을 전송했습니다.');
+      setShowMealSentPopup(true);
       loadPendingMealProposals();
     } catch (e) {
       console.error(e);
@@ -681,8 +683,8 @@ export default function GroupChatRoom() {
 
   const handleMealProposalAccept = async (proposalId: string) => {
     await supabase.from('meal_proposals').update({ status: 'accepted' }).eq('id', proposalId);
-    showToastMsg('식사 제안을 수락했어요!');
     loadPendingMealProposals();
+    setShowMealAcceptPopup(true);
   };
 
   const handleMealProposalReject = async () => {
@@ -883,7 +885,7 @@ export default function GroupChatRoom() {
                 <button
                   onClick={() => setShowMealProposalPicker(true)}
                   className="px-3 py-2 rounded-xl text-sm font-semibold active:scale-[0.98] transition flex items-center gap-1.5 flex-shrink-0"
-                  style={{ background: 'rgba(201,168,76,0.12)', color: '#8B6914', border: '1px solid rgba(201,168,76,0.3)' }}
+                  style={{ background: 'linear-gradient(135deg, rgba(249,168,201,0.25) 0%, rgba(244,114,182,0.18) 100%)', color: '#C9547A', border: '1px solid rgba(224,92,138,0.3)' }}
                 >
                   <UtensilsCrossed className="w-3.5 h-3.5" />
                   <span className="text-xs">식사 제안</span>
@@ -1057,27 +1059,32 @@ export default function GroupChatRoom() {
       {isDating && pendingMealProposals.filter((p) => p.receiver_id === user?.id).map((proposal) => (
         <div
           key={proposal.id}
-          className="mx-3 my-2 rounded-2xl px-4 py-3 flex items-center gap-3 flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #FFF8EC 0%, #FFF0D4 100%)', border: '1px solid rgba(201,168,76,0.35)' }}
+          className="mx-3 my-2 rounded-2xl px-4 py-3.5 flex items-center gap-3 flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE8F0 100%)', border: '1.5px solid rgba(224,92,138,0.28)', boxShadow: '0 2px 10px rgba(224,92,138,0.1)' }}
         >
-          <UtensilsCrossed className="w-5 h-5 flex-shrink-0" style={{ color: '#C9A84C' }} />
-          <p className="flex-1 text-sm font-medium leading-snug" style={{ color: '#8B6914' }}>
-            <span className="font-bold">{proposal.sender_name ?? '호스트'}</span>님이 경기 후 식사를 제안했어요
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)' }}
+          >
+            <UtensilsCrossed className="w-3.5 h-3.5 text-white" />
+          </div>
+          <p className="flex-1 text-xs font-semibold leading-snug" style={{ color: '#7C2D5E' }}>
+            <span style={{ color: '#C9547A' }}>{proposal.sender_name ?? '호스트'}</span>님이<br />경기 후 식사를 제안했어요 :)
           </p>
           <div className="flex gap-1.5 flex-shrink-0">
             <button
               onClick={() => handleMealProposalAccept(proposal.id)}
               className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 2px 6px rgba(224,92,138,0.35)' }}
             >
               수락
             </button>
             <button
               onClick={() => { setMealRejectProposalId(proposal.id); setShowMealRejectPopup(true); }}
               className="px-3 py-1.5 rounded-xl text-xs font-semibold transition active:scale-95"
-              style={{ background: 'rgba(0,0,0,0.06)', color: '#6B7280' }}
+              style={{ background: 'rgba(156,28,67,0.07)', color: '#9C1C43', border: '1px solid rgba(156,28,67,0.15)' }}
             >
-              거절
+              다음에
             </button>
           </div>
         </div>
@@ -1942,9 +1949,9 @@ export default function GroupChatRoom() {
                     </div>
                     <span className="flex-1 text-sm font-semibold text-left text-gray-900">{avName}</span>
                     {alreadyProposed ? (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C' }}>제안완료</span>
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(224,92,138,0.12)', color: '#C9547A' }}>제안완료</span>
                     ) : (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white" style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }}>제안</span>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white" style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)' }}>제안</span>
                     )}
                   </button>
                 );
@@ -1959,6 +1966,71 @@ export default function GroupChatRoom() {
               style={{ background: '#F3F4F6', color: '#374151' }}
             >
               닫기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showMealSentPopup && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setShowMealSentPopup(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-3xl shadow-2xl px-7 py-8 flex flex-col items-center gap-4"
+            style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)', boxShadow: '0 4px 20px rgba(244,114,182,0.4)' }}
+            >
+              <UtensilsCrossed className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold mb-2" style={{ color: '#C9547A' }}>식사 제안이 전해졌어요 :)</p>
+              <p className="text-sm" style={{ color: 'rgba(124,45,94,0.65)' }}>상대방의 답장을 기다려요!</p>
+            </div>
+            <button
+              onClick={() => setShowMealSentPopup(false)}
+              className="w-full py-3 rounded-2xl text-sm font-bold text-white transition active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 4px 16px rgba(224,92,138,0.4)' }}
+            >
+              알겠어요!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showMealAcceptPopup && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setShowMealAcceptPopup(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-3xl shadow-2xl px-7 py-8 flex flex-col items-center gap-4"
+            style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)', boxShadow: '0 4px 20px rgba(244,114,182,0.4)' }}
+            >
+              <UtensilsCrossed className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold mb-1" style={{ color: '#7C2D5E' }}>경기 후 약속,</p>
+              <p className="text-lg font-bold mb-2" style={{ color: '#C9547A' }}>미리 잡아봐요 :)</p>
+              <p className="text-sm" style={{ color: 'rgba(124,45,94,0.65)' }}>수락이 전달됐어요. 경기 후 함께해요!</p>
+            </div>
+            <button
+              onClick={() => setShowMealAcceptPopup(false)}
+              className="w-full py-3 rounded-2xl text-sm font-bold text-white transition active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 4px 16px rgba(224,92,138,0.4)' }}
+            >
+              좋아요!
             </button>
           </div>
         </div>
