@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Upload, LogOut, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Upload, LogOut, X, ChevronLeft, ChevronRight, Plus, Camera } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 
 function ProfileSkeleton() {
@@ -43,12 +43,16 @@ export default function Profile() {
   const [formData, setFormData] = useState({
     newPhotos: [] as File[],
     newPreviews: [] as string[],
+    replaceIndex: null as number | null,
     age: '',
     experience: '',
     mbti: '',
     height: '',
     bio: '',
   });
+  const [editingPhotos, setEditingPhotos] = useState<string[]>([]);
+  const [replaceFileMap, setReplaceFileMap] = useState<Record<number, File>>({});
+  const replaceFileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,9 +75,16 @@ export default function Profile() {
     if (!authLoading) {
       setProfileLoaded(true);
       if (profile) {
+        const photos = profile.photo_urls?.length
+          ? profile.photo_urls
+          : profile.photo_url
+          ? [profile.photo_url]
+          : [];
+        setEditingPhotos(photos);
         setFormData({
           newPhotos: [],
           newPreviews: [],
+          replaceIndex: null,
           age: profile.age?.toString() || '',
           experience: profile.experience || '',
           mbti: profile.mbti || '',
@@ -98,6 +109,10 @@ export default function Profile() {
 
   const hasTennisProfile = !!profile?.tennis_style;
   const tennisPhotoSrc = profile?.tennis_photo_url || '';
+
+  const allEditingSlots: string[] = isEditing
+    ? [...editingPhotos, ...formData.newPreviews]
+    : allPhotos;
 
   const compressFile = (file: File): Promise<Blob> => {
     return new Promise((resolve) => {
@@ -128,16 +143,16 @@ export default function Profile() {
   const uploadPhoto = async (file: File): Promise<string> => {
     const compressed = await compressFile(file);
     const path = `${profile!.user_id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const { error } = await supabase.storage.from('profile-images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+    const { error } = await supabase.storage.from('profile_images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
     if (error) throw new Error(`사진 업로드 실패: ${error.message}`);
-    const { data: { publicUrl } } = supabase.storage.from('profile-images').getPublicUrl(path);
+    const { data: { publicUrl } } = supabase.storage.from('profile_images').getPublicUrl(path);
     return publicUrl;
   };
 
   const handlePhotoAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const remaining = 5 - allPhotos.length - formData.newPhotos.length;
+    const remaining = 5 - editingPhotos.length - formData.newPhotos.length;
     const toAdd = files.slice(0, remaining);
     const previews = toAdd.map((f) => URL.createObjectURL(f));
     setFormData((prev) => ({
@@ -146,6 +161,42 @@ export default function Profile() {
       newPreviews: [...prev.newPreviews, ...previews],
     }));
     e.target.value = '';
+  };
+
+  const handleReplacePhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || formData.replaceIndex === null) return;
+    const idx = formData.replaceIndex;
+    const preview = URL.createObjectURL(file);
+    const totalExisting = editingPhotos.length;
+
+    if (idx < totalExisting) {
+      const updated = [...editingPhotos];
+      updated[idx] = preview;
+      setEditingPhotos(updated);
+      setReplaceFileMap((prev) => ({ ...prev, [idx]: file }));
+    } else {
+      const newIdx = idx - totalExisting;
+      const updatedPhotos = [...formData.newPhotos];
+      const updatedPreviews = [...formData.newPreviews];
+      updatedPhotos[newIdx] = file;
+      updatedPreviews[newIdx] = preview;
+      setFormData((prev) => ({ ...prev, newPhotos: updatedPhotos, newPreviews: updatedPreviews }));
+    }
+    setFormData((prev) => ({ ...prev, replaceIndex: null }));
+    e.target.value = '';
+  };
+
+  const removeExistingPhoto = (idx: number) => {
+    setEditingPhotos((prev) => prev.filter((_, i) => i !== idx));
+    setReplaceFileMap((prev) => {
+      const updated: Record<number, File> = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        const n = Number(k);
+        if (n !== idx) updated[n > idx ? n - 1 : n] = v;
+      });
+      return updated;
+    });
   };
 
   const removeNewPhoto = (idx: number) => {
@@ -159,8 +210,18 @@ export default function Profile() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const resolvedExisting: string[] = [];
+      for (let i = 0; i < editingPhotos.length; i++) {
+        if (replaceFileMap[i]) {
+          const url = await uploadPhoto(replaceFileMap[i]);
+          resolvedExisting.push(url);
+        } else {
+          resolvedExisting.push(editingPhotos[i]);
+        }
+      }
+
       const uploadedNew = await Promise.all(formData.newPhotos.map(uploadPhoto));
-      const updatedPhotos = [...allPhotos, ...uploadedNew];
+      const updatedPhotos = [...resolvedExisting, ...uploadedNew];
       const primaryPhoto = updatedPhotos[0] || null;
 
       const { error } = await supabase
@@ -180,7 +241,8 @@ export default function Profile() {
 
       await refreshProfile();
       setIsEditing(false);
-      setFormData((prev) => ({ ...prev, newPhotos: [], newPreviews: [] }));
+      setReplaceFileMap({});
+      setFormData((prev) => ({ ...prev, newPhotos: [], newPreviews: [], replaceIndex: null }));
     } catch (err) {
       alert(err instanceof Error ? err.message : '오류가 발생했습니다.');
     } finally {
@@ -319,9 +381,7 @@ export default function Profile() {
     ['ESTP', 'ESFP', 'ENFP', 'ENTP'],
     ['ESTJ', 'ESFJ', 'ENFJ', 'ENTJ'],
   ];
-  const displayPhotos = isEditing ? [...allPhotos, ...formData.newPreviews] : allPhotos;
   const heroPhoto = profileTab === 'dating' ? (allPhotos[0] || null) : null;
-  const extraPhotos = isEditing ? displayPhotos.slice(1) : allPhotos.slice(1);
 
   if (!profileLoaded) return <ProfileSkeleton />;
 
@@ -425,7 +485,17 @@ export default function Profile() {
             <h2 className="text-base font-bold text-gray-800">🥂 코트 위 설레는 만남 프로필</h2>
             {!isEditing && (
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  const photos = profile?.photo_urls?.length
+                    ? profile.photo_urls
+                    : profile?.photo_url
+                    ? [profile.photo_url]
+                    : [];
+                  setEditingPhotos(photos);
+                  setReplaceFileMap({});
+                  setFormData((prev) => ({ ...prev, newPhotos: [], newPreviews: [], replaceIndex: null }));
+                  setIsEditing(true);
+                }}
                 className="text-xs font-semibold px-3 py-1.5 rounded-full border transition"
                 style={{ borderColor: '#C9A84C', color: '#C9A84C' }}
               >
@@ -434,13 +504,16 @@ export default function Profile() {
             )}
           </div>
 
-          {(extraPhotos.length > 0 || isEditing) && (
+          {(allPhotos.length > 0 || isEditing) && (
             <div className="mb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-gray-700">
-                  사진 ({displayPhotos.length}/5)
+                  사진 ({isEditing ? allEditingSlots.length : allPhotos.length}/5)
+                  {isEditing && allEditingSlots.length > 0 && (
+                    <span className="text-xs font-normal text-gray-400 ml-1.5">첫 번째 사진이 대표 이미지</span>
+                  )}
                 </span>
-                {isEditing && displayPhotos.length < 5 && (
+                {isEditing && allEditingSlots.length < 5 && (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -458,10 +531,17 @@ export default function Profile() {
                 onChange={handlePhotoAdd}
                 className="hidden"
               />
+              <input
+                ref={replaceFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleReplacePhotoFile}
+                className="hidden"
+              />
               <div className="grid grid-cols-2 gap-3">
-                {(isEditing ? displayPhotos : allPhotos.slice(1)).map((src, idx) => {
-                  const actualIdx = isEditing ? idx : idx + 1;
-                  const isNew = actualIdx >= allPhotos.length;
+                {(isEditing ? allEditingSlots : allPhotos).map((src, idx) => {
+                  const isExisting = idx < editingPhotos.length;
+                  const isFirstSlot = idx === 0;
                   return (
                     <div
                       key={idx}
@@ -470,26 +550,51 @@ export default function Profile() {
                     >
                       <img
                         src={src || ''}
-                        alt={`사진 ${actualIdx + 1}`}
+                        alt={`사진 ${idx + 1}`}
                         className="w-full h-full object-cover cursor-pointer"
                         loading="eager"
                         decoding="sync"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         onClick={() => !isEditing && src && setSelectedImage(src)}
                       />
-                      {isEditing && isNew && (
-                        <button
-                          type="button"
-                          onClick={() => removeNewPhoto(actualIdx - allPhotos.length)}
-                          className="absolute top-2 right-2 bg-black/50 rounded-full p-1 hover:bg-red-500 transition"
-                        >
-                          <X className="w-4 h-4 text-white" />
-                        </button>
+                      {isEditing && isFirstSlot && (
+                        <div className="absolute top-2 left-2 bg-[#C9A84C] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          대표
+                        </div>
+                      )}
+                      {isEditing && (
+                        <div className="absolute bottom-2 right-2 flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({ ...prev, replaceIndex: idx }));
+                              setTimeout(() => replaceFileInputRef.current?.click(), 50);
+                            }}
+                            className="bg-black/55 rounded-full p-1.5 hover:bg-black/80 transition"
+                            title="사진 교체"
+                          >
+                            <Camera className="w-3.5 h-3.5 text-white" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isExisting) {
+                                removeExistingPhoto(idx);
+                              } else {
+                                removeNewPhoto(idx - editingPhotos.length);
+                              }
+                            }}
+                            className="bg-black/55 rounded-full p-1.5 hover:bg-red-500 transition"
+                            title="사진 삭제"
+                          >
+                            <X className="w-3.5 h-3.5 text-white" />
+                          </button>
+                        </div>
                       )}
                     </div>
                   );
                 })}
-                {isEditing && displayPhotos.length === 0 && (
+                {isEditing && allEditingSlots.length === 0 && (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -683,9 +788,17 @@ export default function Profile() {
                 <button
                   onClick={() => {
                     setIsEditing(false);
+                    setReplaceFileMap({});
+                    const photos = profile?.photo_urls?.length
+                      ? profile.photo_urls
+                      : profile?.photo_url
+                      ? [profile.photo_url]
+                      : [];
+                    setEditingPhotos(photos);
                     setFormData({
                       newPhotos: [],
                       newPreviews: [],
+                      replaceIndex: null,
                       age: profile?.age?.toString() || '',
                       experience: profile?.experience || '',
                       mbti: profile?.mbti || '',
@@ -1131,7 +1244,7 @@ export default function Profile() {
         </div>
       )}
 
-      {lightboxIndex !== null && displayPhotos.length > 0 && (
+      {lightboxIndex !== null && allEditingSlots.length > 0 && (
         <div
           className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center"
           onClick={() => setLightboxIndex(null)}
@@ -1143,12 +1256,12 @@ export default function Profile() {
             <X className="w-6 h-6 text-white" />
           </button>
 
-          {displayPhotos.length > 1 && (
+          {allEditingSlots.length > 1 && (
             <>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLightboxIndex((lightboxIndex - 1 + displayPhotos.length) % displayPhotos.length);
+                  setLightboxIndex((lightboxIndex - 1 + allEditingSlots.length) % allEditingSlots.length);
                 }}
                 className="absolute left-4 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition z-10"
               >
@@ -1157,7 +1270,7 @@ export default function Profile() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setLightboxIndex((lightboxIndex + 1) % displayPhotos.length);
+                  setLightboxIndex((lightboxIndex + 1) % allEditingSlots.length);
                 }}
                 className="absolute right-16 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition z-10"
               >
@@ -1167,7 +1280,7 @@ export default function Profile() {
           )}
 
           <img
-            src={displayPhotos[lightboxIndex] || ''}
+            src={allEditingSlots[lightboxIndex] || ''}
             alt={`사진 ${lightboxIndex + 1}`}
             className="max-w-full max-h-full object-contain px-4"
             loading="eager"
@@ -1176,7 +1289,7 @@ export default function Profile() {
           />
 
           <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-1.5">
-            {displayPhotos.map((_, i) => (
+            {allEditingSlots.map((_, i) => (
               <button
                 key={i}
                 onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }}
