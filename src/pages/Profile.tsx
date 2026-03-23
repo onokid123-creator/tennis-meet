@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Upload, LogOut, X, ChevronLeft, ChevronRight, Plus, Camera } from 'lucide-react';
+import { Upload, LogOut, X, ChevronLeft, ChevronRight, Plus, Camera, Star } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 
 function ProfileSkeleton() {
@@ -205,6 +205,37 @@ export default function Profile() {
       newPhotos: prev.newPhotos.filter((_, i) => i !== idx),
       newPreviews: prev.newPreviews.filter((_, i) => i !== idx),
     }));
+  };
+
+  const setAsHero = (slotIdx: number) => {
+    if (slotIdx === 0) return;
+    const allSlots = [...editingPhotos, ...formData.newPreviews];
+    const allFiles: Array<File | null> = [
+      ...editingPhotos.map((_, i) => replaceFileMap[i] ?? null),
+      ...formData.newPhotos,
+    ];
+    const reorderedSlots = [allSlots[slotIdx], ...allSlots.filter((_, i) => i !== slotIdx)];
+    const reorderedFiles = [allFiles[slotIdx], ...allFiles.filter((_, i) => i !== slotIdx)];
+
+    const newExistingPreviews: string[] = [];
+    const newExistingFileMap: Record<number, File> = {};
+    const newAddedFiles: File[] = [];
+    const newAddedPreviews: string[] = [];
+
+    reorderedSlots.forEach((src, i) => {
+      const file = reorderedFiles[i];
+      if (i < editingPhotos.length) {
+        newExistingPreviews.push(src);
+        if (file) newExistingFileMap[i] = file;
+      } else {
+        newAddedPreviews.push(src);
+        if (file) newAddedFiles.push(file);
+      }
+    });
+
+    setEditingPhotos(newExistingPreviews);
+    setReplaceFileMap(newExistingFileMap);
+    setFormData((prev) => ({ ...prev, newPhotos: newAddedFiles, newPreviews: newAddedPreviews }));
   };
 
   const handleSave = async () => {
@@ -541,7 +572,7 @@ export default function Profile() {
               <div className="grid grid-cols-2 gap-3">
                 {(isEditing ? allEditingSlots : allPhotos).map((src, idx) => {
                   const isExisting = idx < editingPhotos.length;
-                  const isFirstSlot = idx === 0;
+                  const isHero = idx === 0;
                   return (
                     <div
                       key={idx}
@@ -557,10 +588,21 @@ export default function Profile() {
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         onClick={() => !isEditing && src && setSelectedImage(src)}
                       />
-                      {isEditing && isFirstSlot && (
-                        <div className="absolute top-2 left-2 bg-[#C9A84C] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {isEditing && isHero && (
+                        <div className="absolute top-2 left-2 bg-[#C9A84C] text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                          <Star className="w-2.5 h-2.5 fill-white stroke-0" />
                           대표
                         </div>
+                      )}
+                      {isEditing && !isHero && (
+                        <button
+                          type="button"
+                          onClick={() => setAsHero(idx)}
+                          className="absolute top-2 left-2 bg-black/45 rounded-full p-1.5 hover:bg-[#C9A84C] transition group"
+                          title="대표 이미지로 설정"
+                        >
+                          <Star className="w-3 h-3 text-white/70 group-hover:fill-white group-hover:text-white transition" />
+                        </button>
                       )}
                       {isEditing && (
                         <div className="absolute bottom-2 right-2 flex gap-1.5">
@@ -839,13 +881,24 @@ export default function Profile() {
                   {tennisPhotoPreview ? (
                     <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
                       <img src={tennisPhotoPreview} alt="테니스 사진" className="w-full h-full object-cover" loading="eager" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                      <button
-                        type="button"
-                        onClick={() => { setTennisPhotoPreview(''); setTennisPhotoFile(null); }}
-                        className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5"
-                      >
-                        <X className="w-3 h-3 text-white" />
-                      </button>
+                      <div className="absolute bottom-1 right-1 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => tennisFileInputRef.current?.click()}
+                          className="bg-black/55 rounded-full p-1 hover:bg-black/80 transition"
+                          title="사진 교체"
+                        >
+                          <Camera className="w-3 h-3 text-white" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setTennisPhotoPreview(''); setTennisPhotoFile(null); }}
+                          className="bg-black/55 rounded-full p-1 hover:bg-red-500 transition"
+                          title="사진 삭제"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <button

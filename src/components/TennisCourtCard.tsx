@@ -122,55 +122,55 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
   const hasSlotsInfo = total > 0;
   const fill = hasSlotsInfo ? confirmedCount / total : 0;
 
-  useEffect(() => {
-    let mounted = true;
-    async function load() {
-      setLoadingParticipants(true);
+  const loadConfirmed = async (signal: { cancelled: boolean }) => {
+    setLoadingParticipants(true);
+    const { data: apps } = await supabase
+      .from('applications')
+      .select('applicant_id')
+      .eq('court_id', court.id)
+      .eq('status', 'accepted');
 
-      const { data: groupChat } = await supabase
-        .from('chats')
-        .select('id')
-        .eq('court_id', court.id)
-        .eq('is_group', true)
-        .maybeSingle();
+    if (signal.cancelled) return;
 
-      let ids: string[] = [];
-
-      if (groupChat?.id) {
-        const { data: participants } = await supabase
-          .from('chat_participants')
-          .select('user_id')
-          .eq('chat_id', groupChat.id);
-        ids = (participants ?? []).map((p) => p.user_id);
-      } else {
-        const { data: apps } = await supabase
-          .from('applications')
-          .select('applicant_id')
-          .eq('court_id', court.id)
-          .eq('status', 'accepted');
-        ids = (apps ?? []).map((a) => a.applicant_id);
-      }
-
-      if (!mounted) return;
-
-      if (ids.length === 0) {
-        setConfirmedProfiles([]);
-        setLoadingParticipants(false);
-        return;
-      }
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id,name,photo_url,tennis_photo_url,experience,tennis_style')
-        .in('user_id', ids);
-
-      if (mounted) {
-        setConfirmedProfiles(profiles ?? []);
-        setLoadingParticipants(false);
-      }
+    const ids = (apps ?? []).map((a) => a.applicant_id);
+    if (ids.length === 0) {
+      setConfirmedProfiles([]);
+      setLoadingParticipants(false);
+      return;
     }
-    load();
-    return () => { mounted = false; };
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id,name,photo_url,tennis_photo_url,experience,tennis_style')
+      .in('user_id', ids);
+
+    if (!signal.cancelled) {
+      setConfirmedProfiles(profiles ?? []);
+      setLoadingParticipants(false);
+    }
+  };
+
+  useEffect(() => {
+    const signal = { cancelled: false };
+    loadConfirmed(signal);
+    return () => { signal.cancelled = true; };
+  // court.confirmed_male_slots / confirmed_female_slots 변화 시 재조회
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [court.id, court.confirmed_male_slots, court.confirmed_female_slots]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`confirmed_tennis_${court.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'applications',
+        filter: `court_id=eq.${court.id}`,
+      }, () => {
+        const signal = { cancelled: false };
+        loadConfirmed(signal);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [court.id]);
 
   return (

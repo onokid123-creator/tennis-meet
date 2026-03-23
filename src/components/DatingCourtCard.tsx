@@ -170,46 +170,50 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
   const tm = court.male_count ?? 0,   tf = court.female_count ?? 0;
   const cm = court.confirmed_male_slots ?? 0, cf = court.confirmed_female_slots ?? 0;
 
+  const loadConfirmed = async (signal: { cancelled: boolean }) => {
+    const { data: apps } = await supabase
+      .from('applications')
+      .select('applicant_id')
+      .eq('court_id', court.id)
+      .eq('status', 'accepted');
+
+    if (signal.cancelled) return;
+
+    const ids = (apps ?? []).map((a) => a.applicant_id);
+    if (ids.length === 0) {
+      setConfirmed([]);
+      return;
+    }
+
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('user_id,name,photo_url,photo_urls,experience')
+      .in('user_id', ids);
+
+    if (!signal.cancelled) setConfirmed(profs ?? []);
+  };
+
   useEffect(() => {
-    let live = true;
-    (async () => {
-      const { data: groupChat } = await supabase
-        .from('chats')
-        .select('id')
-        .eq('court_id', court.id)
-        .eq('is_group', true)
-        .maybeSingle();
+    const signal = { cancelled: false };
+    loadConfirmed(signal);
+    return () => { signal.cancelled = true; };
+  // court.confirmed_male_slots / confirmed_female_slots 변화 시 재조회
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [court.id, court.confirmed_male_slots, court.confirmed_female_slots]);
 
-      let ids: string[] = [];
-
-      if (groupChat?.id) {
-        const { data: participants } = await supabase
-          .from('chat_participants')
-          .select('user_id')
-          .eq('chat_id', groupChat.id);
-        ids = (participants ?? []).map((p) => p.user_id);
-      } else {
-        const { data: apps } = await supabase
-          .from('applications')
-          .select('applicant_id')
-          .eq('court_id', court.id)
-          .eq('status', 'accepted');
-        ids = (apps ?? []).map((a) => a.applicant_id);
-      }
-
-      if (!live || ids.length === 0) {
-        if (live) setConfirmed([]);
-        return;
-      }
-
-      const { data: profs } = await supabase
-        .from('profiles')
-        .select('user_id,name,photo_url,photo_urls,experience')
-        .in('user_id', ids);
-
-      if (live) setConfirmed(profs ?? []);
-    })();
-    return () => { live = false; };
+  useEffect(() => {
+    const channel = supabase
+      .channel(`confirmed_dating_${court.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'applications',
+        filter: `court_id=eq.${court.id}`,
+      }, () => {
+        const signal = { cancelled: false };
+        loadConfirmed(signal);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [court.id]);
 
   const swipe = (e: React.TouchEvent, setCb: (i: number) => void, len: number, cur: number) => {
