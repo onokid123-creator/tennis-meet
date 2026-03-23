@@ -1016,7 +1016,7 @@ export default function Applications() {
   const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [rejectionDetailApp, setRejectionDetailApp] = useState<Application | null>(null);
-  const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string; court_id: string | null }>>([]);
+  const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string; receiver_name?: string; court_id: string | null }>>([]);
   const [mealRejectProposalId, setMealRejectProposalId] = useState<string | null>(null);
   const [mealRejectReason, setMealRejectReason] = useState('');
   const [mealRejectSubmitting, setMealRejectSubmitting] = useState(false);
@@ -1026,8 +1026,8 @@ export default function Applications() {
     if (!user) return;
     const { data } = await supabase
       .from('meal_proposals')
-      .select('id, sender_id, receiver_id, court_id, sender:profiles!meal_proposals_sender_id_fkey(name)')
-      .eq('receiver_id', user.id)
+      .select('id, sender_id, receiver_id, court_id, sender:profiles!meal_proposals_sender_id_fkey(name), receiver:profiles!meal_proposals_receiver_id_fkey(name)')
+      .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
       .eq('status', 'pending');
     if (data) {
       setPendingMealProposals(data.map((p) => ({
@@ -1036,6 +1036,7 @@ export default function Applications() {
         receiver_id: p.receiver_id,
         court_id: p.court_id ?? null,
         sender_name: (p.sender as { name?: string } | null)?.name,
+        receiver_name: (p.receiver as { name?: string } | null)?.name,
       })));
     }
   }, [user]);
@@ -1728,9 +1729,9 @@ export default function Applications() {
         </div>
       </header>
 
-      {isDating && directionTab === 'received' && pendingMealProposals.length > 0 && (
+      {isDating && directionTab === 'received' && pendingMealProposals.some((p) => p.receiver_id === user?.id) && (
         <div className="px-4 pt-4 flex flex-col gap-2">
-          {pendingMealProposals.map((proposal) => (
+          {pendingMealProposals.filter((p) => p.receiver_id === user?.id).map((proposal) => (
             <div
               key={proposal.id}
               className="rounded-2xl px-4 py-3 flex items-center gap-3"
@@ -1756,6 +1757,29 @@ export default function Applications() {
                   거절
                 </button>
               </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isDating && directionTab === 'sent' && pendingMealProposals.some((p) => p.sender_id === user?.id) && (
+        <div className="px-4 pt-4 flex flex-col gap-2">
+          {pendingMealProposals.filter((p) => p.sender_id === user?.id).map((proposal) => (
+            <div
+              key={proposal.id}
+              className="rounded-2xl px-4 py-3 flex items-center gap-3"
+              style={{ background: 'linear-gradient(135deg, #FFF8EC 0%, #FFF0D4 100%)', border: '1px solid rgba(201,168,76,0.4)' }}
+            >
+              <UtensilsCrossed className="w-5 h-5 flex-shrink-0" style={{ color: '#C9A84C' }} />
+              <p className="flex-1 text-sm font-medium leading-snug" style={{ color: '#8B6914' }}>
+                <span className="font-bold">{proposal.receiver_name ?? '참여자'}</span>님에게 경기 후 식사를 제안했어요
+              </p>
+              <span
+                className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
+                style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C', border: '1px solid rgba(201,168,76,0.3)' }}
+              >
+                대기 중
+              </span>
             </div>
           ))}
         </div>
