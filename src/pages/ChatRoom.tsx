@@ -1453,19 +1453,25 @@ const closeAllPickers = () => {
 
  const loadPendingMealProposals = async () => {
     if (!user || !chatId) return;
-    const { data } = await supabase
+    const { data: proposals } = await supabase
       .from('meal_proposals')
-      .select('id, sender_id, receiver_id, sender:profiles!meal_proposals_sender_id_fkey(name)')
+      .select('id, sender_id, receiver_id')
       .eq('chat_id', chatId)
       .eq('status', 'pending');
-    if (data) {
-      setPendingMealProposals(data.map((p) => ({
-        id: p.id,
-        sender_id: p.sender_id,
-        receiver_id: p.receiver_id,
-        sender_name: (p.sender as { name?: string } | null)?.name,
-      })));
+    if (!proposals || proposals.length === 0) {
+      setPendingMealProposals([]);
+      return;
     }
+    const userIds = [...new Set([...proposals.map((p) => p.sender_id), ...proposals.map((p) => p.receiver_id)])];
+    const { data: profilesData } = await supabase.from('profiles').select('user_id, name').in('user_id', userIds);
+    const nameMap: Record<string, string> = {};
+    (profilesData ?? []).forEach((p) => { nameMap[p.user_id] = p.name; });
+    setPendingMealProposals(proposals.map((p) => ({
+      id: p.id,
+      sender_id: p.sender_id,
+      receiver_id: p.receiver_id,
+      sender_name: nameMap[p.sender_id],
+    })));
   };
 
   const handleSendMealProposal = async (receiverId: string) => {
