@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Message, Profile } from '../types';
-import { ArrowLeft, Send, LogOut, X, ChevronLeft, ChevronRight, Users, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Send, LogOut, X, ChevronLeft, ChevronRight, Users, MoreVertical, UtensilsCrossed } from 'lucide-react';
 
 interface AfterProposalPayload {
   status: 'pending' | 'accepted' | 'declined';
@@ -591,6 +591,13 @@ export default function ChatRoom() {
   const [showUnblockMessagePopup, setShowUnblockMessagePopup] = useState(false);
   const [unblockMessageTarget, setUnblockMessageTarget] = useState<{ user_id: string; name: string } | null>(null);
   const [confirmedParticipants, setConfirmedParticipants] = useState<Array<{ user_id: string; name: string; photo_url?: string; tennis_photo_url?: string }>>([]);
+  const [showMealProposalPicker, setShowMealProposalPicker] = useState(false);
+  const [mealProposalSubmitting, setMealProposalSubmitting] = useState(false);
+  const [showMealRejectPopup, setShowMealRejectPopup] = useState(false);
+  const [mealRejectProposalId, setMealRejectProposalId] = useState<string | null>(null);
+  const [mealRejectReason, setMealRejectReason] = useState('');
+  const [mealRejectSubmitting, setMealRejectSubmitting] = useState(false);
+  const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string }>>([]);
 const pickerProcessingRef = useRef(false);
 
 const closeAllPickers = () => {
@@ -883,6 +890,7 @@ const closeAllPickers = () => {
     load();
   }, [chatId, user]);
 
+  useEffect(() => { if (!loading) loadPendingMealProposals(); }, [loading, chatId, user]);
   useEffect(() => { updateMyLastRead(); }, [updateMyLastRead, messages.length]);
   useEffect(() => { if (!loading && messages.length > 0) scrollToBottom('instant'); }, [loading]);
   useEffect(() => { if (messages.length > 0) scrollToBottom('smooth'); }, [messages.length]);
@@ -1442,6 +1450,78 @@ const closeAllPickers = () => {
     setUnblockTargetUser(null);
   };
 
+
+ const loadPendingMealProposals = async () => {
+    if (!user || !chatId) return;
+    const { data } = await supabase
+      .from('meal_proposals')
+      .select('id, sender_id, receiver_id, sender:profiles!meal_proposals_sender_id_fkey(name)')
+      .eq('chat_id', chatId)
+      .eq('status', 'pending');
+    if (data) {
+      setPendingMealProposals(data.map((p) => ({
+        id: p.id,
+        sender_id: p.sender_id,
+        receiver_id: p.receiver_id,
+        sender_name: (p.sender as { name?: string } | null)?.name,
+      })));
+    }
+  };
+
+  const handleSendMealProposal = async (receiverId: string) => {
+    if (!user || !chatId || mealProposalSubmitting) return;
+    const existingPending = pendingMealProposals.find(
+      (p) => p.sender_id === user.id && p.receiver_id === receiverId
+    );
+    if (existingPending) {
+      showToastMsg('이미 식사 제안을 보냈습니다.');
+      setShowMealProposalPicker(false);
+      return;
+    }
+    setMealProposalSubmitting(true);
+    try {
+      await supabase.from('meal_proposals').insert({
+        chat_id: chatId,
+        court_id: courtId,
+        sender_id: user.id,
+        receiver_id: receiverId,
+        status: 'pending',
+      });
+      setShowMealProposalPicker(false);
+      showToastMsg('식사 제안을 전송했습니다.');
+      loadPendingMealProposals();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMealProposalSubmitting(false);
+    }
+  };
+
+  const handleMealProposalAccept = async (proposalId: string) => {
+    await supabase.from('meal_proposals').update({ status: 'accepted' }).eq('id', proposalId);
+    showToastMsg('식사 제안을 수락했어요!');
+    loadPendingMealProposals();
+  };
+
+  const handleMealProposalReject = async () => {
+    if (!mealRejectProposalId || !mealRejectReason.trim()) return;
+    setMealRejectSubmitting(true);
+    try {
+      await supabase.from('meal_proposals').update({
+        status: 'rejected',
+        rejection_reason: mealRejectReason.trim(),
+      }).eq('id', mealRejectProposalId);
+      setShowMealRejectPopup(false);
+      setMealRejectProposalId(null);
+      setMealRejectReason('');
+      showToastMsg('식사 제안을 거절했어요.');
+      loadPendingMealProposals();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMealRejectSubmitting(false);
+    }
+  };
 
  const handleMatchConfirm = () => {
   closeAllPickers();
@@ -2064,6 +2144,20 @@ const closeAllPickers = () => {
             >
               {isDating ? '매칭 취소하기' : '라인업 취소하기'}
             </button>
+            {isDating && (
+              <button
+                onClick={() => setShowMealProposalPicker(true)}
+                className="px-3 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0 flex items-center gap-1.5"
+                style={{
+                  background: 'rgba(201,168,76,0.12)',
+                  color: '#8B6914',
+                  border: '1px solid rgba(201,168,76,0.3)',
+                }}
+              >
+                <UtensilsCrossed className="w-3.5 h-3.5" />
+                <span className="text-xs">식사 제안</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -2149,6 +2243,35 @@ const closeAllPickers = () => {
           </div>
         </div>
       )}
+
+      {isDating && pendingMealProposals.filter((p) => p.receiver_id === user?.id).map((proposal) => (
+        <div
+          key={proposal.id}
+          className="mx-3 my-2 rounded-2xl px-4 py-3 flex items-center gap-3 flex-shrink-0"
+          style={{ background: 'linear-gradient(135deg, #FFF8EC 0%, #FFF0D4 100%)', border: '1px solid rgba(201,168,76,0.35)' }}
+        >
+          <UtensilsCrossed className="w-5 h-5 flex-shrink-0" style={{ color: '#C9A84C' }} />
+          <p className="flex-1 text-sm font-medium leading-snug" style={{ color: '#8B6914' }}>
+            <span className="font-bold">{proposal.sender_name ?? '호스트'}</span>님이 경기 후 식사를 제안했어요
+          </p>
+          <div className="flex gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => handleMealProposalAccept(proposal.id)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }}
+            >
+              수락
+            </button>
+            <button
+              onClick={() => { setMealRejectProposalId(proposal.id); setShowMealRejectPopup(true); }}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold transition active:scale-95"
+              style={{ background: 'rgba(0,0,0,0.06)', color: '#6B7280' }}
+            >
+              거절
+            </button>
+          </div>
+        </div>
+      ))}
 
       <div className="flex-1 overflow-y-auto px-3 py-3 relative z-[1]" style={{ WebkitOverflowScrolling: 'touch' }}>
         {loading ? (
@@ -3224,6 +3347,111 @@ const closeAllPickers = () => {
             >
               닫기
             </button>
+          </div>
+        </div>
+      )}
+
+      {showMealProposalPicker && isDating && isHost && (
+        <div
+          className="fixed inset-0 flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
+          onClick={() => setShowMealProposalPicker(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
+            style={{
+              background: '#FFF8F2',
+              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
+              zIndex: 9999,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(201,168,76,0.4)' }} />
+            <p className="font-bold text-gray-900 text-base text-center mb-1">식사 제안 보내기</p>
+            <p className="text-xs text-gray-400 text-center mb-5">함께할 참여자를 선택하세요</p>
+            <div className="flex flex-col gap-2 mb-4">
+              {(isGroupChat ? groupAvatars.filter((av) => av.user_id !== user?.id) : (otherUser ? [otherUser] : [])).map((av) => {
+                const avId = (av as { user_id?: string; id?: string }).user_id ?? (av as { id?: string }).id ?? '';
+                const avName = av.name;
+                const avPhoto = (av as { photo_url?: string }).photo_url;
+                const alreadyProposed = pendingMealProposals.some(
+                  (p) => p.sender_id === user?.id && p.receiver_id === avId
+                );
+                return (
+                  <button
+                    key={avId}
+                    onClick={() => handleSendMealProposal(avId)}
+                    disabled={mealProposalSubmitting || alreadyProposed}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition active:opacity-80 disabled:opacity-50"
+                    style={{ background: alreadyProposed ? 'rgba(201,168,76,0.08)' : '#fff', border: alreadyProposed ? '1.5px solid rgba(201,168,76,0.4)' : '1.5px solid rgba(0,0,0,0.07)' }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
+                      style={{ background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' }}
+                    >
+                      {avPhoto ? <img src={avPhoto} alt={avName} className="w-full h-full object-cover" /> : <span>{avName?.charAt(0) ?? '?'}</span>}
+                    </div>
+                    <span className="flex-1 text-sm font-semibold text-left text-gray-900">{avName}</span>
+                    {alreadyProposed ? (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(201,168,76,0.15)', color: '#C9A84C' }}>제안완료</span>
+                    ) : (
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white" style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }}>제안</span>
+                    )}
+                  </button>
+                );
+              })}
+              {(isGroupChat ? groupAvatars.filter((av) => av.user_id !== user?.id) : (otherUser ? [otherUser] : [])).length === 0 && (
+                <p className="text-sm text-center py-4 text-gray-400">참여자가 없습니다.</p>
+              )}
+            </div>
+            <button
+              onClick={() => setShowMealProposalPicker(false)}
+              className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
+              style={{ background: '#F3F4F6', color: '#374151' }}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showMealRejectPopup && mealRejectProposalId && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
+          onClick={() => { setShowMealRejectPopup(false); setMealRejectProposalId(null); setMealRejectReason(''); }}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl px-6 py-7"
+            style={{ background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-bold text-gray-900 mb-1 text-center">식사 제안 거절</h2>
+            <p className="text-xs text-gray-400 text-center mb-4">거절 이유를 직접 입력해주세요</p>
+            <textarea
+              value={mealRejectReason}
+              onChange={(e) => setMealRejectReason(e.target.value)}
+              placeholder="거절 이유를 입력해주세요"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-amber-400 mb-4"
+              rows={3}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowMealRejectPopup(false); setMealRejectProposalId(null); setMealRejectReason(''); }}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleMealProposalReject}
+                disabled={!mealRejectReason.trim() || mealRejectSubmitting}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }}
+              >
+                {mealRejectSubmitting ? '처리 중...' : '거절하기'}
+              </button>
+            </div>
           </div>
         </div>
       )}

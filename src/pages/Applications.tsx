@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Application, Profile } from '../types';
 import BottomNav from '../components/BottomNav';
-import { X, ChevronLeft, ChevronRight, MapPin, Calendar } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, MapPin, Calendar, UtensilsCrossed } from 'lucide-react';
 
 type PurposeTab = 'tennis' | 'dating';
 type DirectionTab = 'received' | 'sent';
@@ -1016,6 +1016,53 @@ export default function Applications() {
   const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [rejectionDetailApp, setRejectionDetailApp] = useState<Application | null>(null);
+  const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string; court_id: string | null }>>([]);
+  const [mealRejectProposalId, setMealRejectProposalId] = useState<string | null>(null);
+  const [mealRejectReason, setMealRejectReason] = useState('');
+  const [mealRejectSubmitting, setMealRejectSubmitting] = useState(false);
+  const [showMealRejectPopup, setShowMealRejectPopup] = useState(false);
+
+  const fetchMealProposals = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('meal_proposals')
+      .select('id, sender_id, receiver_id, court_id, sender:profiles!meal_proposals_sender_id_fkey(name)')
+      .eq('receiver_id', user.id)
+      .eq('status', 'pending');
+    if (data) {
+      setPendingMealProposals(data.map((p) => ({
+        id: p.id,
+        sender_id: p.sender_id,
+        receiver_id: p.receiver_id,
+        court_id: p.court_id ?? null,
+        sender_name: (p.sender as { name?: string } | null)?.name,
+      })));
+    }
+  }, [user]);
+
+  const handleMealProposalAccept = async (proposalId: string) => {
+    await supabase.from('meal_proposals').update({ status: 'accepted' }).eq('id', proposalId);
+    setPendingMealProposals((prev) => prev.filter((p) => p.id !== proposalId));
+  };
+
+  const handleMealProposalReject = async () => {
+    if (!mealRejectProposalId || !mealRejectReason.trim()) return;
+    setMealRejectSubmitting(true);
+    try {
+      await supabase.from('meal_proposals').update({
+        status: 'rejected',
+        rejection_reason: mealRejectReason.trim(),
+      }).eq('id', mealRejectProposalId);
+      setPendingMealProposals((prev) => prev.filter((p) => p.id !== mealRejectProposalId));
+      setShowMealRejectPopup(false);
+      setMealRejectProposalId(null);
+      setMealRejectReason('');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMealRejectSubmitting(false);
+    }
+  };
 
   const fetchApplications = useCallback(async () => {
     if (!user) return;
@@ -1073,6 +1120,7 @@ export default function Applications() {
 
   useEffect(() => {
     fetchApplications();
+    fetchMealProposals();
 
     const channel = supabase
       .channel('applications_changes')
@@ -1084,7 +1132,7 @@ export default function Applications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchApplications]);
+  }, [fetchApplications, fetchMealProposals]);
 
   const isGroupFormat = (format: string): boolean => {
     return ['복식', '혼복', '남복', '여복'].some((f) => format.includes(f));
@@ -1680,6 +1728,39 @@ export default function Applications() {
         </div>
       </header>
 
+      {isDating && directionTab === 'received' && pendingMealProposals.length > 0 && (
+        <div className="px-4 pt-4 flex flex-col gap-2">
+          {pendingMealProposals.map((proposal) => (
+            <div
+              key={proposal.id}
+              className="rounded-2xl px-4 py-3 flex items-center gap-3"
+              style={{ background: 'linear-gradient(135deg, #FFF8EC 0%, #FFF0D4 100%)', border: '1px solid rgba(201,168,76,0.4)' }}
+            >
+              <UtensilsCrossed className="w-5 h-5 flex-shrink-0" style={{ color: '#C9A84C' }} />
+              <p className="flex-1 text-sm font-medium leading-snug" style={{ color: '#8B6914' }}>
+                <span className="font-bold">{proposal.sender_name ?? '호스트'}</span>님이 경기 후 식사를 제안했어요
+              </p>
+              <div className="flex gap-1.5 flex-shrink-0">
+                <button
+                  onClick={() => handleMealProposalAccept(proposal.id)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }}
+                >
+                  수락
+                </button>
+                <button
+                  onClick={() => { setMealRejectProposalId(proposal.id); setShowMealRejectPopup(true); }}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold transition active:scale-95"
+                  style={{ background: 'rgba(0,0,0,0.06)', color: '#6B7280' }}
+                >
+                  거절
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="px-4 py-5">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -2012,6 +2093,47 @@ export default function Applications() {
           </div>
         );
       })()}
+
+      {showMealRejectPopup && mealRejectProposalId && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
+          onClick={() => { setShowMealRejectPopup(false); setMealRejectProposalId(null); setMealRejectReason(''); }}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl px-6 py-7"
+            style={{ background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-bold text-gray-900 mb-1 text-center">식사 제안 거절</h2>
+            <p className="text-xs text-gray-400 text-center mb-4">거절 이유를 직접 입력해주세요</p>
+            <textarea
+              value={mealRejectReason}
+              onChange={(e) => setMealRejectReason(e.target.value)}
+              placeholder="거절 이유를 입력해주세요"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-amber-400 mb-4"
+              rows={3}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowMealRejectPopup(false); setMealRejectProposalId(null); setMealRejectReason(''); }}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleMealProposalReject}
+                disabled={!mealRejectReason.trim() || mealRejectSubmitting}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #C9A84C 0%, #D4896A 100%)' }}
+              >
+                {mealRejectSubmitting ? '처리 중...' : '거절하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

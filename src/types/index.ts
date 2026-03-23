@@ -132,6 +132,19 @@ export interface GroupChatParticipant {
   profile?: Profile;
 }
 
+export interface MealProposal {
+  id: string;
+  chat_id: string;
+  court_id: string | null;
+  sender_id: string;
+  receiver_id: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  rejection_reason?: string | null;
+  created_at: string;
+  sender?: Profile;
+  receiver?: Profile;
+}
+
 export interface CourtGroupChat {
   id: string;
   court_id: string;
