@@ -617,6 +617,7 @@ const closeAllPickers = () => {
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const myJoinedAtRef = useRef<string | null>(null);
 
   const showToastMsg = (msg: string) => {
     setSimpleToast(msg);
@@ -848,6 +849,7 @@ const closeAllPickers = () => {
         .eq('user_id', user.id)
         .maybeSingle();
       const joinedAt = (myPartData as { joined_at?: string | null } | null)?.joined_at ?? null;
+      myJoinedAtRef.current = joinedAt;
 
       let query = supabase
         .from('messages')
@@ -909,6 +911,8 @@ const closeAllPickers = () => {
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
         (payload) => {
           const msg = payload.new as Message;
+          const jAt = myJoinedAtRef.current;
+          if (jAt && msg.created_at && msg.created_at < jAt) return;
           if (msg.sender_id !== user.id && !msg.is_read) {
             supabase
               .from('messages')
@@ -1287,6 +1291,10 @@ const closeAllPickers = () => {
     }
 
     await supabase.from('chat_participants').delete().eq('chat_id', chatId).eq('user_id', user.id);
+
+    if (isHost) {
+      await supabase.from('chats').update({ host_left: true }).eq('id', chatId);
+    }
 
     navigate('/chats', { replace: true });
   };

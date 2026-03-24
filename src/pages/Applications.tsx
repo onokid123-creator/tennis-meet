@@ -1063,6 +1063,7 @@ export default function Applications() {
         purpose: app.purpose ?? 'tennis',
         court_id: courtId,
         is_group: false,
+        host_left: false,
         confirmed_user_ids: [],
       })
       .select('id')
