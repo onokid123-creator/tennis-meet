@@ -42,6 +42,11 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 }
 
+function fmtCourtNum(n?: string | null) {
+  if (!n) return '';
+  return /^\d+$/.test(n.trim()) ? `${n.trim()}번 코트` : n.trim();
+}
+
 /* ─────────── Avatar ─────────── */
 function Avatar({
   src, name, size = 44, ring,
@@ -261,7 +266,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         </div>
 
         {/* ── Scrollable area ── */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 'calc(env(safe-area-inset-bottom, 16px) + 140px)' : 24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 'calc(env(safe-area-inset-bottom, 16px) + 140px)' : 32, scrollBehavior: 'smooth' }}>
 
         {/* ── Image slide ── */}
         <div
@@ -346,7 +351,17 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
           {/* ───── Tab 0: 모임 정보 ───── */}
           {tab === 0 && (
             <>
-              {/* 코트 정보 */}
+              {/* 1순위: 호스트 메시지 */}
+              {(court.court_intro || court.description) && (
+                <Card style={{ marginBottom: 10 }}>
+                  <SectionHead label="호스트 메시지" />
+                  <p style={{ margin: 0, fontSize: 14, color: '#5C2D4E', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                    {court.court_intro || court.description}
+                  </p>
+                </Card>
+              )}
+
+              {/* 2순위: 코트 정보 */}
               <Card style={{ marginBottom: 10 }}>
                 <SectionHead label="코트 정보" />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -355,9 +370,12 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                       <div style={{ width: 30, height: 30, borderRadius: 9, background: ROSE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <MapPin style={{ width: 14, height: 14, color: PINK }} />
                       </div>
-                      <span style={{ fontSize: 14, color: DARK, fontWeight: 600 }}>
-                        {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
-                      </span>
+                      <div>
+                        <div style={{ fontSize: 14, color: DARK, fontWeight: 600 }}>{court.court_name}</div>
+                        {fmtCourtNum((court as { court_number?: string }).court_number) && (
+                          <div style={{ fontSize: 12, color: PINK, fontWeight: 600, marginTop: 1 }}>{fmtCourtNum((court as { court_number?: string }).court_number)}</div>
+                        )}
+                      </div>
                     </div>
                   )}
                   {court.date && (
@@ -385,16 +403,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                   </div>
                 )}
               </Card>
-
-              {/* 호스트 한마디 */}
-              {(court.court_intro || court.description) && (
-                <Card style={{ marginBottom: 10 }}>
-                  <SectionHead label="호스트 한마디" />
-                  <p style={{ margin: 0, fontSize: 14, color: '#5C2D4E', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                    {court.court_intro || court.description}
-                  </p>
-                </Card>
-              )}
 
               {/* 모집 현황 */}
               {(tm > 0 || tf > 0) && (
@@ -638,26 +646,23 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
         {/* ── Info strip ── */}
         <div style={{ padding: '12px 14px 14px' }}>
 
-          {/* date / time row */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+          {/* location / date row */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
             {court.court_name && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                <MapPin style={{ width: 11, height: 11, color: PINK }} />
-                <span style={{ fontSize: 12, color: '#6B7280', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <MapPin style={{ width: 11, height: 11, color: PINK, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {court.court_name}{fmtCourtNum((court as { court_number?: string }).court_number) ? ` · ${fmtCourtNum((court as { court_number?: string }).court_number)}` : ''}
                 </span>
               </div>
             )}
-            {court.date && (
+            {(court.date || court.start_time) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Calendar style={{ width: 11, height: 11, color: PINK }} />
-                <span style={{ fontSize: 12, color: '#6B7280' }}>{fmtDate(court.date)}</span>
-              </div>
-            )}
-            {court.start_time && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Clock style={{ width: 11, height: 11, color: PINK }} />
-                <span style={{ fontSize: 12, color: '#6B7280' }}>{court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}</span>
+                <Calendar style={{ width: 11, height: 11, color: PINK, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: '#6B7280' }}>
+                  {court.date ? fmtDate(court.date) : ''}
+                  {court.start_time ? `  ${court.start_time}${court.end_time ? ` – ${court.end_time}` : ''}` : ''}
+                </span>
               </div>
             )}
           </div>

@@ -794,13 +794,13 @@ export default function GroupChatRoom() {
             {/* 2줄: 장소명 + 코트번호 */}
             {court?.court_name && (
               <p className="text-[12px] font-semibold mt-1 leading-snug" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+                {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${/^\d+$/.test(String((court as { court_number?: string }).court_number).trim()) ? `${String((court as { court_number?: string }).court_number).trim()}번 코트` : (court as { court_number?: string }).court_number}` : ''}
               </p>
             )}
             {/* 3줄: 날짜 · 시간 */}
             {court?.date && (
               <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                {court.date}{court.start_time ? ` · ${court.start_time}${court.end_time ? `~${court.end_time}` : ''}` : ''}
+                {new Date(court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}{court.start_time ? `  ${court.start_time}${court.end_time ? ` – ${court.end_time}` : ''}` : ''}
               </p>
             )}
           </div>

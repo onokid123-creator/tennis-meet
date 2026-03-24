@@ -43,6 +43,11 @@ function fmtFee(fee: number) {
   return fee === 0 ? '무료' : `${fee.toLocaleString()}원`;
 }
 
+function fmtCourtNum(n?: string | null) {
+  if (!n) return '';
+  return /^\d+$/.test(n.trim()) ? `${n.trim()}번 코트` : n.trim();
+}
+
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 }
@@ -188,7 +193,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
         </div>
 
         {/* scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 'calc(env(safe-area-inset-bottom, 16px) + 140px)' : 24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: onApply ? 'calc(env(safe-area-inset-bottom, 16px) + 140px)' : 32, scrollBehavior: 'smooth' }}>
 
           {/* photo */}
           {photo ? (
@@ -248,7 +253,17 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
 
           <div style={{ padding: '14px 14px 0' }}>
 
-            {/* 코트 기본 정보 */}
+            {/* 1순위: 호스트 메시지 */}
+            {(court.court_intro || court.description) && (
+              <InfoCard style={{ marginBottom: 10 }}>
+                <SectionHead label="호스트 메시지" />
+                <p style={{ margin: 0, fontSize: 14, color: '#3D5244', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                  {court.court_intro || court.description}
+                </p>
+              </InfoCard>
+            )}
+
+            {/* 2순위: 코트 기본 정보 */}
             <InfoCard style={{ marginBottom: 10 }}>
               <SectionHead label="코트 정보" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -257,9 +272,12 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
                     <div style={{ width: 30, height: 30, borderRadius: 9, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <MapPin style={{ width: 14, height: 14, color: P }} />
                     </div>
-                    <span style={{ fontSize: 14, color: T, fontWeight: 600 }}>
-                      {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
-                    </span>
+                    <div>
+                      <div style={{ fontSize: 14, color: T, fontWeight: 600 }}>{court.court_name}</div>
+                      {fmtCourtNum((court as { court_number?: string }).court_number) && (
+                        <div style={{ fontSize: 12, color: A, fontWeight: 600, marginTop: 1 }}>{fmtCourtNum((court as { court_number?: string }).court_number)}</div>
+                      )}
+                    </div>
                   </div>
                 )}
                 {court.date && (
@@ -296,7 +314,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
               )}
             </InfoCard>
 
-            {/* 모집 현황 */}
+            {/* 3순위: 모집 현황 */}
             {hasSlotsInfo && (
               <InfoCard style={{ marginBottom: 10 }}>
                 <SectionHead label="모집 현황" />
@@ -371,16 +389,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
               </InfoCard>
             )}
 
-            {/* 호스트 한마디 */}
-            {(court.court_intro || court.description) && (
-              <InfoCard style={{ marginBottom: 10 }}>
-                <SectionHead label="호스트 한마디" />
-                <p style={{ margin: 0, fontSize: 14, color: '#3D5244', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                  {court.court_intro || court.description}
-                </p>
-              </InfoCard>
-            )}
-
             {/* 구력 조건 */}
             {court.experience_wanted && (
               <div style={{ background: L, borderRadius: 14, padding: '11px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 9, border: '1px solid rgba(108,191,108,0.35)' }}>
@@ -388,8 +396,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
                 <span style={{ fontSize: 13, color: P, fontWeight: 600 }}>구력 조건: {court.experience_wanted}</span>
               </div>
             )}
-
-            {/* 소유자 액션 — fixed CTA로 이동됨 */}
 
           </div>
         </div>
@@ -527,26 +533,23 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
         {/* info strip */}
         <div style={{ padding: '12px 14px 14px' }}>
 
-          {/* meta row: 코트명+코트번호 / 날짜 / 시간 */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+          {/* meta row: 코트명 / 날짜 · 시간 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
             {court.court_name && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <MapPin style={{ width: 11, height: 11, color: A }} />
-                <span style={{ fontSize: 12, color: M, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+                <MapPin style={{ width: 11, height: 11, color: A, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: M, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {court.court_name}{fmtCourtNum((court as { court_number?: string }).court_number) ? ` · ${fmtCourtNum((court as { court_number?: string }).court_number)}` : ''}
                 </span>
               </div>
             )}
-            {court.date && (
+            {(court.date || court.start_time) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Calendar style={{ width: 11, height: 11, color: A }} />
-                <span style={{ fontSize: 12, color: M }}>{fmtDate(court.date)}</span>
-              </div>
-            )}
-            {court.start_time && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Clock style={{ width: 11, height: 11, color: A }} />
-                <span style={{ fontSize: 12, color: M }}>{court.start_time}{court.end_time ? ` – ${court.end_time}` : ''}</span>
+                <Calendar style={{ width: 11, height: 11, color: A, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: M }}>
+                  {court.date ? fmtDate(court.date) : ''}
+                  {court.start_time ? `  ${court.start_time}${court.end_time ? ` – ${court.end_time}` : ''}` : ''}
+                </span>
               </div>
             )}
           </div>

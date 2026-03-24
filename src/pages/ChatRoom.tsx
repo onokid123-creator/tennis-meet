@@ -2101,13 +2101,13 @@ const closeAllPickers = () => {
               {/* 2줄: 장소명 + 코트번호 */}
               {courtName && (
                 <p className="text-[12px] font-semibold mt-1 leading-snug" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                  {courtName}{courtInfo?.court_number ? ` · ${courtInfo.court_number}` : ''}
+                  {courtName}{courtInfo?.court_number ? ` · ${/^\d+$/.test(String(courtInfo.court_number).trim()) ? `${String(courtInfo.court_number).trim()}번 코트` : courtInfo.court_number}` : ''}
                 </p>
               )}
               {/* 3줄: 날짜 · 시간 */}
               {courtInfo?.date && (
                 <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  {courtInfo.date}{courtInfo.start_time ? ` · ${courtInfo.start_time}${courtInfo.end_time ? `~${courtInfo.end_time}` : ''}` : ''}
+                  {new Date(courtInfo.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}{courtInfo.start_time ? `  ${courtInfo.start_time}${courtInfo.end_time ? ` – ${courtInfo.end_time}` : ''}` : ''}
                 </p>
               )}
             </>
