@@ -19,6 +19,7 @@ const GroupChatRoom = lazy(() => import('./pages/GroupChatRoom'));
 const Profile = lazy(() => import('./pages/Profile'));
 const TennisProfileSetup = lazy(() => import('./pages/TennisProfileSetup'));
 const DatingProfileSetup = lazy(() => import('./pages/DatingProfileSetup'));
+const InquiryPage = lazy(() => import('./pages/InquiryPage'));
 
 function LoadingScreen() {
   return (
@@ -184,6 +185,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute requireComplete={false}>
               <DatingProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inquiry"
+          element={
+            <ProtectedRoute>
+              <InquiryPage />
             </ProtectedRoute>
           }
         />

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Upload, LogOut, X, ChevronLeft, ChevronRight, Plus, Camera, Star } from 'lucide-react';
+import { Upload, LogOut, X, ChevronLeft, ChevronRight, Plus, Camera, Star, MessageSquare } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 
 function ProfileSkeleton() {
@@ -1070,6 +1070,16 @@ export default function Profile() {
           )}
         </div>}
 
+        <button
+          onClick={() => navigate('/inquiry')}
+          className="w-full py-3 rounded-lg font-medium transition flex items-center justify-center gap-2 mb-2"
+          style={{ backgroundColor: '#E5E7EB', color: '#374151' }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#D1D5DB')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#E5E7EB')}
+        >
+          <MessageSquare className="w-5 h-5" />
+          1:1 문의
+        </button>
         <button
           onClick={handleSignOut}
           className="w-full py-3 rounded-lg font-medium transition flex items-center justify-center gap-2"

@@ -1016,7 +1016,7 @@ export default function Applications() {
   const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [rejectionDetailApp, setRejectionDetailApp] = useState<Application | null>(null);
-  const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string; receiver_name?: string; court_id: string | null }>>([]);
+  const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string; receiver_name?: string; court_id: string | null; receiver_deleted?: boolean }>>([]);
   const [resultMealProposals, setResultMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; receiver_name?: string; status: string; rejection_reason?: string | null }>>([]);
   const [mealRejectProposalId, setMealRejectProposalId] = useState<string | null>(null);
   const [mealRejectReason, setMealRejectReason] = useState('');
@@ -1030,7 +1030,7 @@ export default function Applications() {
     const [{ data: pendingRaw }, { data: resultRaw }] = await Promise.all([
       supabase
         .from('meal_proposals')
-        .select('id, sender_id, receiver_id, court_id')
+        .select('id, sender_id, receiver_id, court_id, receiver_deleted')
         .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
         .eq('status', 'pending'),
       supabase
@@ -1041,7 +1041,9 @@ export default function Applications() {
         .in('status', ['accepted', 'rejected']),
     ]);
 
-    const pending = pendingRaw ?? [];
+    const pending = (pendingRaw ?? []).filter((p) =>
+      !(p.receiver_id === user.id && p.receiver_deleted)
+    );
     const results = resultRaw ?? [];
 
     const allUserIds = [...new Set([
@@ -1090,7 +1092,13 @@ export default function Applications() {
   };
 
   const handleDeletePendingMealProposal = async (proposalId: string) => {
-    await supabase.from('meal_proposals').delete().eq('id', proposalId);
+    const proposal = pendingMealProposals.find((p) => p.id === proposalId);
+    if (!proposal) return;
+    if (proposal.receiver_id === user?.id) {
+      await supabase.from('meal_proposals').update({ receiver_deleted: true }).eq('id', proposalId);
+    } else {
+      await supabase.from('meal_proposals').update({ sender_seen: true }).eq('id', proposalId);
+    }
     setPendingMealProposals((prev) => prev.filter((p) => p.id !== proposalId));
   };
 
@@ -1122,11 +1130,13 @@ export default function Applications() {
           .from('applications')
           .select(`*, court:court_id (*)`)
           .eq('owner_id', user.id)
+          .eq('receiver_deleted', false)
           .order('created_at', { ascending: false }),
         supabase
           .from('applications')
           .select(`*, court:court_id (*)`)
           .eq('applicant_id', user.id)
+          .eq('sender_deleted', false)
           .order('created_at', { ascending: false }),
       ]);
 
@@ -1303,7 +1313,7 @@ export default function Applications() {
 
       await supabase
         .from('applications')
-        .update({ status: 'accepted' })
+        .update({ status: 'accepted', receiver_deleted: true })
         .eq('id', app.id);
 
       const courtFormat = app.court?.format || '';
@@ -1387,6 +1397,7 @@ export default function Applications() {
       await supabase.from('applications').update({
         status: 'rejected',
         rejection_reason: reason || null,
+        receiver_deleted: true,
       }).eq('id', app.id);
 
       setReceivedApps((prev) => prev.filter((a) => a.id !== app.id));
@@ -1401,11 +1412,12 @@ export default function Applications() {
     if (!deleteTarget || deleteSubmitting) return;
     setDeleteSubmitting(true);
     try {
-      await supabase.from('applications').delete().eq('id', deleteTarget.id);
       const isOwner = deleteTarget.owner_id === user?.id;
       if (isOwner) {
+        await supabase.from('applications').update({ receiver_deleted: true }).eq('id', deleteTarget.id);
         setReceivedApps((prev) => prev.filter((a) => a.id !== deleteTarget.id));
       } else {
+        await supabase.from('applications').update({ sender_deleted: true }).eq('id', deleteTarget.id);
         setSentApps((prev) => prev.filter((a) => a.id !== deleteTarget.id));
       }
       setDeleteTarget(null);
