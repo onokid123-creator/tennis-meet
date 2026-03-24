@@ -467,45 +467,6 @@ export default function Profile() {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 px-6 pb-6">
-            <h2
-              className="text-white leading-tight flex items-baseline gap-2"
-              style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 32, letterSpacing: 2 }}
-            >
-              <span>{profile?.name}</span>
-              {profile?.age ? (
-                <span style={{ fontWeight: 600, fontSize: 26, letterSpacing: 1 }}>, {profile.age}</span>
-              ) : null}
-              {profile?.gender && (
-                <span
-                  style={{
-                    fontSize: 28,
-                    fontWeight: 700,
-                    letterSpacing: 0,
-                    color: profile.gender === '남성' ? '#93C5FD' : '#FDA4AF',
-                    fontFamily: 'sans-serif',
-                  }}
-                >
-                  {profile.gender === '남성' ? '♂' : '♀'}
-                </span>
-              )}
-            </h2>
-            {profile?.bio && (
-              <p
-                className="mt-2"
-                style={{
-                  fontFamily: "'Noto Sans KR', sans-serif",
-                  fontWeight: 300,
-                  fontStyle: 'italic',
-                  fontSize: 14,
-                  color: '#C9A84C',
-                  letterSpacing: 0.5,
-                }}
-              >
-                "{profile.bio}"
-              </p>
-            )}
-          </div>
         </div>
       )}
 
@@ -652,6 +613,22 @@ export default function Profile() {
           )}
 
           <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
+            {/* 이름 / 나이 / 성별 */}
+            <div className="flex items-baseline gap-2 mb-4 pb-4 border-b border-gray-100">
+              <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
+              {profile?.age && (
+                <span className="text-gray-500 font-medium">{profile.age}세</span>
+              )}
+              {profile?.gender && (
+                <span
+                  className="font-bold text-lg"
+                  style={{ color: profile.gender === '남성' ? '#93C5FD' : '#FDA4AF' }}
+                >
+                  {profile.gender === '남성' ? '♂' : '♀'}
+                </span>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4 mb-4">
               {profile?.mbti && (
                 <div className="flex flex-col gap-1">
@@ -790,33 +767,8 @@ export default function Profile() {
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">cm</span>
                   </div>
                 </div>
-                <div className="mb-4">
-                  <span className="text-xs text-gray-400 font-medium block mb-2">자기소개</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={formData.bio}
-                      onChange={(e) => {
-                        if (e.target.value.length <= 50) setFormData({ ...formData, bio: e.target.value });
-                      }}
-                      placeholder="예) 테니스 좋아하는 활발한 성격이에요"
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#2D6A4F] focus:border-transparent pr-12"
-                      maxLength={50}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{formData.bio.length}/50</span>
-                  </div>
-                </div>
               </>
-            ) : (
-              <>
-                {profile?.bio && (
-                  <div className="mb-4">
-                    <span className="text-xs text-gray-400 font-medium block mb-1">자기소개</span>
-                    <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#333' }}>"{profile.bio}"</p>
-                  </div>
-                )}
-              </>
-            )}
+            ) : null}
 
             {isEditing && (
               <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
@@ -991,46 +943,7 @@ export default function Profile() {
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 flex items-end justify-between">
-                  <div>
-                    <h3
-                      className="text-white leading-tight flex items-baseline gap-2"
-                      style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 30, letterSpacing: 2 }}
-                    >
-                      <span>{profile?.name}</span>
-                      {(profile?.age) && (
-                        <span style={{ fontWeight: 600, fontSize: 24, letterSpacing: 1 }}>, {profile?.age}</span>
-                      )}
-                      {(profile?.gender) && (
-                        <span
-                          style={{
-                            fontSize: 26,
-                            fontWeight: 700,
-                            letterSpacing: 0,
-                            color: (profile?.gender) === '남성' ? '#93C5FD' : '#FDA4AF',
-                            fontFamily: 'sans-serif',
-                          }}
-                        >
-                          {(profile?.gender) === '남성' ? '♂' : '♀'}
-                        </span>
-                      )}
-                    </h3>
-                    {profile?.experience && profile?.tennis_style && (
-                      <p
-                        style={{
-                          fontFamily: "'Noto Sans KR', sans-serif",
-                          fontWeight: 300,
-                          fontStyle: 'italic',
-                          fontSize: 14,
-                          color: '#C9A84C',
-                          letterSpacing: 0.5,
-                          marginTop: 4,
-                        }}
-                      >
-                        구력 {profile.experience}
-                      </p>
-                    )}
-                  </div>
+                <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 flex items-end justify-end">
                   <button
                     onClick={startTennisEdit}
                     className="text-xs font-semibold px-3 py-1.5 rounded-full border transition"
@@ -1042,6 +955,21 @@ export default function Profile() {
               </div>
 
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
+                {/* 이름 / 나이 / 성별 */}
+                <div className="flex items-baseline gap-2 mb-4 pb-4 border-b border-gray-100">
+                  <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
+                  {profile?.age && (
+                    <span className="text-gray-500 font-medium">{profile.age}세</span>
+                  )}
+                  {profile?.gender && (
+                    <span
+                      className="font-bold text-lg"
+                      style={{ color: profile.gender === '남성' ? '#93C5FD' : '#FDA4AF' }}
+                    >
+                      {profile.gender === '남성' ? '♂' : '♀'}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-400 font-medium mb-3">오직테니스 전용 정보</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">

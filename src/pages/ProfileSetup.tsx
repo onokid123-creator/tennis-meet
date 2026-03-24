@@ -651,27 +651,6 @@ export default function ProfileSetup() {
           </p>
 
           <form onSubmit={handleSubmit} className="w-full max-w-md space-y-7">
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">자기소개 한 줄</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={extraData.bio}
-                  onChange={(e) => {
-                    if (e.target.value.length <= 50) {
-                      setExtraData({ ...extraData, bio: e.target.value });
-                    }
-                  }}
-                  placeholder="예) 테니스 좋아하는 활발한 성격이에요 😊"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent pr-16"
-                  style={{ fontSize: 16 }}
-                  maxLength={50}
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-white/40 font-medium">
-                  {extraData.bio.length}/50
-                </span>
-              </div>
-            </div>
 
             <div>
               <label className="block text-sm font-medium text-white mb-3">MBTI</label>
