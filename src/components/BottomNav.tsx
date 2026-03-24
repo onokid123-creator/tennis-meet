@@ -75,7 +75,16 @@ export default function BottomNav({ active }: BottomNavProps) {
       .eq('sender_seen', false)
       .in('status', ['accepted', 'rejected']);
 
-    setPendingApps((appsCount || 0) + (mealReceivedCount || 0) + (mealResultCount || 0));
+    const { count: acceptedNotifCount } = await supabase
+      .from('applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('applicant_id', user.id)
+      .eq('status', 'accepted')
+      .eq('applicant_notified', false)
+      .eq('sender_deleted', false)
+      .not('chat_id', 'is', null);
+
+    setPendingApps((appsCount || 0) + (mealReceivedCount || 0) + (mealResultCount || 0) + (acceptedNotifCount || 0));
   }, [user]);
 
   useEffect(() => {

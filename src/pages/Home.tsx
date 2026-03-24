@@ -316,7 +316,6 @@ export default function Home() {
     setApplyTargetCourt(null);
     setApplyMessage('');
     setApplySuccessPurpose(successPurpose);
-    setTimeout(() => setApplySuccessPurpose(null), 3000);
   };
 
   const handleDelete = (courtId: string) => {
@@ -675,26 +674,60 @@ export default function Home() {
 
       {applySuccessPurpose && (
         <div
-          className="fixed inset-x-0 bottom-24 flex justify-center z-50 px-6 pointer-events-none"
-          style={{ animation: 'fadeInUp 0.3s ease' }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
+          onClick={() => setApplySuccessPurpose(null)}
         >
           <div
-            className="px-5 py-4 rounded-2xl text-center max-w-sm w-full"
-            style={{
-              background: applySuccessPurpose === 'dating'
-                ? 'linear-gradient(135deg, #F43F5E 0%, #FB7185 100%)'
-                : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
-              color: '#fff',
-              boxShadow: applySuccessPurpose === 'dating'
-                ? '0 8px 32px rgba(244,63,94,0.4)'
-                : '0 8px 32px rgba(27,67,50,0.4)',
-            }}
+            className="w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl px-7 py-8 flex flex-col items-center gap-4"
+            style={
+              applySuccessPurpose === 'dating'
+                ? { background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }
+                : { background: 'linear-gradient(135deg, #F0FAF4 0%, #E8F5EC 100%)', border: '1.5px solid rgba(27,67,50,0.2)' }
+            }
+            onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-sm font-semibold leading-relaxed">
-              {applySuccessPurpose === 'dating'
-                ? '신청이 전해졌어요 :) 호스트가 수락하면 채팅방이 열려요 💕'
-                : '신청이 완료됐어요! 호스트가 수락하면 채팅방이 열려요 🎾'}
-            </p>
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={
+                applySuccessPurpose === 'dating'
+                  ? { background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)', boxShadow: '0 4px 20px rgba(244,114,182,0.4)' }
+                  : { background: 'linear-gradient(135deg, #52B788 0%, #2D6A4F 100%)', boxShadow: '0 4px 20px rgba(45,106,79,0.4)' }
+              }
+            >
+              {applySuccessPurpose === 'dating' ? (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 12V22H4V12" /><path d="M22 7H2v5h20V7z" /><path d="M12 22V7" />
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                </svg>
+              ) : (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold mb-1" style={{ color: applySuccessPurpose === 'dating' ? '#7C2D5E' : '#1B4332' }}>
+                {applySuccessPurpose === 'dating' ? '신청이 전해졌어요 :)' : '신청이 완료됐어요!'}
+              </p>
+              <p className="text-sm leading-relaxed" style={{ color: applySuccessPurpose === 'dating' ? 'rgba(124,45,94,0.65)' : 'rgba(27,67,50,0.65)' }}>
+                {applySuccessPurpose === 'dating'
+                  ? '호스트가 수락하면 채팅방이 열려요 💕'
+                  : '호스트가 수락하면 채팅방이 열려요 🎾'}
+              </p>
+            </div>
+            <button
+              onClick={() => setApplySuccessPurpose(null)}
+              className="w-full py-3 rounded-2xl text-sm font-bold text-white transition active:scale-95"
+              style={
+                applySuccessPurpose === 'dating'
+                  ? { background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 4px 16px rgba(224,92,138,0.4)' }
+                  : { background: 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)', boxShadow: '0 4px 16px rgba(27,67,50,0.4)' }
+              }
+            >
+              알겠어요!
+            </button>
           </div>
         </div>
       )}

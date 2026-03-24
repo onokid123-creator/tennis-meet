@@ -904,7 +904,7 @@ export default function Applications() {
   }, [user]);
 
   const handleMealProposalAccept = async (proposalId: string) => {
-    await supabase.from('meal_proposals').update({ status: 'accepted' }).eq('id', proposalId);
+    await supabase.from('meal_proposals').update({ status: 'accepted', receiver_deleted: true }).eq('id', proposalId);
     setPendingMealProposals((prev) => prev.filter((p) => p.id !== proposalId));
     setShowMealAcceptPopup(true);
   };
@@ -932,6 +932,7 @@ export default function Applications() {
       await supabase.from('meal_proposals').update({
         status: 'rejected',
         rejection_reason: mealRejectReason.trim(),
+        receiver_deleted: true,
       }).eq('id', mealRejectProposalId);
       setPendingMealProposals((prev) => prev.filter((p) => p.id !== mealRejectProposalId));
       setShowMealRejectPopup(false);
