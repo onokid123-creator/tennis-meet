@@ -384,19 +384,19 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
         {/* ── 사진 탭 ── */}
         {page === 1 && (
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 relative overflow-hidden">
+            {/* 사진 영역 — 높이 제한 */}
+            <div className="relative flex-shrink-0" style={{ height: '44vw', maxHeight: '210px' }}>
               {photos.length === 0 ? (
                 <div
                   className="w-full h-full flex flex-col items-center justify-center"
                   style={{ background: 'linear-gradient(180deg, #2D1218 0%, #1A0A10 100%)' }}
                 >
                   <div
-                    className="w-28 h-28 rounded-full flex items-center justify-center font-bold"
-                    style={{ fontSize: '3.5rem', background: 'rgba(201,99,122,0.15)', color: '#D4849A' }}
+                    className="w-20 h-20 rounded-full flex items-center justify-center font-bold"
+                    style={{ fontSize: '2.8rem', background: 'rgba(201,99,122,0.15)', color: '#D4849A' }}
                   >
                     {applicant.name?.charAt(0) || '?'}
                   </div>
-                  <p className="text-sm mt-4 font-light" style={{ color: 'rgba(249,168,184,0.6)' }}>사진이 없습니다</p>
                 </div>
               ) : (
                 <>
@@ -411,50 +411,108 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                     <>
                       <button
                         onClick={(e) => { e.stopPropagation(); setPhotoIdx((i) => (i - 1 + photos.length) % photos.length); }}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-10"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
                         style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
                       >
-                        <ChevronLeft className="w-5 h-5 text-white" />
+                        <ChevronLeft className="w-4 h-4 text-white" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setPhotoIdx((i) => (i + 1) % photos.length); }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-10"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
                         style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
                       >
-                        <ChevronRight className="w-5 h-5 text-white" />
+                        <ChevronRight className="w-4 h-4 text-white" />
                       </button>
                     </>
                   )}
                 </>
               )}
               <div
-                className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-20 pointer-events-none"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, transparent 100%)' }}
+                className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%)' }}
               >
-                <div className="flex items-end gap-2.5">
-                  <span className="text-white font-semibold tracking-wide" style={{ fontSize: '1.85rem' }}>
+                <div className="flex items-end gap-2">
+                  <span className="text-white font-semibold tracking-wide" style={{ fontSize: '1.5rem' }}>
                     {applicant.name}
                   </span>
                   {applicant.age && (
-                    <span className="text-white/80 text-xl font-light mb-0.5">{applicant.age}세</span>
+                    <span className="text-white/80 text-base font-light mb-0.5">{applicant.age}세</span>
                   )}
                   {(applicant.gender === 'male' || applicant.gender === '남성' || applicant.gender === 'female' || applicant.gender === '여성') && (
-                    <span className="text-xl font-bold mb-0.5" style={{ color: isMale ? '#93C5FD' : '#FDA4AF' }}>
+                    <span className="text-base font-bold mb-0.5" style={{ color: isMale ? '#93C5FD' : '#FDA4AF' }}>
                       {isMale ? '♂' : '♀'}
                     </span>
+                  )}
+                  {photos.length > 1 && (
+                    <span className="text-xs text-white/50 ml-auto mb-0.5">{photoIdx + 1}/{photos.length}</span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* 안내 문구 */}
+            {/* 핵심 정보 요약 */}
             <div
-              className="flex-shrink-0 px-5 py-3 flex items-center justify-center gap-2"
-              style={{ background: 'rgba(255,248,246,0.98)', borderTop: '1px solid rgba(201,99,122,0.08)' }}
+              className="flex-shrink-0 px-4 py-3 flex flex-wrap gap-2"
+              style={{ background: 'rgba(255,248,246,0.98)', borderBottom: '1px solid rgba(201,99,122,0.08)' }}
             >
-              <span style={{ fontSize: '11px', color: 'rgba(201,99,122,0.5)', fontWeight: 500, textAlign: 'center', letterSpacing: '0.01em' }}>
-                프로필에서 MBTI · 키 · 분위기를 살펴보고 편하게 말을 걸어보세요
-              </span>
+              {applicant.mbti && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,99,122,0.1)', border: '1px solid rgba(201,99,122,0.22)', color: '#C9637A' }}>
+                  {applicant.mbti}
+                </span>
+              )}
+              {applicant.height && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(212,132,154,0.08)', border: '1px solid rgba(212,132,154,0.22)', color: '#A05570' }}>
+                  {applicant.height}cm
+                </span>
+              )}
+              {applicant.experience && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', color: '#9A7A2A' }}>
+                  구력 {applicant.experience}
+                </span>
+              )}
+            </div>
+
+            {/* 프로필 탭 콘텐츠 인라인 */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5" style={{ paddingBottom: app.status === 'pending' ? 88 : 16, background: '#FFF8F6' }}>
+              {app.message && (
+                <div className="px-4 py-3 rounded-2xl" style={{ background: 'rgba(201,99,122,0.05)', border: '1px solid rgba(201,99,122,0.14)' }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: '#C9637A' }}>첫 인사</p>
+                  <p className="text-sm leading-relaxed" style={{ color: '#3a2228' }}>{app.message}</p>
+                </div>
+              )}
+              {applicant.bio && (
+                <div className="px-4 py-3 rounded-2xl" style={{ background: 'rgba(212,132,154,0.05)', border: '1px solid rgba(212,132,154,0.12)' }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: '#A05570' }}>자기소개</p>
+                  <p className="text-sm leading-relaxed" style={{ color: '#4A3040' }}>{applicant.bio}</p>
+                </div>
+              )}
+              {app.court && (
+                <div className="px-4 py-2.5 rounded-2xl" style={{ background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.18)' }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <MapPin className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
+                    <span className="text-xs font-semibold" style={{ color: '#9A7A2A' }}>신청 코트</span>
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: '#2D1820' }}>{app.court.court_name}</p>
+                  {app.court.date && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Calendar className="w-3 h-3" style={{ color: '#C9A84C' }} />
+                      <p className="text-xs" style={{ color: '#7C6030' }}>
+                        {new Date(app.court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                        {app.court.start_time && ` · ${app.court.start_time}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {app.status !== 'pending' && (
+                <div className="text-center py-3">
+                  {app.status === 'accepted' ? (
+                    <span className="font-semibold" style={{ color: '#B83050' }}>매칭 확정됨</span>
+                  ) : (
+                    <span className="font-semibold" style={{ color: '#9CA3AF' }}>거절됨</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -570,8 +628,8 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
           </div>
         )}
 
-        {/* 정보 탭 — fixed CTA */}
-        {page === 2 && app.status === 'pending' && (
+        {/* fixed CTA — 양쪽 탭 모두 노출 */}
+        {app.status === 'pending' && (
           <div
             style={{
               position: 'fixed',
@@ -579,7 +637,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               left: 0,
               right: 0,
               zIndex: 10000,
-              padding: '12px 20px 16px',
+              padding: '10px 16px 12px',
               background: 'rgba(255,248,246,0.98)',
               backdropFilter: 'blur(12px)',
               borderTop: '1px solid rgba(201,99,122,0.12)',
@@ -596,7 +654,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 background: 'rgba(201,99,122,0.08)',
                 color: '#A05570',
                 border: '1.5px solid rgba(201,99,122,0.2)',
-                minHeight: '52px',
+                minHeight: '48px',
               }}
             >
               {processing ? '...' : '거절하기'}
@@ -609,7 +667,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 background: 'linear-gradient(135deg, #C9637A 0%, #D4849A 100%)',
                 color: '#fff',
                 boxShadow: '0 4px 14px rgba(201,99,122,0.3)',
-                minHeight: '52px',
+                minHeight: '48px',
                 border: 'none',
               }}
             >
@@ -743,19 +801,19 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
         {/* ── 사진 탭 ── */}
         {page === 1 && (
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 relative overflow-hidden">
+            {/* 사진 영역 — 높이 제한 */}
+            <div className="relative flex-shrink-0" style={{ height: '44vw', maxHeight: '210px' }}>
               {photos.length === 0 ? (
                 <div
                   className="w-full h-full flex flex-col items-center justify-center"
                   style={{ background: 'linear-gradient(180deg, #0A1F14 0%, #0d1a10 100%)' }}
                 >
                   <div
-                    className="w-28 h-28 rounded-full flex items-center justify-center font-bold"
-                    style={{ fontSize: '3.5rem', background: 'rgba(26,92,53,0.3)', color: '#6CBF6C', border: '2px solid rgba(108,191,108,0.3)' }}
+                    className="w-20 h-20 rounded-full flex items-center justify-center font-bold"
+                    style={{ fontSize: '2.8rem', background: 'rgba(26,92,53,0.3)', color: '#6CBF6C', border: '2px solid rgba(108,191,108,0.3)' }}
                   >
                     {applicant.name?.charAt(0) || '?'}
                   </div>
-                  <p className="text-sm mt-4 font-light" style={{ color: 'rgba(108,191,108,0.5)' }}>사진이 없습니다</p>
                 </div>
               ) : (
                 <>
@@ -768,15 +826,15 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
                   />
                   {photos.length > 1 && (
                     <>
-                      <div className="absolute top-4 left-0 right-0 flex justify-center gap-2 z-10">
+                      <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 z-10">
                         {photos.map((_, i) => (
                           <button
                             key={i}
                             onClick={(e) => { e.stopPropagation(); setPhotoIdx(i); }}
                             className="rounded-full transition-all duration-300"
                             style={{
-                              width: i === photoIdx ? '20px' : '7px',
-                              height: '7px',
+                              width: i === photoIdx ? '18px' : '6px',
+                              height: '6px',
                               background: i === photoIdx ? '#6CBF6C' : 'rgba(255,255,255,0.35)',
                               border: 'none',
                               cursor: 'pointer',
@@ -786,62 +844,103 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); setPhotoIdx((i) => (i - 1 + photos.length) % photos.length); }}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-10"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
                         style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
                       >
-                        <ChevronLeft className="w-5 h-5 text-white" />
+                        <ChevronLeft className="w-4 h-4 text-white" />
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setPhotoIdx((i) => (i + 1) % photos.length); }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center z-10"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10"
                         style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
                       >
-                        <ChevronRight className="w-5 h-5 text-white" />
+                        <ChevronRight className="w-4 h-4 text-white" />
                       </button>
                     </>
                   )}
                 </>
               )}
               <div
-                className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-20 pointer-events-none"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 100%)' }}
+                className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)' }}
               >
-                <div className="flex items-end gap-2.5 mb-2">
-                  <span className="text-white font-semibold tracking-wide" style={{ fontSize: '1.85rem' }}>
+                <div className="flex items-end gap-2">
+                  <span className="text-white font-semibold tracking-wide" style={{ fontSize: '1.5rem' }}>
                     {applicant.name}
                   </span>
                   {applicant.age && (
-                    <span className="text-white/80 text-xl font-light mb-0.5">{applicant.age}세</span>
+                    <span className="text-white/80 text-base font-light mb-0.5">{applicant.age}세</span>
                   )}
                   {(applicant.gender === 'male' || applicant.gender === '남성' || applicant.gender === 'female' || applicant.gender === '여성') && (
-                    <span className="text-xl font-bold mb-0.5" style={{ color: (applicant.gender === 'male' || applicant.gender === '남성') ? '#93C5FD' : '#FDA4AF' }}>
+                    <span className="text-base font-bold mb-0.5" style={{ color: (applicant.gender === 'male' || applicant.gender === '남성') ? '#93C5FD' : '#FDA4AF' }}>
                       {(applicant.gender === 'male' || applicant.gender === '남성') ? '♂' : '♀'}
                     </span>
                   )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {applicant.experience && (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,168,76,0.25)', border: '1px solid rgba(201,168,76,0.5)', color: '#C9A84C' }}>
-                      구력 {applicant.experience}
-                    </span>
-                  )}
-                  {applicant.tennis_style && (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(108,191,108,0.2)', border: '1px solid rgba(108,191,108,0.35)', color: '#6CBF6C' }}>
-                      {applicant.tennis_style}
-                    </span>
+                  {photos.length > 1 && (
+                    <span className="text-xs text-white/50 ml-auto mb-0.5">{photoIdx + 1}/{photos.length}</span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* 안내 문구 */}
+            {/* 핵심 정보 배지 */}
             <div
-              className="flex-shrink-0 px-5 py-3 flex items-center justify-center"
-              style={{ background: 'rgba(13,31,20,0.97)', borderTop: '1px solid rgba(108,191,108,0.1)' }}
+              className="flex-shrink-0 px-4 py-2.5 flex flex-wrap gap-2"
+              style={{ background: 'rgba(13,31,20,0.97)', borderBottom: '1px solid rgba(108,191,108,0.1)' }}
             >
-              <span style={{ fontSize: '11px', color: 'rgba(108,191,108,0.5)', fontWeight: 500, textAlign: 'center' }}>
-                플레이 탭에서 구력 · 스타일을 확인하고 파트너로 맞는지 살펴보세요
-              </span>
+              {applicant.experience && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(201,168,76,0.2)', border: '1px solid rgba(201,168,76,0.45)', color: '#C9A84C' }}>
+                  구력 {applicant.experience}
+                </span>
+              )}
+              {applicant.tennis_style && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: 'rgba(108,191,108,0.15)', border: '1px solid rgba(108,191,108,0.3)', color: '#6CBF6C' }}>
+                  {applicant.tennis_style}
+                </span>
+              )}
+            </div>
+
+            {/* 인라인 상세 정보 */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5" style={{ paddingBottom: app.status === 'pending' ? 88 : 16 }}>
+              {app.message && (
+                <div className="px-4 py-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: '#C9A84C' }}>신청 메시지</p>
+                  <p className="text-sm text-white/75 leading-relaxed">{app.message}</p>
+                </div>
+              )}
+              {applicant.bio && (
+                <div className="px-4 py-3 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                  <p className="text-xs font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>자기소개</p>
+                  <p className="text-sm text-white/75 leading-relaxed">{applicant.bio}</p>
+                </div>
+              )}
+              {app.court && (
+                <div className="px-4 py-2.5 rounded-2xl" style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.22)' }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <MapPin className="w-3.5 h-3.5" style={{ color: '#C9A84C' }} />
+                    <span className="text-xs font-semibold" style={{ color: '#C9A84C' }}>신청 코트</span>
+                  </div>
+                  <p className="text-sm font-medium text-white/90">{app.court.court_name}</p>
+                  {app.court.date && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Calendar className="w-3 h-3 text-white/30" />
+                      <p className="text-xs text-white/45">
+                        {new Date(app.court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+                        {app.court.start_time && ` · ${app.court.start_time}`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {app.status !== 'pending' && (
+                <div className="text-center py-3">
+                  {app.status === 'accepted' ? (
+                    <span className="font-semibold" style={{ color: '#C9A84C' }}>매칭 확정됨</span>
+                  ) : (
+                    <span className="text-white/40 font-semibold">거절됨</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -960,8 +1059,8 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
         )}
       </div>
 
-      {/* Fixed CTA — 테니스 신청 수락/거절 (정보 탭에서만 노출) */}
-      {app.status === 'pending' && page === 2 && (
+      {/* Fixed CTA — 양쪽 탭 모두 노출 */}
+      {app.status === 'pending' && (
         <div
           style={{
             position: 'fixed',
@@ -969,7 +1068,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
             left: 0,
             right: 0,
             zIndex: 10000,
-            padding: '12px 20px 16px',
+            padding: '10px 16px 12px',
             background: '#0f1c14',
             borderTop: '1px solid rgba(108,191,108,0.12)',
             boxShadow: '0 -4px 20px rgba(0,0,0,0.4)',
@@ -981,7 +1080,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
             onClick={() => onReject(app)}
             disabled={processing}
             className="flex-1 rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
-            style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)', minHeight: '52px' }}
+            style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)', minHeight: '48px' }}
           >
             {processing ? '...' : '거절하기'}
           </button>
@@ -989,7 +1088,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
             onClick={() => onAccept(app)}
             disabled={processing}
             className="flex-1 rounded-2xl font-semibold text-sm tracking-wide transition-all active:scale-95 disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg,#1A5C35,#2D7A4A)', color: '#fff', boxShadow: '0 4px 14px rgba(26,92,53,0.4)', minHeight: '52px', border: 'none' }}
+            style={{ background: 'linear-gradient(135deg,#1A5C35,#2D7A4A)', color: '#fff', boxShadow: '0 4px 14px rgba(26,92,53,0.4)', minHeight: '48px', border: 'none' }}
           >
             {processing ? '처리 중...' : '수락하기'}
           </button>
@@ -1030,7 +1129,7 @@ export default function Applications() {
     const [{ data: pendingRaw }, { data: resultRaw }] = await Promise.all([
       supabase
         .from('meal_proposals')
-        .select('id, sender_id, receiver_id, court_id, receiver_deleted')
+        .select('id, sender_id, receiver_id, court_id, receiver_deleted, sender_deleted')
         .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
         .eq('status', 'pending'),
       supabase
@@ -1041,9 +1140,11 @@ export default function Applications() {
         .in('status', ['accepted', 'rejected']),
     ]);
 
-    const pending = (pendingRaw ?? []).filter((p) =>
-      !(p.receiver_id === user.id && p.receiver_deleted)
-    );
+    const pending = (pendingRaw ?? []).filter((p) => {
+      if (p.receiver_id === user.id && p.receiver_deleted) return false;
+      if (p.sender_id === user.id && p.sender_deleted) return false;
+      return true;
+    });
     const results = resultRaw ?? [];
 
     const allUserIds = [...new Set([
@@ -1097,7 +1198,7 @@ export default function Applications() {
     if (proposal.receiver_id === user?.id) {
       await supabase.from('meal_proposals').update({ receiver_deleted: true }).eq('id', proposalId);
     } else {
-      await supabase.from('meal_proposals').update({ sender_seen: true }).eq('id', proposalId);
+      await supabase.from('meal_proposals').update({ sender_deleted: true }).eq('id', proposalId);
     }
     setPendingMealProposals((prev) => prev.filter((p) => p.id !== proposalId));
   };

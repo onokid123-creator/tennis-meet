@@ -270,20 +270,20 @@ export default function InquiryPage() {
             </button>
             <h1 className="text-base font-bold text-gray-900">문의 상세</h1>
           </div>
-          {canEdit && (
-            <div className="relative" ref={openMenuId === selectedInquiry.id ? menuRef : undefined}>
-              <button
-                onClick={() => setOpenMenuId(openMenuId === selectedInquiry.id ? null : selectedInquiry.id)}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-95"
-                style={{ background: 'rgba(0,0,0,0.06)' }}
+          <div className="relative" ref={openMenuId === selectedInquiry.id ? menuRef : undefined}>
+            <button
+              onClick={() => setOpenMenuId(openMenuId === selectedInquiry.id ? null : selectedInquiry.id)}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-95"
+              style={{ background: 'rgba(0,0,0,0.06)' }}
+            >
+              <MoreVertical className="w-4 h-4 text-gray-600" />
+            </button>
+            {openMenuId === selectedInquiry.id && (
+              <div
+                className="absolute right-0 top-10 rounded-xl overflow-hidden z-50"
+                style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.14)', background: '#fff', minWidth: 128 }}
               >
-                <MoreVertical className="w-4 h-4 text-gray-600" />
-              </button>
-              {openMenuId === selectedInquiry.id && (
-                <div
-                  className="absolute right-0 top-10 rounded-xl overflow-hidden z-50"
-                  style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.14)', background: '#fff', minWidth: 128 }}
-                >
+                {canEdit && (
                   <button
                     onClick={() => handleEditOpen(selectedInquiry)}
                     className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium text-gray-700 transition"
@@ -294,20 +294,20 @@ export default function InquiryPage() {
                     <Pencil className="w-4 h-4 text-gray-500" />
                     수정하기
                   </button>
-                  <button
-                    onClick={() => { setOpenMenuId(null); setDeleteTargetId(selectedInquiry.id); }}
-                    className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium transition"
-                    style={{ color: '#DC2626' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(220,38,38,0.06)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    삭제하기
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+                <button
+                  onClick={() => { setOpenMenuId(null); setDeleteTargetId(selectedInquiry.id); }}
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium transition"
+                  style={{ color: '#DC2626' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(220,38,38,0.06)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  삭제하기
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
@@ -594,25 +594,25 @@ export default function InquiryPage() {
                     )}
                   </button>
 
-                  {canEdit && (
-                    <div
-                      className="absolute top-3.5 right-3.5"
-                      ref={isMenuOpen ? menuRef : undefined}
-                      onClick={(e) => e.stopPropagation()}
+                  <div
+                    className="absolute top-3.5 right-3.5"
+                    ref={isMenuOpen ? menuRef : undefined}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => setOpenMenuId(isMenuOpen ? null : inq.id)}
+                      className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95"
+                      style={{ background: isMenuOpen ? 'rgba(0,0,0,0.08)' : 'transparent' }}
                     >
-                      <button
-                        onClick={() => setOpenMenuId(isMenuOpen ? null : inq.id)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95"
-                        style={{ background: isMenuOpen ? 'rgba(0,0,0,0.08)' : 'transparent' }}
-                      >
-                        <MoreVertical className="w-4 h-4 text-gray-400" />
-                      </button>
+                      <MoreVertical className="w-4 h-4 text-gray-400" />
+                    </button>
 
-                      {isMenuOpen && (
-                        <div
-                          className="absolute right-0 top-8 rounded-xl overflow-hidden z-50"
-                          style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.14)', background: '#fff', minWidth: 128 }}
-                        >
+                    {isMenuOpen && (
+                      <div
+                        className="absolute right-0 top-8 rounded-xl overflow-hidden z-50"
+                        style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.14)', background: '#fff', minWidth: 128 }}
+                      >
+                        {canEdit && (
                           <button
                             onClick={() => handleEditOpen(inq)}
                             className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium text-gray-700 transition"
@@ -623,20 +623,20 @@ export default function InquiryPage() {
                             <Pencil className="w-4 h-4 text-gray-500" />
                             수정하기
                           </button>
-                          <button
-                            onClick={() => { setOpenMenuId(null); setDeleteTargetId(inq.id); }}
-                            className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium transition"
-                            style={{ color: '#DC2626' }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(220,38,38,0.06)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            삭제하기
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                        <button
+                          onClick={() => { setOpenMenuId(null); setDeleteTargetId(inq.id); }}
+                          className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium transition"
+                          style={{ color: '#DC2626' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(220,38,38,0.06)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          삭제하기
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
