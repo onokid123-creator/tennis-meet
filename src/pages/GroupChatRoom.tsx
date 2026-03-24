@@ -537,7 +537,7 @@ export default function GroupChatRoom() {
       .maybeSingle();
 
     const requesterName = requesterProfile?.name ?? '알 수 없음';
-    const systemMsg = `${requesterName}님이 나갔어요 😢 사유: '${reason}'`;
+    const systemMsg = `${requesterName}님이 나갔어요`;
 
     await supabase.from('court_group_chat_messages').update({ payload: { reason, requester_id: requesterId, status: 'accepted' } }).eq('id', messageId);
     await supabase.from('court_group_chat_messages').insert({
@@ -548,6 +548,11 @@ export default function GroupChatRoom() {
       is_read: false,
     });
     await supabase.from('court_group_chat_participants').delete().eq('group_chat_id', groupChatId!).eq('user_id', requesterId);
+    await supabase.channel(`group_kick_${groupChatId}_${requesterId}`).send({
+      type: 'broadcast',
+      event: 'group_kick_user',
+      payload: { kicked_user_id: requesterId },
+    });
 
     if (court) {
       const { data: reqProfile } = await supabase.from('profiles').select('gender').eq('user_id', requesterId).maybeSingle();
@@ -774,9 +779,27 @@ export default function GroupChatRoom() {
             <p className="font-bold text-sm text-white truncate leading-tight">
               {hostProfile?.name ?? (isDating ? '설레는 만남 그룹' : '테니스 그룹')}
             </p>
-            <p className="text-[11px]" style={{ color: accentColor }}>
-              {court?.court_name ? `${court.court_name} · ` : ''}{participants.length}명 참가
-            </p>
+            {court?.court_name ? (
+              <div className="flex flex-col">
+                <p className="text-[11px] font-semibold leading-tight" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                  {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+                </p>
+                {court.date && (
+                  <p className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    {court.date}{court.start_time ? ` · ${court.start_time}${court.end_time ? `~${court.end_time}` : ''}` : ''} · {participants.length}명
+                  </p>
+                )}
+                {!court.date && (
+                  <p className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    {participants.length}명 참가
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-[11px]" style={{ color: accentColor }}>
+                {participants.length}명 참가
+              </p>
+            )}
           </div>
         </div>
         <button
@@ -1162,12 +1185,16 @@ export default function GroupChatRoom() {
                 const reqStatus = payload?.status ?? 'pending';
                 const requesterId = payload?.requester_id ?? '';
                 const reason = payload?.reason ?? '';
+                const isMyRequest = requesterId === user?.id;
                 return (
                   <div key={message.id} className="flex justify-center py-2">
                     <div className="max-w-[85%] rounded-2xl overflow-hidden" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
                       <div className="px-4 py-3 text-center">
                         <p className="text-xs font-semibold text-red-500 mb-1">나가기 요청</p>
                         <p className="text-xs text-gray-600 leading-relaxed">{message.content}</p>
+                        {isHost && reason && (
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">사유: {reason}</p>
+                        )}
                       </div>
                       {isHost && reqStatus === 'pending' && (
                         <div className="flex border-t border-red-100">
@@ -1178,6 +1205,9 @@ export default function GroupChatRoom() {
                             나가기 수락
                           </button>
                         </div>
+                      )}
+                      {!isHost && !isMyRequest && reqStatus === 'pending' && (
+                        <div className="px-4 py-2 text-xs text-center text-gray-400 border-t border-red-100">호스트가 처리 중</div>
                       )}
                       {reqStatus === 'accepted' && (
                         <div className="px-4 py-2 text-xs text-center text-gray-400 border-t border-red-100">수락됨</div>

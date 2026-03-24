@@ -175,6 +175,7 @@ export default function CreateCourt() {
   const [courtFee, setCourtFee] = useState('');
 
   const [description, setDescription] = useState('');
+  const [courtNumber, setCourtNumber] = useState('');
 
   const maxDescLen = isTennis ? 100 : 150;
 
@@ -191,6 +192,7 @@ export default function CreateCourt() {
       setFemaleSlots(editCourt.female_slots || 0);
       setCostOption(editCourt.cost || '');
       setCourtFee(editCourt.court_fee?.toString() || '');
+      setCourtNumber(editCourt.court_number || '');
     }
   }, []);
 
@@ -301,6 +303,7 @@ export default function CreateCourt() {
         format: format || '단식',
         match_type: format || '단식',
         description,
+        court_number: courtNumber.trim() || null,
         male_slots: maleSlots,
         female_slots: femaleSlots,
         male_count: maleSlots,
@@ -651,6 +654,19 @@ export default function CreateCourt() {
             )}
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <p className="text-sm font-semibold text-gray-700 mb-2">코트 번호 <span className="text-gray-400 font-normal text-xs">(선택)</span></p>
+              <input
+                type="text"
+                value={courtNumber}
+                onChange={(e) => setCourtNumber(e.target.value)}
+                placeholder="예) 3번 코트"
+                maxLength={20}
+                className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gray-400 placeholder-gray-400"
+              />
+              <p className="text-xs text-gray-400 mt-1.5">참가자들이 현장에서 찾기 쉽도록 입력해주세요</p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <textarea
                 value={description}
                 onChange={(e) => {
@@ -673,7 +689,7 @@ export default function CreateCourt() {
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">등록 요약</p>
               <div className="flex gap-2 text-sm">
                 <span className="text-gray-500 w-16 flex-shrink-0">장소</span>
-                <span className="font-medium text-gray-900 truncate">{selectedCourt?.name}</span>
+                <span className="font-medium text-gray-900 truncate">{selectedCourt?.name}{courtNumber.trim() ? ` · ${courtNumber.trim()}` : ''}</span>
               </div>
               <div className="flex gap-2 text-sm">
                 <span className="text-gray-500 w-16 flex-shrink-0">날짜</span>

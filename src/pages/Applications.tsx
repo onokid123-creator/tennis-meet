@@ -1203,7 +1203,7 @@ export default function Applications() {
       setReceivedApps((prev) => prev.filter((a) => a.id !== app.id));
       setSelectedApp(null);
 
-      setTimeout(() => navigate(`/chat/${targetChatId}`), 100);
+      navigate(`/chat/${targetChatId}`, { replace: false });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setAcceptError(msg);
@@ -1258,12 +1258,9 @@ export default function Applications() {
     }
   };
 
-  const handleGoToAcceptedChat = async (app: Application) => {
+  const handleGoToAcceptedChat = (app: Application) => {
     if (!app.chat_id) return;
-    await supabase
-      .from('applications')
-      .update({ applicant_notified: true })
-      .eq('id', app.id);
+    supabase.from('applications').update({ applicant_notified: true }).eq('id', app.id).then(() => {});
     setSentApps((prev) =>
       prev.map((a) => (a.id === app.id ? { ...a, applicant_notified: true } : a))
     );

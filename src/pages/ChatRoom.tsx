@@ -569,6 +569,7 @@ export default function ChatRoom() {
   const [includeMealProposal, setIncludeMealProposal] = useState(false);
   const [courtId, setCourtId] = useState<string | null>(null);
   const [courtName, setCourtName] = useState<string | null>(null);
+  const [courtInfo, setCourtInfo] = useState<{ date?: string; start_time?: string; end_time?: string; court_number?: string } | null>(null);
   const [inAppToast, setInAppToast] = useState<{ name: string; content: string } | null>(null);
   const [simpleToast, setSimpleToast] = useState<string | null>(null);
   const [showBlockPopup, setShowBlockPopup] = useState(false);
@@ -736,8 +737,9 @@ const closeAllPickers = () => {
       if (chat?.user1_id === user.id) setIsHost(true);
       if (chat?.court_id) {
         setCourtId(chat.court_id);
-        supabase.from('courts').select('court_name').eq('id', chat.court_id).maybeSingle().then(({ data }) => {
+        supabase.from('courts').select('court_name, date, start_time, end_time, court_number').eq('id', chat.court_id).maybeSingle().then(({ data }) => {
           if (data?.court_name) setCourtName(data.court_name);
+          if (data) setCourtInfo({ date: data.date, start_time: data.start_time, end_time: data.end_time, court_number: data.court_number ?? undefined });
         });
       }
       const isGroup = !!chat?.is_group;
@@ -2085,21 +2087,25 @@ const closeAllPickers = () => {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                {!isGroupChat && !isDating && !isOpponentBlocked && otherUser?.experience && (
-                  <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    🎾 구력 {otherUser.experience}
-                  </span>
-                )}
-                {!isGroupChat && isDating && !isOpponentBlocked && otherUser?.experience && (
-                  <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    🎾 {otherUser.experience}
-                  </span>
-                )}
+              <div className="flex flex-col gap-0.5 mt-0.5">
                 {courtName && (
-                  <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                    {courtName}
+                  <span className="text-[11px] font-semibold leading-tight" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                    {courtName}{courtInfo?.court_number ? ` · ${courtInfo.court_number}` : ''}
                   </span>
+                )}
+                {courtInfo?.date && (
+                  <span className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    {courtInfo.date}{courtInfo.start_time ? ` · ${courtInfo.start_time}${courtInfo.end_time ? `~${courtInfo.end_time}` : ''}` : ''}
+                  </span>
+                )}
+                {!courtName && (
+                  <div className="flex items-center gap-2">
+                    {!isGroupChat && !isDating && !isOpponentBlocked && otherUser?.experience && (
+                      <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                        구력 {otherUser.experience}
+                      </span>
+                    )}
+                  </div>
                 )}
                 <button
                   onClick={isGroupChat ? (e) => { e.stopPropagation(); setShowParticipantMgmt((v) => !v); } : undefined}
@@ -2332,12 +2338,16 @@ const closeAllPickers = () => {
                 const reqStatus = payload?.status ?? 'pending';
                 const requesterId = payload?.requester_id ?? '';
                 const reason = payload?.reason ?? '';
+                const isMyRequest = requesterId === user?.id;
                 return (
                   <div key={msg.id} className="flex justify-center py-2">
                     <div className="max-w-[85%] rounded-2xl overflow-hidden" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)' }}>
                       <div className="px-4 py-3 text-center">
                         <p className="text-xs font-semibold text-red-500 mb-1">나가기 요청</p>
                         <p className="text-xs text-gray-600 leading-relaxed">{msg.content}</p>
+                        {isHost && reason && (
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">사유: {reason}</p>
+                        )}
                       </div>
                       {isHost && reqStatus === 'pending' && (
                         <div className="flex border-t border-red-100">
@@ -2346,7 +2356,12 @@ const closeAllPickers = () => {
                               if (!chatId || !user) return;
                               await supabase.from('messages').update({ payload: { ...msg.payload, status: 'accepted' } }).eq('id', msg.id);
                               await supabase.from('chat_participants').delete().eq('chat_id', chatId).eq('user_id', requesterId);
-                              navigate('/chats', { replace: true });
+                              await supabase.channel(`broadcast_${chatId}`).send({
+                                type: 'broadcast',
+                                event: 'kick_user',
+                                payload: { kicked_user_id: requesterId },
+                              });
+                              refreshParticipantCount();
                             }}
                             className="flex-1 py-2.5 text-xs font-semibold text-white bg-red-500"
                           >
@@ -2354,7 +2369,13 @@ const closeAllPickers = () => {
                           </button>
                         </div>
                       )}
-                      {reqStatus === 'accepted' && (
+                      {isMyRequest && reqStatus === 'accepted' && (
+                        <div className="px-4 py-2 text-xs text-center text-gray-400 border-t border-red-100">수락됨</div>
+                      )}
+                      {!isMyRequest && !isHost && reqStatus === 'pending' && (
+                        <div className="px-4 py-2 text-xs text-center text-gray-400 border-t border-red-100">호스트가 처리 중</div>
+                      )}
+                      {reqStatus === 'accepted' && !isMyRequest && (
                         <div className="px-4 py-2 text-xs text-center text-gray-400 border-t border-red-100">수락됨</div>
                       )}
                     </div>

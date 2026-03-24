@@ -53,6 +53,7 @@ export interface Court {
   owner_age?: number;
   owner_name?: string;
   court_intro?: string;
+  court_number?: string;
   created_at: string;
   profile?: Profile;
 }
