@@ -835,25 +835,38 @@ export default function Applications() {
   const fetchMealProposals = useCallback(async () => {
     if (!user) return;
 
-    const [{ data: pendingRaw }, { data: resultRaw }] = await Promise.all([
+    const [
+      { data: pendingReceivedRaw },
+      { data: pendingSentRaw },
+      { data: resultRaw },
+    ] = await Promise.all([
       supabase
         .from('meal_proposals')
-        .select('id, sender_id, receiver_id, court_id, receiver_deleted, sender_deleted')
-        .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
-        .eq('status', 'pending'),
+        .select('id, sender_id, receiver_id, court_id, created_at')
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending')
+        .eq('receiver_deleted', false)
+        .order('created_at', { ascending: false }),
       supabase
         .from('meal_proposals')
-        .select('id, sender_id, receiver_id, status, rejection_reason')
+        .select('id, sender_id, receiver_id, court_id, created_at')
+        .eq('sender_id', user.id)
+        .eq('status', 'pending')
+        .eq('sender_deleted', false)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('meal_proposals')
+        .select('id, sender_id, receiver_id, status, rejection_reason, created_at')
         .eq('sender_id', user.id)
         .eq('sender_seen', false)
-        .in('status', ['accepted', 'rejected']),
+        .in('status', ['accepted', 'rejected'])
+        .order('created_at', { ascending: false }),
     ]);
 
-    const pending = (pendingRaw ?? []).filter((p) => {
-      if (p.receiver_id === user.id && p.receiver_deleted) return false;
-      if (p.sender_id === user.id && p.sender_deleted) return false;
-      return true;
-    });
+    const pending = [
+      ...(pendingReceivedRaw ?? []),
+      ...(pendingSentRaw ?? []),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const results = resultRaw ?? [];
 
     const allUserIds = [...new Set([

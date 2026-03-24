@@ -96,6 +96,7 @@ export default function Home() {
   const [applyTargetCourt, setApplyTargetCourt] = useState<Court | null>(null);
   const [applyMessage, setApplyMessage] = useState('');
   const [applyLoading, setApplyLoading] = useState(false);
+  const [applySuccessPurpose, setApplySuccessPurpose] = useState<'tennis' | 'dating' | null>(null);
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -311,7 +312,11 @@ export default function Home() {
       return;
     }
 
+    const successPurpose = applyTargetCourt.purpose;
     setApplyTargetCourt(null);
+    setApplyMessage('');
+    setApplySuccessPurpose(successPurpose);
+    setTimeout(() => setApplySuccessPurpose(null), 3000);
   };
 
   const handleDelete = (courtId: string) => {
@@ -667,6 +672,32 @@ export default function Home() {
           </div>
         );
       })()}
+
+      {applySuccessPurpose && (
+        <div
+          className="fixed inset-x-0 bottom-24 flex justify-center z-50 px-6 pointer-events-none"
+          style={{ animation: 'fadeInUp 0.3s ease' }}
+        >
+          <div
+            className="px-5 py-4 rounded-2xl text-center max-w-sm w-full"
+            style={{
+              background: applySuccessPurpose === 'dating'
+                ? 'linear-gradient(135deg, #F43F5E 0%, #FB7185 100%)'
+                : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+              color: '#fff',
+              boxShadow: applySuccessPurpose === 'dating'
+                ? '0 8px 32px rgba(244,63,94,0.4)'
+                : '0 8px 32px rgba(27,67,50,0.4)',
+            }}
+          >
+            <p className="text-sm font-semibold leading-relaxed">
+              {applySuccessPurpose === 'dating'
+                ? '신청이 전해졌어요 :) 호스트가 수락하면 채팅방이 열려요 💕'
+                : '신청이 완료됐어요! 호스트가 수락하면 채팅방이 열려요 🎾'}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
