@@ -156,7 +156,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
   const exp    = court.owner_experience ?? p?.experience;
   const mbti   = court.owner_mbti  ?? p?.mbti;
   const height = court.owner_height ?? p?.height;
-  const bio    = court.court_intro  ?? court.owner_bio ?? p?.bio;
 
   const photos: string[] = (() => {
     if (court.owner_photos?.length) return court.owner_photos;
@@ -459,13 +458,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                 </Card>
               )}
 
-              {/* 자기소개 */}
-              {bio && (
-                <Card style={{ marginBottom: 16 }}>
-                  <SectionHead label="자기소개" />
-                  <p style={{ margin: 0, fontSize: 14, color: '#4B5563', lineHeight: 1.85, whiteSpace: 'pre-wrap' }}>{bio}</p>
-                </Card>
-              )}
             </>
           )}
         </div>
