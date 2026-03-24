@@ -1089,6 +1089,11 @@ export default function Applications() {
     setResultMealProposals((prev) => prev.filter((p) => p.id !== proposalId));
   };
 
+  const handleDeletePendingMealProposal = async (proposalId: string) => {
+    await supabase.from('meal_proposals').delete().eq('id', proposalId);
+    setPendingMealProposals((prev) => prev.filter((p) => p.id !== proposalId));
+  };
+
   const handleMealProposalReject = async () => {
     if (!mealRejectProposalId || !mealRejectReason.trim()) return;
     setMealRejectSubmitting(true);
@@ -1798,9 +1803,20 @@ export default function Applications() {
                 <UtensilsCrossed className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-snug mb-2.5" style={{ color: '#7C2D5E' }}>
-                  <span style={{ color: '#C9547A' }}>{proposal.sender_name ?? '호스트'}</span>님이<br />경기 후 식사를 제안했어요 :)
-                </p>
+                <div className="flex items-start justify-between mb-2.5">
+                  <p className="text-sm font-semibold leading-snug" style={{ color: '#7C2D5E' }}>
+                    <span style={{ color: '#C9547A' }}>{proposal.sender_name ?? '호스트'}</span>님이<br />경기 후 식사를 제안했어요 :)
+                  </p>
+                  <button
+                    onClick={() => handleDeletePendingMealProposal(proposal.id)}
+                    className="ml-2 flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition active:scale-95"
+                    style={{ background: 'rgba(0,0,0,0.06)' }}
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 14 14" stroke="#9CA3AF" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 2l10 10M12 2L2 12" />
+                    </svg>
+                  </button>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleMealProposalAccept(proposal.id)}
@@ -1852,25 +1868,29 @@ export default function Applications() {
                 <UtensilsCrossed className="w-4 h-4" style={{ color: proposal.status === 'accepted' ? '#fff' : '#DC5050' }} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-snug mb-1" style={{ color: proposal.status === 'accepted' ? '#7C2D5E' : '#7F1D1D' }}>
-                  {proposal.status === 'accepted' ? (
-                    <><span style={{ color: '#C9547A' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />경기 후 식사 제안을 수락했어요 :)</>
-                  ) : (
-                    <><span style={{ color: '#DC5050' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />식사 제안을 거절했어요</>
-                  )}
-                </p>
+                <div className="flex items-start justify-between">
+                  <p className="text-sm font-semibold leading-snug mb-1" style={{ color: proposal.status === 'accepted' ? '#7C2D5E' : '#7F1D1D' }}>
+                    {proposal.status === 'accepted' ? (
+                      <><span style={{ color: '#C9547A' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />경기 후 식사 제안을 수락했어요 :)</>
+                    ) : (
+                      <><span style={{ color: '#DC5050' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />식사 제안을 거절했어요</>
+                    )}
+                  </p>
+                  <button
+                    onClick={() => handleDismissResultMeal(proposal.id)}
+                    className="ml-2 flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition active:scale-95"
+                    style={{ background: 'rgba(0,0,0,0.06)' }}
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 14 14" stroke="#9CA3AF" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 2l10 10M12 2L2 12" />
+                    </svg>
+                  </button>
+                </div>
                 {proposal.status === 'rejected' && proposal.rejection_reason && (
                   <p className="text-xs mt-1 px-2.5 py-1.5 rounded-lg" style={{ background: 'rgba(220,80,80,0.07)', color: '#9B1C1C' }}>
                     "{proposal.rejection_reason}"
                   </p>
                 )}
-                <button
-                  onClick={() => handleDismissResultMeal(proposal.id)}
-                  className="mt-2.5 text-xs font-medium transition active:scale-95"
-                  style={{ color: proposal.status === 'accepted' ? '#C9547A' : '#DC5050', opacity: 0.7 }}
-                >
-                  확인했어요
-                </button>
               </div>
             </div>
           ))}
@@ -1887,9 +1907,20 @@ export default function Applications() {
                 <UtensilsCrossed className="w-4 h-4" style={{ color: '#E05C8A' }} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-snug" style={{ color: '#7C2D5E' }}>
-                  <span style={{ color: '#C9547A' }}>{proposal.receiver_name ?? '참여자'}</span>님에게<br />경기 후 식사를 제안했어요
-                </p>
+                <div className="flex items-start justify-between">
+                  <p className="text-sm font-semibold leading-snug" style={{ color: '#7C2D5E' }}>
+                    <span style={{ color: '#C9547A' }}>{proposal.receiver_name ?? '참여자'}</span>님에게<br />경기 후 식사를 제안했어요
+                  </p>
+                  <button
+                    onClick={() => handleDeletePendingMealProposal(proposal.id)}
+                    className="ml-2 flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition active:scale-95"
+                    style={{ background: 'rgba(0,0,0,0.06)' }}
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 14 14" stroke="#9CA3AF" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 2l10 10M12 2L2 12" />
+                    </svg>
+                  </button>
+                </div>
                 <span
                   className="inline-block mt-2 text-xs font-semibold px-2.5 py-1 rounded-full"
                   style={{ background: 'rgba(224,92,138,0.1)', color: '#C9547A', border: '1px solid rgba(224,92,138,0.25)' }}

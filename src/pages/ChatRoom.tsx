@@ -1600,14 +1600,9 @@ const closeAllPickers = () => {
       });
       loadPendingMealProposals();
     }
-    let msg: string;
-    if (chatPurpose === 'dating') {
-      msg = includeMealProposal
-        ? '💕 매칭 확정! 경기 후 식사도 함께 제안했어요 🍽️'
-        : '💕 매칭 확정! 설레는 만남 기대해요 🥂';
-    } else {
-      msg = '🎾 라인업 확정!';
-    }
+    const msg = chatPurpose === 'dating'
+      ? '💕 매칭 확정! 설레는 만남 기대해요 🥂'
+      : '🎾 라인업 확정!';
     const ok = await sendMessage(msg, 'system');
     if (ok) {
       setMatchConfirmed(true);
@@ -1822,14 +1817,9 @@ const closeAllPickers = () => {
         });
         loadPendingMealProposals();
       }
-      let confirmMsg: string;
-      if (chatPurpose === 'dating') {
-        confirmMsg = includeMealProposal
-          ? `💕 ${participantName}님 매칭 확정! 경기 후 식사도 함께 제안했어요 🍽️`
-          : `💕 ${participantName}님 매칭이 확정됐어요!`;
-      } else {
-        confirmMsg = `🎾 ${participantName}님 라인업이 확정됐어요!`;
-      }
+      const confirmMsg = chatPurpose === 'dating'
+        ? `💕 ${participantName}님 매칭이 확정됐어요!`
+        : `🎾 ${participantName}님 라인업이 확정됐어요!`;
       await sendMessage(confirmMsg, 'system');
       if (chatPurpose === 'dating' && includeMealProposal) setShowMealSentPopup(true);
     } finally {

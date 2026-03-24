@@ -455,14 +455,7 @@ export default function GroupChatRoom() {
       await Promise.all(mealInserts);
       loadPendingMealProposals();
     }
-    let msg: string;
-    if (isDating) {
-      msg = includeMealProposal
-        ? '💕 매칭 확정! 경기 후 식사도 함께 제안했어요 🍽️'
-        : '💕 매칭 확정! 설레는 만남 기대해요 🥂';
-    } else {
-      msg = '🎾 라인업 확정!';
-    }
+    const msg = isDating ? '💕 매칭 확정! 설레는 만남 기대해요 🥂' : '🎾 라인업 확정!';
     const ok = await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
