@@ -355,7 +355,9 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                       <div style={{ width: 30, height: 30, borderRadius: 9, background: ROSE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <MapPin style={{ width: 14, height: 14, color: PINK }} />
                       </div>
-                      <span style={{ fontSize: 14, color: DARK, fontWeight: 600 }}>{court.court_name}</span>
+                      <span style={{ fontSize: 14, color: DARK, fontWeight: 600 }}>
+                        {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+                      </span>
                     </div>
                   )}
                   {court.date && (
@@ -383,6 +385,16 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                   </div>
                 )}
               </Card>
+
+              {/* 호스트 한마디 */}
+              {(court.court_intro || court.description) && (
+                <Card style={{ marginBottom: 10 }}>
+                  <SectionHead label="호스트 한마디" />
+                  <p style={{ margin: 0, fontSize: 14, color: '#5C2D4E', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                    {court.court_intro || court.description}
+                  </p>
+                </Card>
+              )}
 
               {/* 모집 현황 */}
               {(tm > 0 || tf > 0) && (
@@ -631,7 +643,9 @@ export default function DatingCourtCard({ court, isOwner, onApply, onEdit, onDel
             {court.court_name && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                 <MapPin style={{ width: 11, height: 11, color: PINK }} />
-                <span style={{ fontSize: 12, color: '#6B7280', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{court.court_name}</span>
+                <span style={{ fontSize: 12, color: '#6B7280', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+                </span>
               </div>
             )}
             {court.date && (

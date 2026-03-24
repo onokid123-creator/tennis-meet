@@ -136,7 +136,7 @@ export default function Home() {
     });
   }, [user]);
 
-  const COURT_FIELDS = 'id,user_id,purpose,status,court_name,date,start_time,end_time,format,match_type,description,male_slots,female_slots,male_count,female_count,confirmed_male_slots,confirmed_female_slots,current_participants,capacity,cost,experience_wanted,court_fee,tennis_photo_url,owner_photo,owner_photos,owner_name,owner_age,owner_gender,owner_mbti,owner_height,owner_bio,owner_experience,court_intro,created_at';
+  const COURT_FIELDS = 'id,user_id,purpose,status,court_name,court_number,date,start_time,end_time,format,match_type,description,male_slots,female_slots,male_count,female_count,confirmed_male_slots,confirmed_female_slots,current_participants,capacity,cost,experience_wanted,court_fee,tennis_photo_url,owner_photo,owner_photos,owner_name,owner_age,owner_gender,owner_mbti,owner_height,owner_bio,owner_experience,court_intro,created_at';
   const PROFILE_FIELDS = 'user_id,name,photo_url,tennis_photo_url,experience,tennis_style,age,gender,purpose';
 
   const fetchCourts = useCallback(async (purpose: CategoryTab, tab: Tab) => {

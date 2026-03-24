@@ -753,16 +753,16 @@ export default function GroupChatRoom() {
         </div>
       )}
       <header
-        className="px-4 py-3 flex items-center gap-3 sticky top-0 z-10 flex-shrink-0"
+        className="px-4 pt-3 pb-2.5 flex items-start gap-3 sticky top-0 z-10 flex-shrink-0"
         style={{ background: headerBg, borderBottom: `1px solid ${isDating ? 'rgba(201,84,122,0.25)' : 'rgba(45,106,79,0.25)'}`, boxShadow: isDating ? '0 2px 16px rgba(201,84,122,0.2)' : '0 2px 16px rgba(45,106,79,0.2)' }}
       >
-        <button onClick={() => navigate(-1)} className="p-1.5 rounded-full transition active:scale-90" style={{ background: 'rgba(255,255,255,0.08)' }}>
+        <button onClick={() => navigate(-1)} className="p-1.5 rounded-full transition active:scale-90 mt-0.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
-        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        <div className="flex items-start gap-2.5 flex-1 min-w-0">
           <button
             onClick={() => setShowConversationSheet(true)}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden active:opacity-75 transition focus:outline-none"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden active:opacity-75 transition focus:outline-none mt-0.5"
             style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: `0 0 0 2px ${accentColor}40` }}
           >
             {(isDating ? hostProfile?.photo_url : (hostProfile?.tennis_photo_url || hostProfile?.photo_url)) ? (
@@ -776,28 +776,31 @@ export default function GroupChatRoom() {
             )}
           </button>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm text-white truncate leading-tight">
-              {hostProfile?.name ?? (isDating ? '설레는 만남 그룹' : '테니스 그룹')}
-            </p>
-            {court?.court_name ? (
-              <div className="flex flex-col">
-                <p className="text-[11px] font-semibold leading-tight" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                  {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
-                </p>
-                {court.date && (
-                  <p className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    {court.date}{court.start_time ? ` · ${court.start_time}${court.end_time ? `~${court.end_time}` : ''}` : ''} · {participants.length}명
-                  </p>
-                )}
-                {!court.date && (
-                  <p className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    {participants.length}명 참가
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-[11px]" style={{ color: accentColor }}>
-                {participants.length}명 참가
+            {/* 1줄: 호스트 이름 + GROUP 뱃지 + 인원 */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="font-bold text-[15px] text-white leading-tight">
+                {hostProfile?.name ?? (isDating ? '설레는 만남 그룹' : '테니스 그룹')}
+              </p>
+              <span
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 tracking-wide"
+                style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)' }}
+              >
+                GROUP
+              </span>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}>
+                {participants.length}명
+              </span>
+            </div>
+            {/* 2줄: 장소명 + 코트번호 */}
+            {court?.court_name && (
+              <p className="text-[12px] font-semibold mt-1 leading-snug" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+              </p>
+            )}
+            {/* 3줄: 날짜 · 시간 */}
+            {court?.date && (
+              <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                {court.date}{court.start_time ? ` · ${court.start_time}${court.end_time ? `~${court.end_time}` : ''}` : ''}
               </p>
             )}
           </div>

@@ -257,7 +257,9 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
                     <div style={{ width: 30, height: 30, borderRadius: 9, background: L, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <MapPin style={{ width: 14, height: 14, color: P }} />
                     </div>
-                    <span style={{ fontSize: 14, color: T, fontWeight: 600 }}>{court.court_name}</span>
+                    <span style={{ fontSize: 14, color: T, fontWeight: 600 }}>
+                      {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+                    </span>
                   </div>
                 )}
                 {court.date && (
@@ -525,12 +527,14 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
         {/* info strip */}
         <div style={{ padding: '12px 14px 14px' }}>
 
-          {/* meta row: 코트명 / 날짜 / 시간 */}
+          {/* meta row: 코트명+코트번호 / 날짜 / 시간 */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
             {court.court_name && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <MapPin style={{ width: 11, height: 11, color: A }} />
-                <span style={{ fontSize: 12, color: M, maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{court.court_name}</span>
+                <span style={{ fontSize: 12, color: M, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${(court as { court_number?: string }).court_number}` : ''}
+                </span>
               </div>
             )}
             {court.date && (
@@ -548,38 +552,38 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
           </div>
 
           {/* 모집 현황 + 매칭비 — 정보형 표시 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 6 }}>
             {/* 모집 인원 */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, flex: 1 }}>
               {hasSlotsInfo && !isClosed && (
                 <>
                   {tm > 0 && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(74,144,217,0.1)', border: '1px solid rgba(74,144,217,0.22)', borderRadius: 10, padding: '4px 10px', fontSize: 12, color: '#4A90D9', fontWeight: 700 }}>
-                      남 {rm <= 0 ? <span style={{ color: '#EF4444', fontWeight: 700 }}>마감</span> : `${rm}명 모집 중`}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(74,144,217,0.1)', border: '1px solid rgba(74,144,217,0.22)', borderRadius: 10, padding: '4px 9px', fontSize: 11, color: '#4A90D9', fontWeight: 700, lineHeight: 1.4 }}>
+                      남 {rm <= 0 ? <span style={{ color: '#EF4444', fontWeight: 700 }}>마감</span> : `${rm}명 남음`}
                     </span>
                   )}
                   {tf > 0 && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(229,122,138,0.1)', border: '1px solid rgba(229,122,138,0.22)', borderRadius: 10, padding: '4px 10px', fontSize: 12, color: '#E57A8A', fontWeight: 700 }}>
-                      여 {rf <= 0 ? <span style={{ color: '#EF4444', fontWeight: 700 }}>마감</span> : `${rf}명 모집 중`}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(229,122,138,0.1)', border: '1px solid rgba(229,122,138,0.22)', borderRadius: 10, padding: '4px 9px', fontSize: 11, color: '#E57A8A', fontWeight: 700, lineHeight: 1.4 }}>
+                      여 {rf <= 0 ? <span style={{ color: '#EF4444', fontWeight: 700 }}>마감</span> : `${rf}명 남음`}
                     </span>
                   )}
                   {total > 0 && tm === 0 && tf === 0 && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: L, border: `1px solid rgba(108,191,108,0.25)`, borderRadius: 10, padding: '4px 10px', fontSize: 12, color: P, fontWeight: 700 }}>
-                      <Users style={{ width: 11, height: 11 }} />
-                      {remain}명 모집 중
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: L, border: `1px solid rgba(108,191,108,0.25)`, borderRadius: 10, padding: '4px 9px', fontSize: 11, color: P, fontWeight: 700, lineHeight: 1.4 }}>
+                      <Users style={{ width: 10, height: 10 }} />
+                      {remain}명 남음
                     </span>
                   )}
                 </>
               )}
               {isClosed && (
-                <span style={{ background: '#FEE2E2', border: `1px solid rgba(239,68,68,0.2)`, borderRadius: 10, padding: '4px 10px', fontSize: 12, color: '#EF4444', fontWeight: 700 }}>모집 마감</span>
+                <span style={{ background: '#FEE2E2', border: `1px solid rgba(239,68,68,0.2)`, borderRadius: 10, padding: '4px 9px', fontSize: 11, color: '#EF4444', fontWeight: 700, lineHeight: 1.4 }}>모집 마감</span>
               )}
             </div>
 
             {/* 매칭비 */}
             {court.court_fee != null && court.court_fee >= 0 && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: L, border: `1.5px solid rgba(108,191,108,0.3)`, color: P, borderRadius: 10, padding: '4px 10px', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
-                매칭비 {fmtFee(court.court_fee)}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: L, border: `1.5px solid rgba(108,191,108,0.3)`, color: P, borderRadius: 10, padding: '4px 9px', fontSize: 11, fontWeight: 700, flexShrink: 0, lineHeight: 1.4 }}>
+                {fmtFee(court.court_fee)}
               </span>
             )}
           </div>

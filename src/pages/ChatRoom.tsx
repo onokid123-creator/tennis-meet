@@ -2002,9 +2002,8 @@ const closeAllPickers = () => {
       )}
 
       <header
-        className="px-3 flex items-center gap-2.5 sticky top-0 z-10 flex-shrink-0"
+        className="px-3 pt-3 pb-2.5 flex items-start gap-2.5 sticky top-0 z-10 flex-shrink-0"
         style={{
-          height: 60,
           background: isDating
             ? 'linear-gradient(135deg, #C06070 0%, #D9809A 100%)'
             : 'linear-gradient(135deg, #264D3A 0%, #376952 100%)',
@@ -2018,12 +2017,12 @@ const closeAllPickers = () => {
       >
         <button
           onClick={() => navigate(-1)}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-white/10 transition"
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full active:bg-white/10 transition mt-0.5"
         >
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
 
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 mt-0.5">
           {isGroupChat && (participantCount ?? 0) >= 3 ? (
             <div className="relative cursor-pointer active:opacity-70" style={{ width: 40, height: 40 }} onClick={() => setShowConversationSheet(true)}>
               {groupAvatars.slice(0, 3).map((av, i) => {
@@ -2067,17 +2066,21 @@ const closeAllPickers = () => {
         >
           {otherUser || isGroupChat || isDeletedUser ? (
             <>
-              <div className="flex items-center gap-1.5">
-                <p
-                  className="font-bold text-[15px] leading-tight truncate text-white"
-                >
+              {/* 1줄: 이름 + 나이/구력 + 인원 */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="font-bold text-[15px] leading-tight text-white">
                   {isGroupChat ? (groupChatTitle ?? '단체방') : opponentName}
-                  {!isGroupChat && !isDeletedUser && isDating && otherUser?.age ? (
-                    <span className="font-normal text-xs ml-1" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                      {otherUser!.age}세
-                    </span>
-                  ) : null}
                 </p>
+                {!isGroupChat && !isDeletedUser && isDating && otherUser?.age && (
+                  <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                    {otherUser!.age}세
+                  </span>
+                )}
+                {!isGroupChat && !isDating && !isOpponentBlocked && otherUser?.experience && (
+                  <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    {otherUser.experience}
+                  </span>
+                )}
                 {isGroupChat && (
                   <span
                     className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 tracking-wide"
@@ -2085,27 +2088,6 @@ const closeAllPickers = () => {
                   >
                     GROUP
                   </span>
-                )}
-              </div>
-              <div className="flex flex-col gap-0.5 mt-0.5">
-                {courtName && (
-                  <span className="text-[11px] font-semibold leading-tight" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                    {courtName}{courtInfo?.court_number ? ` · ${courtInfo.court_number}` : ''}
-                  </span>
-                )}
-                {courtInfo?.date && (
-                  <span className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                    {courtInfo.date}{courtInfo.start_time ? ` · ${courtInfo.start_time}${courtInfo.end_time ? `~${courtInfo.end_time}` : ''}` : ''}
-                  </span>
-                )}
-                {!courtName && (
-                  <div className="flex items-center gap-2">
-                    {!isGroupChat && !isDating && !isOpponentBlocked && otherUser?.experience && (
-                      <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                        구력 {otherUser.experience}
-                      </span>
-                    )}
-                  </div>
                 )}
                 <button
                   onClick={isGroupChat ? (e) => { e.stopPropagation(); setShowParticipantMgmt((v) => !v); } : undefined}
@@ -2116,6 +2098,18 @@ const closeAllPickers = () => {
                   {isGroupChat && <span className="ml-0.5 opacity-60">▾</span>}
                 </button>
               </div>
+              {/* 2줄: 장소명 + 코트번호 */}
+              {courtName && (
+                <p className="text-[12px] font-semibold mt-1 leading-snug" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                  {courtName}{courtInfo?.court_number ? ` · ${courtInfo.court_number}` : ''}
+                </p>
+              )}
+              {/* 3줄: 날짜 · 시간 */}
+              {courtInfo?.date && (
+                <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  {courtInfo.date}{courtInfo.start_time ? ` · ${courtInfo.start_time}${courtInfo.end_time ? `~${courtInfo.end_time}` : ''}` : ''}
+                </p>
+              )}
             </>
           ) : (
             <>
