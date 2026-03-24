@@ -1179,6 +1179,13 @@ export default function Applications() {
         });
       }
 
+      if (targetChatId) {
+        await supabase
+          .from('applications')
+          .update({ chat_id: targetChatId })
+          .eq('id', app.id);
+      }
+
       setReceivedApps((prev) => prev.filter((a) => a.id !== app.id));
       setSelectedApp(null);
 
@@ -1237,12 +1244,33 @@ export default function Applications() {
     }
   };
 
+  const handleGoToAcceptedChat = async (app: Application) => {
+    if (!app.chat_id) return;
+    await supabase
+      .from('applications')
+      .update({ applicant_notified: true })
+      .eq('id', app.id);
+    setSentApps((prev) =>
+      prev.map((a) => (a.id === app.id ? { ...a, applicant_notified: true } : a))
+    );
+    navigate(`/chat/${app.chat_id}`);
+  };
+
+  const handleDismissAcceptedNotif = async (app: Application) => {
+    await supabase
+      .from('applications')
+      .update({ applicant_notified: true, sender_deleted: true })
+      .eq('id', app.id);
+    setSentApps((prev) => prev.filter((a) => a.id !== app.id));
+  };
+
   const filteredReceived = receivedApps.filter((a) => a.purpose === purposeTab && a.status === 'pending');
   const filteredSent = sentApps.filter((a) => a.purpose === purposeTab);
   const mealProposalReceivedCount = purposeTab === 'dating' ? pendingMealProposals.filter((p) => p.receiver_id === user?.id).length : 0;
   const mealProposalResultCount = purposeTab === 'dating' ? resultMealProposals.length : 0;
+  const acceptedNotifCount = filteredSent.filter((a) => a.status === 'accepted' && !a.applicant_notified && a.chat_id).length;
   const pendingReceivedCount = filteredReceived.length + mealProposalReceivedCount;
-  const pendingSentCount = mealProposalResultCount;
+  const pendingSentCount = mealProposalResultCount + acceptedNotifCount;
 
   const renderStatusBadge = (status: string) => {
     if (status === 'accepted') {
@@ -1431,6 +1459,11 @@ export default function Applications() {
       ? host?.tennis_photo_url || host?.photo_url
       : host?.photo_url;
     const hasRejectionReason = app.status === 'rejected' && !!app.rejection_reason;
+    const hasAcceptedNotif = app.status === 'accepted' && !app.applicant_notified && !!app.chat_id;
+
+    const acceptedNotifMsg = isTennisApp
+      ? '호스트가 신청을 수락했어요! 이제 채팅방에서 이야기 나눠보세요 🎾'
+      : '호스트가 신청을 수락했어요 :) 이제 채팅방에서 자연스럽게 이야기 나눠보세요 💕';
 
     return (
       <div
@@ -1438,15 +1471,59 @@ export default function Applications() {
         className="overflow-hidden"
         style={{
           borderRadius: '18px',
-          background: isDatingCard ? 'linear-gradient(160deg, #FFF9F6 0%, #FFF5F0 100%)' : '#fff',
+          background: hasAcceptedNotif
+            ? (isTennisApp ? 'linear-gradient(160deg, #F0FAF4 0%, #E8F5EC 100%)' : 'linear-gradient(160deg, #FFF5F8 0%, #FFF0F5 100%)')
+            : !isTennisApp ? 'linear-gradient(160deg, #FFF9F6 0%, #FFF5F0 100%)' : '#fff',
           border: hasRejectionReason
             ? '1.5px solid rgba(239,68,68,0.3)'
-            : isDatingCard ? '1px solid rgba(183,110,121,0.15)' : '1px solid #EBEBEB',
+            : hasAcceptedNotif
+              ? (isTennisApp ? '1.5px solid rgba(27,67,50,0.25)' : '1.5px solid rgba(201,99,122,0.25)')
+              : !isTennisApp ? '1px solid rgba(183,110,121,0.15)' : '1px solid #EBEBEB',
           boxShadow: hasRejectionReason
             ? '0 2px 14px rgba(239,68,68,0.1)'
-            : isDatingCard ? '0 2px 12px rgba(183,110,121,0.08)' : '0 2px 12px rgba(0,0,0,0.06)',
+            : hasAcceptedNotif
+              ? (isTennisApp ? '0 2px 16px rgba(27,67,50,0.12)' : '0 2px 16px rgba(201,99,122,0.12)')
+              : !isTennisApp ? '0 2px 12px rgba(183,110,121,0.08)' : '0 2px 12px rgba(0,0,0,0.06)',
         }}
       >
+        {/* 수락 알림 배너 */}
+        {hasAcceptedNotif && (
+          <div
+            className="px-4 py-3"
+            style={{
+              background: isTennisApp ? 'rgba(27,67,50,0.06)' : 'rgba(201,99,122,0.06)',
+              borderBottom: isTennisApp ? '1px solid rgba(27,67,50,0.12)' : '1px solid rgba(201,99,122,0.12)',
+            }}
+          >
+            <p className="text-xs font-medium mb-2.5" style={{ color: isTennisApp ? '#1B4332' : '#C9637A', lineHeight: 1.5 }}>
+              {acceptedNotifMsg}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleGoToAcceptedChat(app)}
+                className="flex-1 py-1.5 rounded-full text-xs font-bold transition active:scale-95"
+                style={{
+                  background: isTennisApp ? '#1B4332' : '#C9637A',
+                  color: '#fff',
+                }}
+              >
+                채팅방 가기
+              </button>
+              <button
+                onClick={() => handleDismissAcceptedNotif(app)}
+                className="flex-1 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
+                style={{
+                  background: 'rgba(0,0,0,0.05)',
+                  color: '#999',
+                  border: '1px solid rgba(0,0,0,0.08)',
+                }}
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 거절 사유 알림 배너 */}
         {hasRejectionReason && (
           <button

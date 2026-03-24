@@ -66,6 +66,8 @@ export interface Application {
   purpose: 'tennis' | 'dating';
   message?: string | null;
   rejection_reason?: string | null;
+  chat_id?: string | null;
+  applicant_notified?: boolean;
   created_at: string;
   applicant?: Profile;
   owner?: Profile;
