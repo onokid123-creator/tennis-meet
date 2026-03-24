@@ -369,40 +369,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
               </InfoCard>
             )}
 
-            {/* 확정 참여자 */}
-            <InfoCard style={{ marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                <div style={{ width: 3, height: 15, borderRadius: 2, background: `linear-gradient(180deg,${P},${A})` }} />
-                <span style={{ fontWeight: 700, fontSize: 14, color: T }}>확정 참여자</span>
-                {!loadingParticipants && (
-                  <span style={{ background: L, color: P, borderRadius: 99, padding: '1px 8px', fontSize: 11, fontWeight: 700, marginLeft: 2 }}>{confirmedProfiles.length}명</span>
-                )}
-              </div>
-              {loadingParticipants ? (
-                <div style={{ padding: '12px 0', textAlign: 'center' }}>
-                  <span style={{ fontSize: 13, color: M }}>불러오는 중...</span>
-                </div>
-              ) : confirmedProfiles.length === 0 ? (
-                <div style={{ background: BG, borderRadius: 12, padding: '14px', textAlign: 'center', border: `1px solid ${L}` }}>
-                  <Users style={{ width: 20, height: 20, color: A, opacity: 0.45, margin: '0 auto 6px' }} />
-                  <span style={{ fontSize: 13, color: M }}>아직 확정된 참여자가 없습니다</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {confirmedProfiles.map((p, idx) => (
-                    <div key={p.user_id || idx} style={{ display: 'flex', alignItems: 'center', gap: 12, background: BG, borderRadius: 12, padding: '10px 12px', border: `1px solid ${L}` }}>
-                      <Avatar src={p.tennis_photo_url || p.photo_url} name={p.name} size={42} />
-                      <div style={{ flex: 1, minWidth: 0, overflow: 'visible' }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: T, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                        {p.experience && <div style={{ fontSize: 12, color: M, marginTop: 3, whiteSpace: 'nowrap' }}>구력 {p.experience}</div>}
-                        {p.tennis_style && <div style={{ fontSize: 11, color: A, fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap' }}>{p.tennis_style}</div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </InfoCard>
-
             {/* 호스트 한마디 */}
             {(court.court_intro || court.description) && (
               <InfoCard style={{ marginBottom: 10 }}>

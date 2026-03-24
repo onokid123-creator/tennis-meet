@@ -420,31 +420,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                 </Card>
               )}
 
-              {/* 확정 참여자 */}
-              <Card style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                  <div style={{ width: 3, height: 15, borderRadius: 2, background: `linear-gradient(180deg,${PINK},${PINK2})` }} />
-                  <span style={{ fontWeight: 700, fontSize: 14, color: DARK }}>확정 참여자</span>
-                  <span style={{ background: ROSE, color: PINK, borderRadius: 99, padding: '1px 8px', fontSize: 11, fontWeight: 700, marginLeft: 2 }}>{confirmed.length}명</span>
-                </div>
-                {confirmed.length === 0 ? (
-                  <div style={{ background: ROSE, borderRadius: 12, padding: '14px', textAlign: 'center', border: '1px solid rgba(255,126,138,0.09)' }}>
-                    <Users style={{ width: 20, height: 20, color: PINK, opacity: 0.45, margin: '0 auto 6px' }} />
-                    <span style={{ fontSize: 13, color: MUTED }}>아직 확정된 참여자가 없어요</span>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                    {confirmed.map((pr, i) => (
-                      <div key={pr.user_id ?? i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 64 }}>
-                        <Avatar src={pr.photo_urls?.[0] ?? pr.photo_url} name={pr.name} size={48} ring={`2px solid ${PINK2}`} />
-                        <span style={{ fontSize: 11, fontWeight: 600, color: DARK, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pr.name}</span>
-                        {pr.experience && <span style={{ fontSize: 10, color: MUTED, marginTop: -2, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pr.experience}</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-
               {/* 소유자 버튼 — fixed CTA로 이동됨 */}
             </>
           )}

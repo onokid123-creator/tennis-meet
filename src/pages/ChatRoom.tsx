@@ -566,6 +566,7 @@ export default function ChatRoom() {
   const [showCancelPicker, setShowCancelPicker] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [includeMealProposal, setIncludeMealProposal] = useState(false);
   const [courtId, setCourtId] = useState<string | null>(null);
   const [courtName, setCourtName] = useState<string | null>(null);
   const [inAppToast, setInAppToast] = useState<{ name: string; content: string } | null>(null);
@@ -608,6 +609,7 @@ const closeAllPickers = () => {
   setShowCancelPicker(false);
   setConfirmingId(null);
   setCancellingId(null);
+  setIncludeMealProposal(false);
 };
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -1587,12 +1589,31 @@ const closeAllPickers = () => {
         })));
       }
     }
-    const msg =
-      chatPurpose === 'dating'
-        ? '💕 매칭 확정! 설레는 만남 기대해요 🥂'
-        : '🎾 라인업 확정!';
+    if (chatPurpose === 'dating' && includeMealProposal && otherUser && user) {
+      const receiverId = otherUser.user_id || otherUser.id;
+      await supabase.from('meal_proposals').insert({
+        chat_id: chatId,
+        court_id: courtId,
+        sender_id: user.id,
+        receiver_id: receiverId,
+        status: 'pending',
+      });
+      loadPendingMealProposals();
+    }
+    let msg: string;
+    if (chatPurpose === 'dating') {
+      msg = includeMealProposal
+        ? '💕 매칭 확정! 경기 후 식사도 함께 제안했어요 🍽️'
+        : '💕 매칭 확정! 설레는 만남 기대해요 🥂';
+    } else {
+      msg = '🎾 라인업 확정!';
+    }
     const ok = await sendMessage(msg, 'system');
-    if (ok) setMatchConfirmed(true);
+    if (ok) {
+      setMatchConfirmed(true);
+      if (chatPurpose === 'dating' && includeMealProposal) setShowMealSentPopup(true);
+    }
+    setIncludeMealProposal(false);
   };
 
  const handleMatchCancel = () => {
@@ -1791,11 +1812,26 @@ const closeAllPickers = () => {
         }
       }
 
-      const confirmMsg =
-        chatPurpose === 'dating'
-          ? `💕 ${participantName}님 매칭이 확정됐어요!`
-          : `🎾 ${participantName}님 라인업이 확정됐어요!`;
+      if (chatPurpose === 'dating' && includeMealProposal && user) {
+        await supabase.from('meal_proposals').insert({
+          chat_id: chatId,
+          court_id: courtId,
+          sender_id: user.id,
+          receiver_id: participantId,
+          status: 'pending',
+        });
+        loadPendingMealProposals();
+      }
+      let confirmMsg: string;
+      if (chatPurpose === 'dating') {
+        confirmMsg = includeMealProposal
+          ? `💕 ${participantName}님 매칭 확정! 경기 후 식사도 함께 제안했어요 🍽️`
+          : `💕 ${participantName}님 매칭이 확정됐어요!`;
+      } else {
+        confirmMsg = `🎾 ${participantName}님 라인업이 확정됐어요!`;
+      }
       await sendMessage(confirmMsg, 'system');
+      if (chatPurpose === 'dating' && includeMealProposal) setShowMealSentPopup(true);
     } finally {
       setConfirmingId(null);
     }
@@ -2152,20 +2188,6 @@ const closeAllPickers = () => {
             >
               {isDating ? '매칭 취소하기' : '라인업 취소하기'}
             </button>
-            {isDating && (
-              <button
-                onClick={() => setShowMealProposalPicker(true)}
-                className="px-3 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0 flex items-center gap-1.5"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(249,168,201,0.25) 0%, rgba(244,114,182,0.18) 100%)',
-                  color: '#C9547A',
-                  border: '1px solid rgba(224,92,138,0.3)',
-                }}
-              >
-                <UtensilsCrossed className="w-3.5 h-3.5" />
-                <span className="text-xs">식사 제안</span>
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -2742,6 +2764,41 @@ const closeAllPickers = () => {
             <p className="text-xs text-gray-400 text-center mb-5">
               선택한 참여자에게 확정 배지가 부여됩니다
             </p>
+            {isDating && (
+              <button
+                type="button"
+                onClick={() => setIncludeMealProposal((v) => !v)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl mb-4 transition active:scale-95"
+                style={{
+                  background: includeMealProposal
+                    ? 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)'
+                    : 'rgba(0,0,0,0.04)',
+                  border: includeMealProposal
+                    ? '1.5px solid rgba(224,92,138,0.35)'
+                    : '1.5px solid rgba(0,0,0,0.07)',
+                }}
+              >
+                <div
+                  className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: includeMealProposal
+                      ? 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)'
+                      : '#fff',
+                    border: includeMealProposal ? 'none' : '1.5px solid rgba(0,0,0,0.2)',
+                  }}
+                >
+                  {includeMealProposal && (
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 12 12" stroke="#fff" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                    </svg>
+                  )}
+                </div>
+                <UtensilsCrossed className="w-4 h-4 flex-shrink-0" style={{ color: includeMealProposal ? '#C9547A' : '#9CA3AF' }} />
+                <span className="text-sm font-semibold flex-1 text-left" style={{ color: includeMealProposal ? '#7C2D5E' : '#6B7280' }}>
+                  경기 후 식사도 함께 제안하기
+                </span>
+              </button>
+            )}
             <div className="flex flex-col gap-2 mb-3">
               {isGroupChat ? groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => {
                 const avIsBlocked = blockedUserIds.includes(av.user_id);
@@ -3357,70 +3414,6 @@ const closeAllPickers = () => {
               onClick={() => setShowGroupParticipants(false)}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
               style={{ background: isDating ? 'rgba(201,84,122,0.08)' : 'rgba(27,67,50,0.08)', color: isDating ? '#2D1820' : '#1B4332' }}
-            >
-              닫기
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showMealProposalPicker && isDating && isHost && (
-        <div
-          className="fixed inset-0 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
-          onClick={() => setShowMealProposalPicker(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
-            style={{
-              background: '#FFF8F2',
-              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
-              zIndex: 9999,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(201,168,76,0.4)' }} />
-            <p className="font-bold text-gray-900 text-base text-center mb-1">식사 제안 보내기</p>
-            <p className="text-xs text-gray-400 text-center mb-5">함께할 참여자를 선택하세요</p>
-            <div className="flex flex-col gap-2 mb-4">
-              {(isGroupChat ? groupAvatars.filter((av) => av.user_id !== user?.id) : (otherUser ? [otherUser] : [])).map((av) => {
-                const avId = (av as { user_id?: string; id?: string }).user_id ?? (av as { id?: string }).id ?? '';
-                const avName = av.name;
-                const avPhoto = (av as { photo_url?: string }).photo_url;
-                const alreadyProposed = pendingMealProposals.some(
-                  (p) => p.sender_id === user?.id && p.receiver_id === avId
-                );
-                return (
-                  <button
-                    key={avId}
-                    onClick={() => handleSendMealProposal(avId)}
-                    disabled={mealProposalSubmitting || alreadyProposed}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition active:opacity-80 disabled:opacity-50"
-                    style={{ background: alreadyProposed ? 'rgba(201,168,76,0.08)' : '#fff', border: alreadyProposed ? '1.5px solid rgba(201,168,76,0.4)' : '1.5px solid rgba(0,0,0,0.07)' }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
-                      style={{ background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' }}
-                    >
-                      {avPhoto ? <img src={avPhoto} alt={avName} className="w-full h-full object-cover" /> : <span>{avName?.charAt(0) ?? '?'}</span>}
-                    </div>
-                    <span className="flex-1 text-sm font-semibold text-left text-gray-900">{avName}</span>
-                    {alreadyProposed ? (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(224,92,138,0.12)', color: '#C9547A' }}>제안완료</span>
-                    ) : (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white" style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)' }}>제안</span>
-                    )}
-                  </button>
-                );
-              })}
-              {(isGroupChat ? groupAvatars.filter((av) => av.user_id !== user?.id) : (otherUser ? [otherUser] : [])).length === 0 && (
-                <p className="text-sm text-center py-4 text-gray-400">참여자가 없습니다.</p>
-              )}
-            </div>
-            <button
-              onClick={() => setShowMealProposalPicker(false)}
-              className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
-              style={{ background: '#F3F4F6', color: '#374151' }}
             >
               닫기
             </button>

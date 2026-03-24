@@ -47,6 +47,7 @@ export default function GroupChatRoom() {
   const [toast, setToast] = useState<string | null>(null);
   const [confirmedParticipants, setConfirmedParticipants] = useState<Array<{ user_id: string; name: string; photo_url?: string; tennis_photo_url?: string }>>([]);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [includeMealProposal, setIncludeMealProposal] = useState(false);
   const [showMealProposalPicker, setShowMealProposalPicker] = useState(false);
   const [mealProposalSubmitting, setMealProposalSubmitting] = useState(false);
   const [showMealRejectPopup, setShowMealRejectPopup] = useState(false);
@@ -441,7 +442,27 @@ export default function GroupChatRoom() {
       .from('court_group_chats')
       .update({ confirmed_user_ids: confirmedIds })
       .eq('id', groupChatId!);
-    const msg = isDating ? '💕 매칭 확정! 설레는 만남 기대해요 🥂' : '🎾 라인업 확정!';
+    if (isDating && includeMealProposal && user) {
+      const mealInserts = confirmedIds.map((receiverId) =>
+        supabase.from('meal_proposals').insert({
+          group_chat_id: groupChatId,
+          court_id: court?.id ?? null,
+          sender_id: user.id,
+          receiver_id: receiverId,
+          status: 'pending',
+        })
+      );
+      await Promise.all(mealInserts);
+      loadPendingMealProposals();
+    }
+    let msg: string;
+    if (isDating) {
+      msg = includeMealProposal
+        ? '💕 매칭 확정! 경기 후 식사도 함께 제안했어요 🍽️'
+        : '💕 매칭 확정! 설레는 만남 기대해요 🥂';
+    } else {
+      msg = '🎾 라인업 확정!';
+    }
     const ok = await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
@@ -452,7 +473,9 @@ export default function GroupChatRoom() {
     if (!ok.error) {
       setMatchConfirmed(true);
       await fetchConfirmedParticipants();
+      if (isDating && includeMealProposal) setShowMealSentPopup(true);
     }
+    setIncludeMealProposal(false);
   };
 
   const handleMatchCancel = () => {
@@ -866,31 +889,58 @@ export default function GroupChatRoom() {
               <span className="text-sm font-semibold" style={{ color: hostAccentColor }}>✅ 매칭 확정됨</span>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={handleMatchConfirm}
-                className="flex-1 py-2 rounded-xl text-sm font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1"
-                style={{ background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #E8C66A 100%)' : 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)', boxShadow: isDating ? '0 2px 12px rgba(201,168,76,0.3)' : '0 2px 12px rgba(45,106,79,0.25)', color: '#fff' }}
-              >
-                ✅ 매칭 확정하기
-              </button>
-              <button
-                onClick={handleMatchCancel}
-                className="flex-1 py-2 rounded-xl text-sm font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1"
-                style={{ background: isDating ? 'rgba(255,220,230,0.6)' : 'rgba(210,230,220,0.65)', color: isDating ? '#A83060' : '#2D6A4F', border: `1px solid ${isDating ? 'rgba(168,48,96,0.2)' : 'rgba(45,106,79,0.2)'}` }}
-              >
-                ❌ 매칭 취소하기
-              </button>
+            <div className="flex flex-col gap-1.5">
               {isDating && (
                 <button
-                  onClick={() => setShowMealProposalPicker(true)}
-                  className="px-3 py-2 rounded-xl text-sm font-semibold active:scale-[0.98] transition flex items-center gap-1.5 flex-shrink-0"
-                  style={{ background: 'linear-gradient(135deg, rgba(249,168,201,0.25) 0%, rgba(244,114,182,0.18) 100%)', color: '#C9547A', border: '1px solid rgba(224,92,138,0.3)' }}
+                  type="button"
+                  onClick={() => setIncludeMealProposal((v) => !v)}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl transition active:scale-95"
+                  style={{
+                    background: includeMealProposal
+                      ? 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)'
+                      : 'rgba(0,0,0,0.04)',
+                    border: includeMealProposal
+                      ? '1.5px solid rgba(224,92,138,0.35)'
+                      : '1.5px solid rgba(0,0,0,0.07)',
+                  }}
                 >
-                  <UtensilsCrossed className="w-3.5 h-3.5" />
-                  <span className="text-xs">식사 제안</span>
+                  <div
+                    className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: includeMealProposal
+                        ? 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)'
+                        : '#fff',
+                      border: includeMealProposal ? 'none' : '1.5px solid rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    {includeMealProposal && (
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 12 12" stroke="#fff" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                      </svg>
+                    )}
+                  </div>
+                  <UtensilsCrossed className="w-3.5 h-3.5 flex-shrink-0" style={{ color: includeMealProposal ? '#C9547A' : '#9CA3AF' }} />
+                  <span className="text-xs font-semibold" style={{ color: includeMealProposal ? '#7C2D5E' : '#6B7280' }}>
+                    경기 후 식사도 함께 제안하기
+                  </span>
                 </button>
               )}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleMatchConfirm}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1"
+                  style={{ background: isDating ? 'linear-gradient(135deg, #C9A84C 0%, #E8C66A 100%)' : 'linear-gradient(135deg, #2D6A4F 0%, #40916C 100%)', boxShadow: isDating ? '0 2px 12px rgba(201,168,76,0.3)' : '0 2px 12px rgba(45,106,79,0.25)', color: '#fff' }}
+                >
+                  ✅ 매칭 확정하기
+                </button>
+                <button
+                  onClick={handleMatchCancel}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold active:scale-[0.98] transition flex items-center justify-center gap-1"
+                  style={{ background: isDating ? 'rgba(255,220,230,0.6)' : 'rgba(210,230,220,0.65)', color: isDating ? '#A83060' : '#2D6A4F', border: `1px solid ${isDating ? 'rgba(168,48,96,0.2)' : 'rgba(45,106,79,0.2)'}` }}
+                >
+                  ❌ 매칭 취소하기
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -1902,71 +1952,6 @@ export default function GroupChatRoom() {
                 차단 해제하기
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showMealProposalPicker && isDating && isHost && (
-        <div
-          className="fixed inset-0 flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: 9998 }}
-          onClick={() => setShowMealProposalPicker(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
-            style={{
-              background: '#FFF8F2',
-              paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
-              zIndex: 9999,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(201,168,76,0.4)' }} />
-            <p className="font-bold text-gray-900 text-base text-center mb-1">식사 제안 보내기</p>
-            <p className="text-xs text-gray-400 text-center mb-5">함께할 참여자를 선택하세요</p>
-            <div className="flex flex-col gap-2 mb-4">
-              {participants.filter((p) => p.user_id !== user?.id).map((p) => {
-                const prof = p.profile;
-                const avId = p.user_id;
-                const avName = prof?.name ?? '참여자';
-                const avPhoto = prof?.photo_url;
-                const alreadyProposed = pendingMealProposals.some(
-                  (mp) => mp.sender_id === user?.id && mp.receiver_id === avId
-                );
-                return (
-                  <button
-                    key={avId}
-                    onClick={() => handleSendMealProposal(avId)}
-                    disabled={mealProposalSubmitting || alreadyProposed}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition active:opacity-80 disabled:opacity-50"
-                    style={{ background: alreadyProposed ? 'rgba(201,168,76,0.08)' : '#fff', border: alreadyProposed ? '1.5px solid rgba(201,168,76,0.4)' : '1.5px solid rgba(0,0,0,0.07)' }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
-                      style={{ background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' }}
-                    >
-                      {avPhoto ? <img src={avPhoto} alt={avName} className="w-full h-full object-cover" /> : <span>{avName?.charAt(0) ?? '?'}</span>}
-                    </div>
-                    <span className="flex-1 text-sm font-semibold text-left text-gray-900">{avName}</span>
-                    {alreadyProposed ? (
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0" style={{ background: 'rgba(224,92,138,0.12)', color: '#C9547A' }}>제안완료</span>
-                    ) : (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 text-white" style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)' }}>제안</span>
-                    )}
-                  </button>
-                );
-              })}
-              {participants.filter((p) => p.user_id !== user?.id).length === 0 && (
-                <p className="text-sm text-center py-4 text-gray-400">참여자가 없습니다.</p>
-              )}
-            </div>
-            <button
-              onClick={() => setShowMealProposalPicker(false)}
-              className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
-              style={{ background: '#F3F4F6', color: '#374151' }}
-            >
-              닫기
-            </button>
           </div>
         </div>
       )}
