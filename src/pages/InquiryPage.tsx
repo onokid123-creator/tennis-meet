@@ -1,11 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Plus, X, Upload, MessageSquare, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import {
+  ChevronLeft, Plus, X, Upload, MessageSquare,
+  CheckCircle, Clock, AlertCircle, MoreVertical, Pencil, Trash2,
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 type InquiryCategory = 'bug' | 'feature' | 'inconvenience' | 'other';
 type InquiryStatus = 'received' | 'reviewing' | 'answered';
+type ViewMode = 'list' | 'write' | 'edit' | 'detail';
 
 interface Inquiry {
   id: string;
@@ -17,6 +21,7 @@ interface Inquiry {
   admin_reply: string | null;
   created_at: string;
   answered_at: string | null;
+  is_deleted: boolean;
 }
 
 const CATEGORY_LABELS: Record<InquiryCategory, string> = {
@@ -39,7 +44,44 @@ const STATUS_CONFIG: Record<InquiryStatus, { label: string; icon: typeof Clock; 
   answered: { label: '답변완료', icon: CheckCircle, color: '#059669', bg: 'rgba(5,150,105,0.1)' },
 };
 
-type ViewMode = 'list' | 'write' | 'detail';
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function CategorySelector({
+  value,
+  onChange,
+}: {
+  value: InquiryCategory;
+  onChange: (v: InquiryCategory) => void;
+}) {
+  return (
+    <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+      <p className="text-xs font-semibold text-gray-500 mb-2">카테고리</p>
+      <div className="grid grid-cols-2 gap-2">
+        {(Object.keys(CATEGORY_LABELS) as InquiryCategory[]).map((cat) => {
+          const col = CATEGORY_COLORS[cat];
+          const isSelected = value === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => onChange(cat)}
+              className="py-2.5 px-3 rounded-xl text-sm font-semibold transition active:scale-95"
+              style={{
+                background: isSelected ? col.bg : 'rgba(0,0,0,0.04)',
+                color: isSelected ? col.text : '#9CA3AF',
+                border: isSelected ? `1.5px solid ${col.text}30` : '1.5px solid transparent',
+              }}
+            >
+              {CATEGORY_LABELS[cat]}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function InquiryPage() {
   const navigate = useNavigate();
@@ -55,7 +97,13 @@ export default function InquiryPage() {
   const [content, setContent] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const fetchInquiries = useCallback(async () => {
     if (!user) return;
@@ -65,6 +113,7 @@ export default function InquiryPage() {
         .from('inquiries')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_deleted', false)
         .order('created_at', { ascending: false });
       setInquiries(data ?? []);
     } finally {
@@ -76,23 +125,46 @@ export default function InquiryPage() {
     fetchInquiries();
   }, [fetchInquiries]);
 
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    if (openMenuId) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [openMenuId]);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-    if (imageFiles.length + files.length > 3) {
+    const totalExisting = existingImageUrls.length + imageFiles.length;
+    if (totalExisting + files.length > 3) {
       alert('사진은 최대 3장까지 첨부 가능합니다.');
       return;
     }
-    const newFiles = [...imageFiles, ...files].slice(0, 3);
+    const newFiles = [...imageFiles, ...files].slice(0, 3 - existingImageUrls.length);
     setImageFiles(newFiles);
     const previews = newFiles.map((f) => URL.createObjectURL(f));
     setImagePreviews(previews);
   };
 
-  const removeImage = (idx: number) => {
+  const removeNewImage = (idx: number) => {
     const newFiles = imageFiles.filter((_, i) => i !== idx);
-    const newPreviews = imagePreviews.filter((_, i) => i !== idx);
     setImageFiles(newFiles);
-    setImagePreviews(newPreviews);
+    setImagePreviews(newFiles.map((f) => URL.createObjectURL(f)));
+  };
+
+  const removeExistingImage = (idx: number) => {
+    setExistingImageUrls((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    setCategory('bug');
+    setImageFiles([]);
+    setImagePreviews([]);
+    setExistingImageUrls([]);
   };
 
   const handleSubmit = async () => {
@@ -112,51 +184,130 @@ export default function InquiryPage() {
         }
       }
 
-      const { error } = await supabase.from('inquiries').insert({
-        user_id: user.id,
-        category,
-        title: title.trim(),
-        content: content.trim(),
-        image_urls: uploadedUrls,
-      });
+      const finalUrls = [...existingImageUrls, ...uploadedUrls];
 
-      if (!error) {
-        setTitle('');
-        setContent('');
-        setImageFiles([]);
-        setImagePreviews([]);
-        setCategory('bug');
-        await fetchInquiries();
-        setViewMode('list');
+      if (viewMode === 'edit' && selectedInquiry) {
+        const { error } = await supabase.from('inquiries').update({
+          category,
+          title: title.trim(),
+          content: content.trim(),
+          image_urls: finalUrls,
+        }).eq('id', selectedInquiry.id);
+
+        if (!error) {
+          await fetchInquiries();
+          resetForm();
+          setSelectedInquiry(null);
+          setViewMode('list');
+        }
+      } else {
+        const { error } = await supabase.from('inquiries').insert({
+          user_id: user.id,
+          category,
+          title: title.trim(),
+          content: content.trim(),
+          image_urls: finalUrls,
+        });
+
+        if (!error) {
+          await fetchInquiries();
+          resetForm();
+          setViewMode('list');
+        }
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  const handleEditOpen = (inq: Inquiry) => {
+    setOpenMenuId(null);
+    setSelectedInquiry(inq);
+    setCategory(inq.category);
+    setTitle(inq.title);
+    setContent(inq.content);
+    setExistingImageUrls(inq.image_urls ?? []);
+    setImageFiles([]);
+    setImagePreviews([]);
+    setViewMode('edit');
   };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId || deleteSubmitting) return;
+    setDeleteSubmitting(true);
+    try {
+      await supabase.from('inquiries').update({ is_deleted: true }).eq('id', deleteTargetId);
+      setInquiries((prev) => prev.filter((i) => i.id !== deleteTargetId));
+      setDeleteTargetId(null);
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  };
+
+  const isWriteMode = viewMode === 'write' || viewMode === 'edit';
+  const isEditMode = viewMode === 'edit';
+  const totalImages = existingImageUrls.length + imageFiles.length;
 
   if (viewMode === 'detail' && selectedInquiry) {
     const cfg = STATUS_CONFIG[selectedInquiry.status];
     const StatusIcon = cfg.icon;
     const catColor = CATEGORY_COLORS[selectedInquiry.category];
+    const canEdit = selectedInquiry.status !== 'answered';
+
     return (
       <div className="min-h-screen flex flex-col" style={{ background: '#F9FAFB', maxWidth: 480, margin: '0 auto' }}>
         <div
-          className="flex items-center gap-3 px-4 pt-12 pb-4 sticky top-0 z-10"
+          className="flex items-center justify-between px-4 pt-12 pb-4 sticky top-0 z-10"
           style={{ background: '#F9FAFB', borderBottom: '1px solid rgba(0,0,0,0.06)' }}
         >
-          <button
-            onClick={() => { setSelectedInquiry(null); setViewMode('list'); }}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-95"
-            style={{ background: 'rgba(0,0,0,0.06)' }}
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <h1 className="text-base font-bold text-gray-900">문의 상세</h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setSelectedInquiry(null); setViewMode('list'); }}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-95"
+              style={{ background: 'rgba(0,0,0,0.06)' }}
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
+            </button>
+            <h1 className="text-base font-bold text-gray-900">문의 상세</h1>
+          </div>
+          {canEdit && (
+            <div className="relative" ref={openMenuId === selectedInquiry.id ? menuRef : undefined}>
+              <button
+                onClick={() => setOpenMenuId(openMenuId === selectedInquiry.id ? null : selectedInquiry.id)}
+                className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-95"
+                style={{ background: 'rgba(0,0,0,0.06)' }}
+              >
+                <MoreVertical className="w-4 h-4 text-gray-600" />
+              </button>
+              {openMenuId === selectedInquiry.id && (
+                <div
+                  className="absolute right-0 top-10 rounded-xl overflow-hidden z-50"
+                  style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.14)', background: '#fff', minWidth: 128 }}
+                >
+                  <button
+                    onClick={() => handleEditOpen(selectedInquiry)}
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium text-gray-700 transition"
+                    style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Pencil className="w-4 h-4 text-gray-500" />
+                    수정하기
+                  </button>
+                  <button
+                    onClick={() => { setOpenMenuId(null); setDeleteTargetId(selectedInquiry.id); }}
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium transition"
+                    style={{ color: '#DC2626' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(220,38,38,0.06)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    삭제하기
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
@@ -179,7 +330,7 @@ export default function InquiryPage() {
             </div>
             <h2 className="text-base font-bold text-gray-900 mb-2">{selectedInquiry.title}</h2>
             <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{selectedInquiry.content}</p>
-            {selectedInquiry.image_urls.length > 0 && (
+            {selectedInquiry.image_urls?.length > 0 && (
               <div className="flex gap-2 mt-3 flex-wrap">
                 {selectedInquiry.image_urls.map((url, i) => (
                   <img
@@ -197,7 +348,10 @@ export default function InquiryPage() {
           {selectedInquiry.admin_reply && (
             <div
               className="rounded-2xl p-5"
-              style={{ background: 'linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%)', border: '1.5px solid rgba(5,150,105,0.2)' }}
+              style={{
+                background: 'linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%)',
+                border: '1.5px solid rgba(5,150,105,0.2)',
+              }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="w-4 h-4" style={{ color: '#059669' }} />
@@ -226,7 +380,7 @@ export default function InquiryPage() {
     );
   }
 
-  if (viewMode === 'write') {
+  if (isWriteMode) {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: '#F9FAFB', maxWidth: 480, margin: '0 auto' }}>
         <div
@@ -234,39 +388,21 @@ export default function InquiryPage() {
           style={{ background: '#F9FAFB', borderBottom: '1px solid rgba(0,0,0,0.06)' }}
         >
           <button
-            onClick={() => setViewMode('list')}
+            onClick={() => {
+              resetForm();
+              setSelectedInquiry(null);
+              setViewMode('list');
+            }}
             className="w-9 h-9 rounded-full flex items-center justify-center transition active:scale-95"
             style={{ background: 'rgba(0,0,0,0.06)' }}
           >
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
-          <h1 className="text-base font-bold text-gray-900">문의 작성</h1>
+          <h1 className="text-base font-bold text-gray-900">{isEditMode ? '문의 수정' : '문의 작성'}</h1>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-          <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-            <p className="text-xs font-semibold text-gray-500 mb-2">카테고리</p>
-            <div className="grid grid-cols-2 gap-2">
-              {(Object.keys(CATEGORY_LABELS) as InquiryCategory[]).map((cat) => {
-                const col = CATEGORY_COLORS[cat];
-                const isSelected = category === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => setCategory(cat)}
-                    className="py-2.5 px-3 rounded-xl text-sm font-semibold transition active:scale-95"
-                    style={{
-                      background: isSelected ? col.bg : 'rgba(0,0,0,0.04)',
-                      color: isSelected ? col.text : '#9CA3AF',
-                      border: isSelected ? `1.5px solid ${col.text}30` : '1.5px solid transparent',
-                    }}
-                  >
-                    {CATEGORY_LABELS[cat]}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <CategorySelector value={category} onChange={setCategory} />
 
           <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <p className="text-xs font-semibold text-gray-500 mb-2">제목</p>
@@ -297,11 +433,16 @@ export default function InquiryPage() {
           <div className="bg-white rounded-2xl p-5" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
             <p className="text-xs font-semibold text-gray-500 mb-3">사진 첨부 (선택, 최대 3장)</p>
             <div className="flex gap-2 flex-wrap">
-              {imagePreviews.map((src, i) => (
-                <div key={i} className="relative w-20 h-20">
-                  <img src={src} alt="" className="w-20 h-20 rounded-xl object-cover" style={{ border: '1px solid rgba(0,0,0,0.08)' }} />
+              {existingImageUrls.map((url, i) => (
+                <div key={`existing-${i}`} className="relative w-20 h-20">
+                  <img
+                    src={url}
+                    alt=""
+                    className="w-20 h-20 rounded-xl object-cover"
+                    style={{ border: '1px solid rgba(0,0,0,0.08)' }}
+                  />
                   <button
-                    onClick={() => removeImage(i)}
+                    onClick={() => removeExistingImage(i)}
                     className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
                     style={{ background: '#374151' }}
                   >
@@ -309,8 +450,28 @@ export default function InquiryPage() {
                   </button>
                 </div>
               ))}
-              {imageFiles.length < 3 && (
-                <label className="w-20 h-20 rounded-xl flex flex-col items-center justify-center cursor-pointer transition active:scale-95" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px dashed rgba(0,0,0,0.15)' }}>
+              {imagePreviews.map((src, i) => (
+                <div key={`new-${i}`} className="relative w-20 h-20">
+                  <img
+                    src={src}
+                    alt=""
+                    className="w-20 h-20 rounded-xl object-cover"
+                    style={{ border: '1px solid rgba(0,0,0,0.08)' }}
+                  />
+                  <button
+                    onClick={() => removeNewImage(i)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{ background: '#374151' }}
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+              ))}
+              {totalImages < 3 && (
+                <label
+                  className="w-20 h-20 rounded-xl flex flex-col items-center justify-center cursor-pointer transition active:scale-95"
+                  style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px dashed rgba(0,0,0,0.15)' }}
+                >
                   <Upload className="w-5 h-5 text-gray-400 mb-1" />
                   <span className="text-xs text-gray-400">추가</span>
                   <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageChange} />
@@ -325,9 +486,12 @@ export default function InquiryPage() {
             onClick={handleSubmit}
             disabled={!title.trim() || !content.trim() || submitting}
             className="w-full py-4 rounded-2xl text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 4px 16px rgba(27,67,50,0.25)' }}
+            style={{
+              background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+              boxShadow: '0 4px 16px rgba(27,67,50,0.25)',
+            }}
           >
-            {submitting ? '등록 중...' : '문의 등록하기'}
+            {submitting ? (isEditMode ? '수정 중...' : '등록 중...') : isEditMode ? '수정 완료' : '문의 등록하기'}
           </button>
         </div>
       </div>
@@ -335,7 +499,11 @@ export default function InquiryPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#F9FAFB', maxWidth: 480, margin: '0 auto' }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: '#F9FAFB', maxWidth: 480, margin: '0 auto' }}
+      onClick={() => setOpenMenuId(null)}
+    >
       <div
         className="flex items-center justify-between px-4 pt-12 pb-4 sticky top-0 z-10"
         style={{ background: '#F9FAFB', borderBottom: '1px solid rgba(0,0,0,0.06)' }}
@@ -351,7 +519,7 @@ export default function InquiryPage() {
           <h1 className="text-base font-bold text-gray-900">1:1 문의</h1>
         </div>
         <button
-          onClick={() => setViewMode('write')}
+          onClick={(e) => { e.stopPropagation(); setViewMode('write'); }}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white transition active:scale-95"
           style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
         >
@@ -382,48 +550,133 @@ export default function InquiryPage() {
               const cfg = STATUS_CONFIG[inq.status];
               const StatusIcon = cfg.icon;
               const catColor = CATEGORY_COLORS[inq.category];
+              const canEdit = inq.status !== 'answered';
+              const isMenuOpen = openMenuId === inq.id;
+
               return (
-                <button
+                <div
                   key={inq.id}
-                  onClick={() => { setSelectedInquiry(inq); setViewMode('detail'); }}
-                  className="w-full bg-white rounded-2xl p-4 text-left transition active:scale-[0.98]"
+                  className="bg-white rounded-2xl overflow-visible relative"
                   style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: catColor.bg, color: catColor.text }}
-                    >
-                      {CATEGORY_LABELS[inq.category]}
-                    </span>
-                    <span
-                      className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
-                      style={{ background: cfg.bg, color: cfg.color }}
-                    >
-                      <StatusIcon className="w-3 h-3" />
-                      {cfg.label}
-                    </span>
-                    <span className="text-xs text-gray-400 ml-auto">{formatDate(inq.created_at)}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900 mb-1 truncate">{inq.title}</p>
-                  <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{inq.content}</p>
-                  {inq.status === 'answered' && inq.admin_reply && (
+                  <button
+                    onClick={() => { setSelectedInquiry(inq); setViewMode('detail'); }}
+                    className="w-full p-4 text-left transition active:scale-[0.98] rounded-2xl"
+                  >
+                    <div className="flex items-center gap-2 mb-2 pr-8">
+                      <span
+                        className="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: catColor.bg, color: catColor.text }}
+                      >
+                        {CATEGORY_LABELS[inq.category]}
+                      </span>
+                      <span
+                        className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0"
+                        style={{ background: cfg.bg, color: cfg.color }}
+                      >
+                        <StatusIcon className="w-3 h-3" />
+                        {cfg.label}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-auto">{formatDate(inq.created_at)}</span>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900 mb-1 truncate pr-2">{inq.title}</p>
+                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed pr-2">{inq.content}</p>
+                    {inq.status === 'answered' && inq.admin_reply && (
+                      <div
+                        className="mt-2 pt-2 flex items-center gap-1.5"
+                        style={{ borderTop: '1px solid rgba(5,150,105,0.15)' }}
+                      >
+                        <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#059669' }} />
+                        <p className="text-xs font-medium truncate" style={{ color: '#065F46' }}>
+                          {inq.admin_reply}
+                        </p>
+                      </div>
+                    )}
+                  </button>
+
+                  {canEdit && (
                     <div
-                      className="mt-2 pt-2 flex items-center gap-1.5"
-                      style={{ borderTop: '1px solid rgba(5,150,105,0.15)' }}
+                      className="absolute top-3.5 right-3.5"
+                      ref={isMenuOpen ? menuRef : undefined}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#059669' }} />
-                      <p className="text-xs font-medium truncate" style={{ color: '#065F46' }}>
-                        {inq.admin_reply}
-                      </p>
+                      <button
+                        onClick={() => setOpenMenuId(isMenuOpen ? null : inq.id)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center transition active:scale-95"
+                        style={{ background: isMenuOpen ? 'rgba(0,0,0,0.08)' : 'transparent' }}
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-400" />
+                      </button>
+
+                      {isMenuOpen && (
+                        <div
+                          className="absolute right-0 top-8 rounded-xl overflow-hidden z-50"
+                          style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.14)', background: '#fff', minWidth: 128 }}
+                        >
+                          <button
+                            onClick={() => handleEditOpen(inq)}
+                            className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium text-gray-700 transition"
+                            style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <Pencil className="w-4 h-4 text-gray-500" />
+                            수정하기
+                          </button>
+                          <button
+                            onClick={() => { setOpenMenuId(null); setDeleteTargetId(inq.id); }}
+                            className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-medium transition"
+                            style={{ color: '#DC2626' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(220,38,38,0.06)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            삭제하기
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
         )}
       </div>
+
+      {deleteTargetId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setDeleteTargetId(null)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 w-full max-w-sm"
+            style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-base font-bold text-gray-900 mb-2 text-center">문의를 삭제할까요?</h2>
+            <p className="text-sm text-gray-500 text-center mb-6">삭제하면 복구할 수 없습니다.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTargetId(null)}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-gray-600 transition"
+                style={{ background: '#F3F4F6' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteSubmitting}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition disabled:opacity-50"
+                style={{ background: '#DC2626' }}
+              >
+                {deleteSubmitting ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

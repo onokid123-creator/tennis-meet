@@ -58,13 +58,15 @@ export default function BottomNav({ active }: BottomNavProps) {
       .from('applications')
       .select('*', { count: 'exact', head: true })
       .eq('owner_id', user.id)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .eq('receiver_deleted', false);
 
     const { count: mealReceivedCount } = await supabase
       .from('meal_proposals')
       .select('*', { count: 'exact', head: true })
       .eq('receiver_id', user.id)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .eq('receiver_deleted', false);
 
     const { count: mealResultCount } = await supabase
       .from('meal_proposals')
