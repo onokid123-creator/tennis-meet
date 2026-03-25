@@ -27,7 +27,7 @@ function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () =>
       >
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'rgba(183,110,121,0.3)' }} />
         <p className="text-lg font-bold mb-1" style={{ color: '#2D1820' }}>설레는 만남은 추가 정보가 필요해요!</p>
-        <p className="text-xs mb-6" style={{ color: 'rgba(45,24,32,0.5)' }}>MBTI · 키 · 자기소개 · 사진 3장을 등록하면 설레는 만남을 즐길 수 있어요</p>
+        <p className="text-xs mb-6" style={{ color: 'rgba(45,24,32,0.5)' }}>MBTI · 키 · 사진 3장을 등록하면 설레는 만남을 즐길 수 있어요</p>
         <button
           onClick={onRegister}
           className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
@@ -40,39 +40,6 @@ function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () =>
   );
 }
 
-function TennisProfileSetupPopup({ onUseExisting, onCreateNew, onClose }: { onUseExisting: () => void; onCreateNew: () => void; onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(0,0,0,0.6)' }}
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-t-3xl px-6 pt-6 pb-10"
-        style={{ background: '#fff' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-        <p className="text-lg font-bold text-gray-900 mb-1">오직테니스 프로필 설정</p>
-        <p className="text-sm text-gray-500 mb-6">사진 1장 · 구력 · 테니스 스타일을 등록해주세요</p>
-        <button
-          onClick={onUseExisting}
-          className="w-full py-3.5 rounded-2xl font-semibold text-sm mb-3"
-          style={{ background: '#F3F4F6', color: '#374151' }}
-        >
-          기존 프로필 사용
-        </button>
-        <button
-          onClick={onCreateNew}
-          className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
-          style={{ background: '#C9A84C' }}
-        >
-          직접 등록하기
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export default function Home() {
   const navigate = useNavigate();
@@ -91,8 +58,6 @@ export default function Home() {
     return profile?.purpose === 'dating' ? 'dating' : 'tennis';
   });
   const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
-  const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
-  const [showTennisPhotoSelect, setShowTennisPhotoSelect] = useState(false);
   const [applyTargetCourt, setApplyTargetCourt] = useState<Court | null>(null);
   const [applyMessage, setApplyMessage] = useState('');
   const [applyLoading, setApplyLoading] = useState(false);
@@ -249,7 +214,7 @@ export default function Home() {
     const userPurpose = profile?.purpose;
 
     if (tab === 'dating' && userPurpose === 'tennis') {
-      if (!profile?.bio && !profile?.mbti && !profile?.height) {
+      if (!profile?.mbti && !profile?.height) {
         setShowDatingProfilePopup(true);
         return;
       }
@@ -257,7 +222,7 @@ export default function Home() {
 
     if (tab === 'tennis' && userPurpose === 'dating') {
       if (!profile?.tennis_style) {
-        setShowTennisProfilePopup(true);
+        navigate('/tennis-profile-setup');
         return;
       }
     }
@@ -493,83 +458,6 @@ export default function Home() {
         />
       )}
 
-      {showTennisProfilePopup && (
-        <TennisProfileSetupPopup
-          onUseExisting={async () => {
-            if (user) {
-              await supabase.from('profiles').update({
-                tennis_style: profile?.experience ? '올라운더' : '',
-              }).eq('user_id', user.id);
-            }
-            setShowTennisProfilePopup(false);
-            setCategoryTab('tennis');
-            setActiveTab('others');
-          }}
-          onCreateNew={() => {
-            setShowTennisProfilePopup(false);
-            const allPhotos: string[] = profile?.photo_urls?.length ? profile.photo_urls : profile?.photo_url ? [profile.photo_url] : [];
-            if (allPhotos.length > 0) {
-              setShowTennisPhotoSelect(true);
-            } else {
-              navigate('/tennis-profile-setup');
-            }
-          }}
-          onClose={() => setShowTennisProfilePopup(false)}
-        />
-      )}
-
-      {showTennisPhotoSelect && (() => {
-        const allPhotos: string[] = profile?.photo_urls?.length ? profile.photo_urls : profile?.photo_url ? [profile.photo_url] : [];
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-end justify-center"
-            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-            onClick={() => setShowTennisPhotoSelect(false)}
-          >
-            <div
-              className="w-full max-w-md rounded-t-3xl px-5 pt-5"
-              style={{ background: '#fff', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-              <p className="text-base font-bold text-gray-900 mb-1">사진을 선택해주세요</p>
-              <p className="text-sm text-gray-500 mb-5">테니스 프로필에 사용할 설레는 만남 사진을 고르세요</p>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {allPhotos.map((url, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setShowTennisPhotoSelect(false);
-                      navigate('/tennis-profile-setup', { state: { prefillPhotoUrl: url } });
-                    }}
-                    className="relative rounded-xl overflow-hidden transition hover:opacity-90 active:scale-95"
-                    style={{ height: 110, border: '2px solid transparent' }}
-                    onPointerDown={(e) => (e.currentTarget.style.borderColor = '#C9A84C')}
-                    onPointerUp={(e) => (e.currentTarget.style.borderColor = 'transparent')}
-                  >
-                    <img src={url} alt={`사진 ${idx + 1}`} className="w-full h-full object-cover" loading="eager" />
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => { setShowTennisPhotoSelect(false); navigate('/tennis-profile-setup'); }}
-                className="w-full py-3.5 rounded-2xl font-semibold text-sm mb-2"
-                style={{ background: '#C9A84C', color: '#fff' }}
-              >
-                사진 없이 계속하기
-              </button>
-              <button
-                onClick={() => setShowTennisPhotoSelect(false)}
-                className="w-full py-3 rounded-2xl font-semibold text-sm"
-                style={{ background: '#F3F4F6', color: '#374151' }}
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        );
-      })()}
 
       {deleteConfirmId && (
         <div

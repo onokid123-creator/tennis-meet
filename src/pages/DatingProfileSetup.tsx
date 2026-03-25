@@ -48,7 +48,6 @@ export default function DatingProfileSetup() {
     experience: profile?.experience || '',
   });
   const [extraData, setExtraData] = useState({
-    bio: '',
     mbti: '',
     height: '',
   });
@@ -148,13 +147,13 @@ export default function DatingProfileSetup() {
     if (!formData.gender) { setError('성별을 선택해주세요'); return; }
     if (!formData.experience) { setError('구력을 선택해주세요'); return; }
     setStep(2);
-    setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!extraData.bio.trim() || !extraData.mbti || !extraData.height.trim()) {
+    if (!extraData.mbti || !extraData.height.trim()) {
       setError('모든 항목을 입력해주세요');
       return;
     }
@@ -169,49 +168,29 @@ export default function DatingProfileSetup() {
       );
       const primaryPhoto = uploadedUrls[0] || null;
 
-      const datingProfileData = {
+      const upsertData = {
+        id: user!.id,
+        user_id: user!.id,
         name: formData.name || profile?.name || '',
         age: Number(formData.age) || profile?.age || 0,
         gender: formData.gender || profile?.gender || '',
-        experience: formData.experience,
-        photo_url: primaryPhoto || undefined,
+        photo_url: primaryPhoto,
         photo_urls: uploadedUrls,
-        photos: uploadedUrls,
-        bio: extraData.bio,
-        mbti: extraData.mbti,
-        height: Number(extraData.height),
-        profile_completed: true,
+        mbti: extraData.mbti || null,
+        height: extraData.height ? Number(extraData.height) : null,
+        experience: formData.experience,
         purpose: 'dating',
+        profile_completed: true,
       };
 
-      localStorage.setItem('dating_profile', JSON.stringify(datingProfileData));
-
-      await supabase.from('profiles').upsert(
-        {
-          id: user!.id,
-          user_id: user!.id,
-          name: formData.name || profile?.name || '',
-          age: Number(formData.age) || profile?.age || 0,
-          gender: formData.gender || profile?.gender || '',
-          photo_url: primaryPhoto,
-          photo_urls: uploadedUrls,
-          bio: extraData.bio || null,
-          mbti: extraData.mbti || null,
-          height: extraData.height ? Number(extraData.height) : null,
-          experience: formData.experience,
-          purpose: 'dating',
-          profile_completed: true,
-        },
-        { onConflict: 'user_id' }
-      );
+      await supabase.from('profiles').upsert(upsertData, { onConflict: 'user_id' });
 
       updateProfile({
-        name: formData.name || profile?.name || '',
-        age: Number(formData.age) || profile?.age || 0,
-        gender: formData.gender || profile?.gender || '',
+        name: upsertData.name,
+        age: upsertData.age,
+        gender: upsertData.gender,
         photo_url: primaryPhoto || undefined,
         photo_urls: uploadedUrls,
-        bio: extraData.bio || undefined,
         mbti: extraData.mbti || undefined,
         height: extraData.height ? Number(extraData.height) : undefined,
         experience: formData.experience,
@@ -227,7 +206,7 @@ export default function DatingProfileSetup() {
     }
   };
 
-  const isStep2Valid = extraData.bio.trim() !== '' && extraData.mbti !== '' && extraData.height.trim() !== '';
+  const isStep2Valid = extraData.mbti !== '' && extraData.height.trim() !== '';
 
   return (
     <div className="min-h-screen bg-[#1B4332] flex flex-col items-center px-5 py-10">
@@ -444,26 +423,6 @@ export default function DatingProfileSetup() {
 
           <form onSubmit={handleSubmit} className="w-full max-w-md space-y-7">
             <div>
-              <label className="block text-sm font-medium text-white mb-2">자기소개 한 줄</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={extraData.bio}
-                  onChange={(e) => {
-                    if (e.target.value.length <= 50) setExtraData({ ...extraData, bio: e.target.value });
-                  }}
-                  placeholder="예) 테니스 좋아하는 활발한 성격이에요"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent pr-16"
-                  style={{ fontSize: 16 }}
-                  maxLength={50}
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-white/40 font-medium">
-                  {extraData.bio.length}/50
-                </span>
-              </div>
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-white mb-3">MBTI</label>
               <div className="space-y-2">
                 {MBTI_LIST.map((row, rowIdx) => (
@@ -533,7 +492,7 @@ export default function DatingProfileSetup() {
               </button>
               <button
                 type="button"
-                onClick={() => { setStep(1); setError(''); setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 0); }}
+                onClick={() => { setStep(1); setError(''); window.scrollTo({ top: 0, behavior: 'instant' }); }}
                 className="w-full py-3 rounded-xl border border-white/20 text-white/60 text-sm font-medium hover:bg-white/5 transition"
               >
                 이전으로

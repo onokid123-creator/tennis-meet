@@ -22,7 +22,7 @@ const MBTI_LIST = [
 
 export default function ProfileSetup() {
   const navigate = useNavigate();
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeSlotRef = useRef<number>(0);
   const dragIndexRef = useRef<number | null>(null);
@@ -47,7 +47,6 @@ export default function ProfileSetup() {
   });
   const [tennisStyle, setTennisStyle] = useState('');
   const [extraData, setExtraData] = useState({
-    bio: '',
     mbti: '',
     height: '',
   });
@@ -169,26 +168,21 @@ export default function ProfileSetup() {
 
       const primaryPhoto = uploadedUrls[0] || null;
 
-      await supabase.from('profiles').upsert(
-        {
-          user_id: user!.id,
-          name: formData.name,
-          age: Number(formData.age),
-          gender: formData.gender,
-          experience: formData.experience,
-          tennis_style: tennisStyle,
-          purpose: 'tennis',
-          profile_completed: true,
-          photo_url: primaryPhoto,
-          photo_urls: uploadedUrls,
-          bio: null,
-          mbti: null,
-          height: null,
-        },
-        { onConflict: 'user_id' }
-      );
+      const tennisData = {
+        user_id: user!.id,
+        name: formData.name,
+        age: Number(formData.age),
+        gender: formData.gender,
+        experience: formData.experience,
+        tennis_style: tennisStyle,
+        purpose: 'tennis',
+        profile_completed: true,
+        photo_url: primaryPhoto,
+        photo_urls: uploadedUrls,
+      };
 
-      await refreshProfile();
+      await supabase.from('profiles').upsert(tennisData, { onConflict: 'user_id' });
+      updateProfile({ ...tennisData, id: user!.id });
       navigate('/home', { replace: true });
     } catch (err) {
       console.error('프로필 저장 실패:', err);
@@ -209,12 +203,12 @@ export default function ProfileSetup() {
     if (!formData.experience) { setError('구력을 선택해주세요'); return; }
     if (!purpose) {
       setError('목적 선택 화면으로 다시 이동합니다.');
-      setTimeout(() => navigate('/purpose-selection'), 1000);
+      navigate('/purpose-selection', { replace: true });
       return;
     }
 
     setStep(2);
-    setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -232,25 +226,22 @@ export default function ProfileSetup() {
 
       const primaryPhoto = uploadedUrls[0] || null;
 
-      await supabase.from('profiles').upsert(
-        {
-          user_id: user!.id,
-          name: formData.name,
-          age: Number(formData.age),
-          gender: formData.gender,
-          experience: formData.experience,
-          purpose,
-          profile_completed: true,
-          photo_url: primaryPhoto,
-          photo_urls: uploadedUrls,
-          bio: extraData.bio || null,
-          mbti: extraData.mbti || null,
-          height: extraData.height ? Number(extraData.height) : null,
-        },
-        { onConflict: 'user_id' }
-      );
+      const datingData = {
+        user_id: user!.id,
+        name: formData.name,
+        age: Number(formData.age),
+        gender: formData.gender,
+        experience: formData.experience,
+        purpose,
+        profile_completed: true,
+        photo_url: primaryPhoto,
+        photo_urls: uploadedUrls,
+        mbti: extraData.mbti || null,
+        height: extraData.height ? Number(extraData.height) : null,
+      };
 
-      await refreshProfile();
+      await supabase.from('profiles').upsert(datingData, { onConflict: 'user_id' });
+      updateProfile({ ...datingData, id: user!.id });
       navigate('/home', { replace: true });
     } catch (err) {
       console.error('프로필 저장 실패:', err);
@@ -272,7 +263,7 @@ export default function ProfileSetup() {
   void preloadImages;
 
   const experienceOptions = ['1년미만', '1년차', '2년차', '3년차', '4년차', '5년이상'];
-  const isStep2Valid = extraData.bio.trim() !== '' && extraData.mbti !== '' && extraData.height.trim() !== '';
+  const isStep2Valid = extraData.mbti !== '' && extraData.height.trim() !== '';
 
   return (
     <div className="min-h-screen bg-[#1B4332] flex flex-col items-center px-5 py-10">
@@ -722,7 +713,7 @@ export default function ProfileSetup() {
               </button>
               <button
                 type="button"
-                onClick={() => { setStep(1); setError(''); setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 0); }}
+                onClick={() => { setStep(1); setError(''); window.scrollTo({ top: 0, behavior: 'instant' }); }}
                 className="w-full py-3 rounded-xl border border-white/20 text-white/60 text-sm font-medium hover:bg-white/5 transition"
               >
                 이전으로
