@@ -230,45 +230,71 @@ export default function CreateCourt() {
     }, 250);
   };
 
+  const compressImage = (base64: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxSize = 600;
+        let width = img.width;
+        let height = img.height;
+        if (width > height && width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.src = base64;
+    });
+  };
+
   const handleSubmit = async () => {
     if (!canProceed || loading || !user) return;
     setLoading(true);
 
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) throw new Error('로그인 정보를 확인할 수 없습니다. 다시 로그인해주세요.');
-
-      const { data: currentProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id,name,age,gender,experience,mbti,height,bio,photo_url,photo_urls,tennis_photo_url,tennis_style')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
-      if (profileError || !currentProfile) {
-        throw new Error('현재 계정의 프로필을 불러올 수 없습니다. 다시 시도해주세요.');
-      }
-
       const endTime = selectedEndTime || (() => {
         const [h] = selectedTime.split(':');
         return `${String(parseInt(h) + 1).padStart(2, '0')}:00`;
       })();
 
-      const ownerPhotos: string[] = currentProfile.photo_urls?.length
-        ? currentProfile.photo_urls
-        : currentProfile.photo_url
-          ? [currentProfile.photo_url]
-          : [];
+      const datingProfile = JSON.parse(localStorage.getItem('dating_profile') || localStorage.getItem('optimistic_profile') || '{}');
+
+      const rawDatingPhotos: string[] = (() => {
+        if (datingProfile?.photos?.length) return datingProfile.photos;
+        if (datingProfile?.photo_urls?.length) return datingProfile.photo_urls;
+        if (datingProfile?.photo_url) return [datingProfile.photo_url];
+        return [];
+      })();
+
+      const datingPhotos: string[] = await Promise.all(
+        rawDatingPhotos.map(photo =>
+          photo.startsWith('data:') ? compressImage(photo) : Promise.resolve(photo)
+        )
+      );
 
       let tennisPhotoUrl: string | null = null;
       if (purpose === 'tennis') {
-        tennisPhotoUrl = currentProfile.tennis_photo_url || currentProfile.photo_url || null;
+        const { data: myProfile } = await supabase
+          .from('profiles')
+          .select('tennis_photo_url, photo_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        tennisPhotoUrl = myProfile?.tennis_photo_url || myProfile?.photo_url || null;
       } else {
-        tennisPhotoUrl = ownerPhotos[0] || null;
+        tennisPhotoUrl = datingPhotos[0] || null;
       }
 
       const courtData: Record<string, unknown> = {
-        user_id: currentUser.id,
-        host_id: currentUser.id,
+        user_id: user.id,
+        host_id: user.id,
         purpose,
         court_name: selectedCourt!.name,
         date: selectedDate,
@@ -301,20 +327,37 @@ export default function CreateCourt() {
         courtData.male_count = maleSlots;
         courtData.female_count = femaleSlots;
         courtData.court_intro = description;
-        courtData.owner_name = currentProfile.name || null;
-        courtData.owner_age = currentProfile.age || null;
-        courtData.owner_gender = currentProfile.gender || null;
-        courtData.owner_experience = currentProfile.experience || null;
-        courtData.owner_mbti = currentProfile.mbti || null;
-        courtData.owner_height = currentProfile.height || null;
-        courtData.owner_bio = currentProfile.bio || null;
-        courtData.owner_photos = ownerPhotos;
-        courtData.owner_photo = ownerPhotos[0] || null;
-        courtData.tennis_photo_url = ownerPhotos[0] || null;
 
-        if (!isEditing) {
+        if (isEditing) {
+          const existingPhotos: string[] = editCourt!.owner_photos?.length
+            ? editCourt!.owner_photos
+            : editCourt!.owner_photo
+              ? [editCourt!.owner_photo]
+              : [];
+          const finalPhotos = datingPhotos.length > 0 ? datingPhotos : existingPhotos;
+          courtData.owner_photos = finalPhotos;
+          courtData.owner_photo = finalPhotos[0] || null;
+          courtData.tennis_photo_url = finalPhotos[0] || null;
+          courtData.owner_mbti = datingProfile?.mbti || editCourt!.owner_mbti || null;
+          courtData.owner_height = datingProfile?.height || editCourt!.owner_height || null;
+          courtData.owner_bio = datingProfile?.bio || editCourt!.owner_bio || null;
+          courtData.owner_experience = datingProfile?.experience || editCourt!.owner_experience || null;
+          courtData.owner_gender = datingProfile?.gender || editCourt!.owner_gender || null;
+          courtData.owner_age = datingProfile?.age || editCourt!.owner_age || null;
+          courtData.owner_name = datingProfile?.name || editCourt!.owner_name || null;
+        } else {
           courtData.confirmed_male_slots = 0;
           courtData.confirmed_female_slots = 0;
+          courtData.owner_photos = datingPhotos;
+          courtData.owner_photo = datingPhotos[0] || null;
+          courtData.tennis_photo_url = datingPhotos[0] || null;
+          courtData.owner_mbti = datingProfile?.mbti || null;
+          courtData.owner_height = datingProfile?.height || null;
+          courtData.owner_bio = datingProfile?.bio || null;
+          courtData.owner_experience = datingProfile?.experience || null;
+          courtData.owner_gender = datingProfile?.gender || null;
+          courtData.owner_age = datingProfile?.age || null;
+          courtData.owner_name = datingProfile?.name || null;
         }
       }
 
