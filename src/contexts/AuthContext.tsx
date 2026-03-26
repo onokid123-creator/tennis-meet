@@ -189,6 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     Object.keys(profileCache).forEach((k) => delete profileCache[k]);
+    ['dating_profile', 'optimistic_profile', 'tennis_profile', 'home_category_tab', 'home_active_tab'].forEach((k) => localStorage.removeItem(k));
     setProfile(null);
     setUser(null);
   };
