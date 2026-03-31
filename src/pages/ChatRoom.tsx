@@ -1855,13 +1855,13 @@ const closeAllPickers = () => {
     return unreadCount;
   };
   const isDating = chatPurpose === 'dating';
-  const isDeletedUser = !isGroupChat && !otherUser;
+  const isDeletedUser = !loading && !isGroupChat && !otherUser;
   const isOpponentBlocked = otherUser ? blockedUserIds.includes(otherUser.user_id) : false;
-  const opponentName = isOpponentBlocked ? '알 수 없음' : (otherUser?.name ?? '알 수 없음');
+  const opponentName = isOpponentBlocked ? '알 수 없음' : (otherUser?.name ?? (loading ? '' : '알 수 없음'));
   const opponentInitial = (!isOpponentBlocked && otherUser?.name) ? otherUser.name.charAt(0).toUpperCase() : '?';
 
   const groupChatTitle = (() => {
-    if (!isGroupChat || groupAvatars.length === 0) return null;
+    if (!isGroupChat || groupAvatars.length === 0) return loading ? '' : null;
     const others = groupAvatars.filter((av) => av.user_id !== user?.id).map((av) =>
       blockedUserIds.includes(av.user_id) ? '알 수 없음' : av.name
     );
