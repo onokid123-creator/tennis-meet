@@ -176,10 +176,12 @@ export default function InquiryPage() {
         const ext = file.name.split('.').pop();
         const path = `inquiries/${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: uploadErr } = await supabase.storage
-          .from('profile-images')
+          .from('profile_images')
           .upload(path, file, { upsert: true });
-        if (!uploadErr) {
-          const { data: urlData } = supabase.storage.from('profile-images').getPublicUrl(path);
+        if (uploadErr) {
+          console.error('이미지 업로드 실패:', uploadErr);
+        } else {
+          const { data: urlData } = supabase.storage.from('profile_images').getPublicUrl(path);
           if (urlData?.publicUrl) uploadedUrls.push(urlData.publicUrl);
         }
       }
