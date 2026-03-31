@@ -149,11 +149,15 @@ export default function CreateCourt() {
       if (!hasSupabaseProfile && !hasLocalProfile) {
         setShowTennisProfilePopup(true);
       }
-    } else if (userPurpose === 'dating' && !localStorage.getItem('dating_profile')) {
-      setShowDatingProfilePopup(true);
+    } else if (userPurpose === 'dating') {
+      const hasLocalDatingProfile = !!localStorage.getItem('dating_profile');
+      const hasSupabaseDatingProfile = !!(profile?.name || profile?.age || profile?.photo_url);
+      if (!hasLocalDatingProfile && !hasSupabaseDatingProfile) {
+        setShowDatingProfilePopup(true);
+      }
     }
     setProfileChecked(true);
-  }, [isTennis, isEditing, profileChecked, profile?.purpose, profile?.experience, profile?.photo_url]);
+  }, [isTennis, isEditing, profileChecked, profile?.purpose, profile?.experience, profile?.photo_url, profile?.name, profile?.age]);
   const accentColor = isTennis ? '#1B4332' : '#C9A84C';
   const TOTAL_STEPS = 4;
 
