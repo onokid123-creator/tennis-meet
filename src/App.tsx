@@ -1,7 +1,13 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CourtsProvider } from './contexts/CourtsContext';
+import { registerPlugin } from '@capacitor/core';
+
+interface AppPlugin {
+  addListener(event: 'backButton', handler: (data: { canGoBack: boolean }) => void): Promise<{ remove: () => void }>;
+}
+const CapacitorApp = registerPlugin<AppPlugin>('App');
 
 import Splash from './pages/Splash';
 import Login from './pages/Login';
@@ -71,9 +77,52 @@ function PurposeSelectionGuard() {
   return <PurposeSelection />;
 }
 
+const ROOT_PATHS = ['/', '/home', '/login', '/signup'];
+
+function BackButtonHandler() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const lastBackPress = useRef<number>(0);
+
+  useEffect(() => {
+    let listenerHandle: { remove: () => void } | null = null;
+
+    CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      const path = location.pathname;
+      const isRoot = ROOT_PATHS.includes(path);
+
+      if (!isRoot && canGoBack) {
+        navigate(-1);
+        return;
+      }
+
+      if (!isRoot && !canGoBack) {
+        navigate('/home', { replace: true });
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastBackPress.current < 2000) {
+        (navigator as { app?: { exitApp?: () => void } }).app?.exitApp?.();
+      } else {
+        lastBackPress.current = now;
+      }
+    }).then((handle) => {
+      listenerHandle = handle;
+    });
+
+    return () => {
+      listenerHandle?.remove();
+    };
+  }, [navigate, location.pathname]);
+
+  return null;
+}
+
 function AppRoutes() {
   return (
     <Suspense fallback={<LoadingScreen />}>
+      <BackButtonHandler />
       <Routes>
         <Route
           path="/"

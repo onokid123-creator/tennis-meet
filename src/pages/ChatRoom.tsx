@@ -602,6 +602,8 @@ export default function ChatRoom() {
   const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string }>>([]);
   const [showMealSentPopup, setShowMealSentPopup] = useState(false);
   const [showMealAcceptPopup, setShowMealAcceptPopup] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number>(() => window.visualViewport?.height ?? window.innerHeight);
+
 const pickerProcessingRef = useRef(false);
 
 const closeAllPickers = () => {
@@ -628,6 +630,17 @@ const closeAllPickers = () => {
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   };
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      setViewportHeight(vv.height);
+      scrollToBottom('instant');
+    };
+    vv.addEventListener('resize', onResize);
+    return () => vv.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -1939,7 +1952,7 @@ const closeAllPickers = () => {
   };
 
   return (
-    <div className="flex flex-col" style={{ height: '100dvh', overflow: 'hidden', ...bgStyle }}>
+    <div className="flex flex-col" style={{ height: `${viewportHeight}px`, overflow: 'hidden', ...bgStyle }}>
       {isDating && (
         <div
           className="absolute inset-0 pointer-events-none"
