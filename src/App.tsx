@@ -46,9 +46,10 @@ function PushNotificationBootstrap() {
         const permStatus = await PushNotifications.checkPermissions();
 
         let finalStatus = permStatus;
-        if (permStatus.receive === 'prompt') {
-          finalStatus = await PushNotifications.requestPermissions();
-        }
+if (permStatus.receive === 'prompt') {
+  alert('권한 요청 시작');
+  finalStatus = await PushNotifications.requestPermissions();
+}
 
         if (finalStatus.receive !== 'granted') {
           console.log('푸시 알림 권한 거부됨');
@@ -62,9 +63,10 @@ function PushNotificationBootstrap() {
     };
 
     PushNotifications.addListener('registration', (token: Token) => {
-      if (!isMounted) return;
-      console.log('FCM token:', token.value);
-    });
+  if (!isMounted) return;
+  alert('FCM token: ' + token.value);
+  console.log('FCM token:', token.value);
+});
 
     PushNotifications.addListener('registrationError', (error) => {
       console.error('푸시 등록 에러:', error);
