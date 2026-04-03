@@ -21,8 +21,13 @@ function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () =>
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-3xl px-6 pt-6 pb-10"
-        style={{ background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F0 100%)' }}
+        className="w-full max-w-md rounded-t-3xl px-6 pt-6"
+        style={{
+          background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F0 100%)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)',
+          maxHeight: '80vh',
+          overflowY: 'auto',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'rgba(183,110,121,0.3)' }} />

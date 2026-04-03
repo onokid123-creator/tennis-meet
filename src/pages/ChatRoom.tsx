@@ -3514,25 +3514,32 @@ const closeAllPickers = () => {
 
       {showMealRejectPopup && mealRejectProposalId && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+          className="fixed inset-0 z-[60] flex items-end justify-center px-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
           onClick={() => { setShowMealRejectPopup(false); setMealRejectProposalId(null); setMealRejectReason(''); }}
         >
           <div
-            className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl px-6 py-7"
-            style={{ background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)' }}
+            className="w-full max-w-sm rounded-t-3xl shadow-2xl flex flex-col"
+            style={{
+              background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)',
+              maxHeight: '80vh',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-base font-bold text-gray-900 mb-1 text-center">식사 제안 거절</h2>
-            <p className="text-xs text-gray-400 text-center mb-4">거절 이유를 직접 입력해주세요</p>
-            <textarea
-              value={mealRejectReason}
-              onChange={(e) => setMealRejectReason(e.target.value)}
-              placeholder="거절 이유를 입력해주세요"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-amber-400 mb-4"
-              rows={3}
-            />
-            <div className="flex gap-3">
+            <div className="px-6 pt-6 pb-4 flex-1 overflow-y-auto">
+              <div className="w-8 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(201,168,76,0.3)' }} />
+              <h2 className="text-base font-bold text-gray-900 mb-1 text-center">식사 제안 거절</h2>
+              <p className="text-xs text-gray-400 text-center mb-4">거절 이유를 직접 입력해주세요</p>
+              <textarea
+                value={mealRejectReason}
+                onChange={(e) => setMealRejectReason(e.target.value)}
+                placeholder="거절 이유를 입력해주세요"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-amber-400"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-3 px-6 py-3 flex-shrink-0 border-t border-gray-100">
               <button
                 onClick={() => { setShowMealRejectPopup(false); setMealRejectProposalId(null); setMealRejectReason(''); }}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold transition"

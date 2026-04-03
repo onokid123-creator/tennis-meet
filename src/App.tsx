@@ -3,8 +3,6 @@ import { Suspense, lazy, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CourtsProvider } from './contexts/CourtsContext';
 import { registerPlugin } from '@capacitor/core';
-import { Capacitor } from '@capacitor/core';
-import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 interface AppPlugin {
   addListener(event: 'backButton', handler: (data: { canGoBack: boolean }) => void): Promise<{ remove: () => void }>;
 }
@@ -34,61 +32,6 @@ function LoadingScreen() {
       <div className="text-gray-500">로딩 중...</div>
     </div>
   );
-}
-function PushNotificationBootstrap() {
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    let isMounted = true;
-
-    const setupPush = async () => {
-      try {
-        const permStatus = await PushNotifications.checkPermissions();
-
-        let finalStatus = permStatus;
-if (permStatus.receive === 'prompt') {
-  alert('권한 요청 시작');
-  finalStatus = await PushNotifications.requestPermissions();
-}
-
-        if (finalStatus.receive !== 'granted') {
-          console.log('푸시 알림 권한 거부됨');
-          return;
-        }
-
-        await PushNotifications.register();
-      } catch (error) {
-        console.error('푸시 초기화 실패:', error);
-      }
-    };
-
-    PushNotifications.addListener('registration', (token: Token) => {
-  if (!isMounted) return;
-  alert('FCM token: ' + token.value);
-  console.log('FCM token:', token.value);
-});
-
-    PushNotifications.addListener('registrationError', (error) => {
-      console.error('푸시 등록 에러:', error);
-    });
-
-    PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-      console.log('푸시 수신:', notification);
-    });
-
-    PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
-      console.log('푸시 클릭:', notification);
-    });
-
-    setupPush();
-
-    return () => {
-      isMounted = false;
-      PushNotifications.removeAllListeners();
-    };
-  }, []);
-
-  return null;
 }
 function ProtectedRoute({ children, requireComplete = true }: { children: React.ReactNode; requireComplete?: boolean }) {
   const { user, profile, loading } = useAuth();
@@ -310,7 +253,6 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <CourtsProvider>
-          <PushNotificationBootstrap />
           <AppRoutes />
         </CourtsProvider>
       </AuthProvider>

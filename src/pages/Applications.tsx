@@ -1972,100 +1972,96 @@ export default function Applications() {
             onClick={() => { setRejectTarget(null); setRejectReason(''); }}
           >
             <div
-              className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl flex flex-col"
+              className="w-full max-w-md rounded-t-3xl shadow-2xl flex flex-col"
               style={{
                 background: sheetBg,
-                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+                maxHeight: '85vh',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: handleColor }} />
+              <div className="px-5 pt-5 flex-1 overflow-y-auto">
+                <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: handleColor }} />
 
-              <div className="flex items-center gap-2.5 mb-1">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: isDatingReject ? 'rgba(201,99,122,0.1)' : 'rgba(26,92,53,0.1)', border: `1px solid ${borderIdle}` }}
-                >
-                  {isDatingReject ? (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={borderActive} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                    </svg>
-                  ) : (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={borderActive} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M2 12a15.3 15.3 0 0 0 4 4c1.9 1.3 4 2 6 2s4.1-.7 6-2a15.3 15.3 0 0 0 4-4" />
-                      <path d="M2 12a15.3 15.3 0 0 1 4-4 11.6 11.6 0 0 1 6-2 11.6 11.6 0 0 1 6 2 15.3 15.3 0 0 1 4 4" />
-                    </svg>
-                  )}
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ background: isDatingReject ? 'rgba(201,99,122,0.1)' : 'rgba(26,92,53,0.1)', border: `1px solid ${borderIdle}` }}
+                  >
+                    {isDatingReject ? (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={borderActive} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      </svg>
+                    ) : (
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={borderActive} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M2 12a15.3 15.3 0 0 0 4 4c1.9 1.3 4 2 6 2s4.1-.7 6-2a15.3 15.3 0 0 0 4-4" />
+                        <path d="M2 12a15.3 15.3 0 0 1 4-4 11.6 11.6 0 0 1 6-2 11.6 11.6 0 0 1 6 2 15.3 15.3 0 0 1 4 4" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm" style={{ color: titleColor }}>
+                      {isDatingReject ? '이번엔 인연이 아닌 것 같아요' : '이번 파트너십은 어렵겠어요'}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: descColor }}>
+                      {isDatingReject ? '부드럽게 사유를 전달해주세요' : '간단한 이유를 남겨주시면 좋아요'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-sm" style={{ color: titleColor }}>
-                    {isDatingReject ? '이번엔 인연이 아닌 것 같아요' : '이번 파트너십은 어렵겠어요'}
+
+                <div className="h-px my-4" style={{ background: isDatingReject ? 'rgba(201,99,122,0.1)' : 'rgba(26,92,53,0.1)' }} />
+
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder={isDatingReject
+                    ? '예) 일정이 맞지 않아서요, 다음에 또 좋은 인연이 생기길 바랍니다 :)'
+                    : '예) 구력 차이가 조금 있어서요, 좋은 파트너 만나시길 바랍니다!'}
+                  rows={4}
+                  autoFocus
+                  className="w-full rounded-2xl px-4 py-3.5 text-sm resize-none focus:outline-none"
+                  style={{
+                    background: '#fff',
+                    border: `1.5px solid ${hasReason ? borderActive : borderIdle}`,
+                    color: '#1a1a1a',
+                    lineHeight: 1.7,
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    boxShadow: hasReason ? `0 0 0 3px ${shadowActive}` : 'none',
+                    fontSize: '14px',
+                  }}
+                />
+                {!hasReason && (
+                  <p className="text-xs text-center mt-2.5 mb-1" style={{ color: hintColor }}>
+                    {isDatingReject ? '사유를 입력해야 거절을 보낼 수 있어요' : '한 줄이라도 남겨주시면 상대방에게 큰 도움이 돼요'}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: descColor }}>
-                    {isDatingReject ? '부드럽게 사유를 전달해주세요' : '간단한 이유를 남겨주시면 좋아요'}
-                  </p>
-                </div>
+                )}
               </div>
 
-              <div className="h-px my-4" style={{ background: isDatingReject ? 'rgba(201,99,122,0.1)' : 'rgba(26,92,53,0.1)' }} />
-
-              <textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder={isDatingReject
-                  ? '예) 일정이 맞지 않아서요, 다음에 또 좋은 인연이 생기길 바랍니다 :)'
-                  : '예) 구력 차이가 조금 있어서요, 좋은 파트너 만나시길 바랍니다!'}
-                rows={4}
-                autoFocus
-                className="w-full rounded-2xl px-4 py-3.5 text-sm resize-none focus:outline-none"
+              <div
+                className="flex-shrink-0 flex gap-2.5 px-5 py-3"
                 style={{
-                  background: '#fff',
-                  border: `1.5px solid ${hasReason ? borderActive : borderIdle}`,
-                  color: '#1a1a1a',
-                  lineHeight: 1.7,
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
-                  boxShadow: hasReason ? `0 0 0 3px ${shadowActive}` : 'none',
-                  fontSize: '14px',
+                  background: footerBg,
+                  backdropFilter: 'blur(12px)',
+                  borderTop: `1px solid ${footerBorder}`,
                 }}
-              />
-              {!hasReason && (
-                <p className="text-xs text-center mt-2.5" style={{ color: hintColor }}>
-                  {isDatingReject ? '사유를 입력해야 거절을 보낼 수 있어요' : '한 줄이라도 남겨주시면 상대방에게 큰 도움이 돼요'}
-                </p>
-              )}
-            </div>
-
-            <div
-              style={{
-                position: 'fixed',
-                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)',
-                left: 0,
-                right: 0,
-                zIndex: 10001,
-                padding: '12px 20px 14px',
-                background: footerBg,
-                backdropFilter: 'blur(12px)',
-                borderTop: `1px solid ${footerBorder}`,
-                display: 'flex',
-                gap: '10px',
-              }}
-            >
-              <button
-                onClick={() => { setRejectTarget(null); setRejectReason(''); }}
-                className="flex-1 rounded-2xl font-semibold text-sm transition active:scale-95"
-                style={{ background: cancelBg, color: cancelColor, minHeight: '50px', border: `1px solid ${cancelBorder}` }}
               >
-                취소
-              </button>
-              <button
-                onClick={handleRejectConfirm}
-                disabled={rejectSubmitting || !hasReason}
-                className="flex-1 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-40"
-                style={{ background: btnGradient, minHeight: '50px', border: 'none', boxShadow: hasReason ? `0 4px 14px ${btnShadow}` : 'none' }}
-              >
-                {rejectSubmitting ? '처리 중...' : '거절 전달하기'}
-              </button>
+                <button
+                  onClick={() => { setRejectTarget(null); setRejectReason(''); }}
+                  className="flex-1 rounded-2xl font-semibold text-sm transition active:scale-95"
+                  style={{ background: cancelBg, color: cancelColor, minHeight: '50px', border: `1px solid ${cancelBorder}` }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleRejectConfirm}
+                  disabled={rejectSubmitting || !hasReason}
+                  className="flex-1 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-40"
+                  style={{ background: btnGradient, minHeight: '50px', border: 'none', boxShadow: hasReason ? `0 4px 14px ${btnShadow}` : 'none' }}
+                >
+                  {rejectSubmitting ? '처리 중...' : '거절 전달하기'}
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -2212,25 +2208,32 @@ export default function Applications() {
 
       {showMealRejectPopup && mealRejectProposalId && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center px-6"
+          className="fixed inset-0 z-[9999] flex items-end justify-center px-4"
           style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}
           onClick={() => { setShowMealRejectPopup(false); setMealRejectProposalId(null); setMealRejectReason(''); }}
         >
           <div
-            className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl px-6 py-7"
-            style={{ background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)' }}
+            className="w-full max-w-sm rounded-t-3xl shadow-2xl flex flex-col"
+            style={{
+              background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)',
+              maxHeight: '80vh',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-base font-bold text-gray-900 mb-1 text-center">식사 제안 거절</h2>
-            <p className="text-xs text-gray-400 text-center mb-4">거절 이유를 직접 입력해주세요</p>
-            <textarea
-              value={mealRejectReason}
-              onChange={(e) => setMealRejectReason(e.target.value)}
-              placeholder="거절 이유를 입력해주세요"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-amber-400 mb-4"
-              rows={3}
-            />
-            <div className="flex gap-3">
+            <div className="px-6 pt-6 pb-4 flex-1 overflow-y-auto">
+              <div className="w-8 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(201,168,76,0.3)' }} />
+              <h2 className="text-base font-bold text-gray-900 mb-1 text-center">식사 제안 거절</h2>
+              <p className="text-xs text-gray-400 text-center mb-4">거절 이유를 직접 입력해주세요</p>
+              <textarea
+                value={mealRejectReason}
+                onChange={(e) => setMealRejectReason(e.target.value)}
+                placeholder="거절 이유를 입력해주세요"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-amber-400"
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-3 px-6 py-3 flex-shrink-0 border-t border-gray-100">
               <button
                 onClick={() => { setShowMealRejectPopup(false); setMealRejectProposalId(null); setMealRejectReason(''); }}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
