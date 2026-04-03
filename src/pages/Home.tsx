@@ -9,37 +9,43 @@ import BottomNav from '../components/BottomNav';
 import TennisCourtCard from '../components/TennisCourtCard';
 import BrandLogo from '../components/BrandLogo';
 import SwipeCourtDeck from '../components/SwipeCourtDeck';
+import { useVisualViewport } from '../hooks/useVisualViewport';
 
 type Tab = 'others' | 'mine';
 type CategoryTab = 'tennis' | 'dating';
 
 function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () => void; onClose: () => void }) {
+  const vpHeight = useVisualViewport();
+  const maxH = Math.floor(vpHeight * 0.82);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="sheet-overlay z-50"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-3xl px-6 pt-6"
+        className="sheet-container shadow-2xl"
         style={{
           background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F0 100%)',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)',
-          maxHeight: '80vh',
-          overflowY: 'auto',
+          maxHeight: `${maxH}px`,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'rgba(183,110,121,0.3)' }} />
-        <p className="text-lg font-bold mb-1" style={{ color: '#2D1820' }}>설레는 만남은 추가 정보가 필요해요!</p>
-        <p className="text-xs mb-6" style={{ color: 'rgba(45,24,32,0.5)' }}>MBTI · 키 · 사진 3장을 등록하면 설레는 만남을 즐길 수 있어요</p>
-        <button
-          onClick={onRegister}
-          className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
-          style={{ background: 'linear-gradient(135deg, #B76E79 0%, #C9A84C 100%)' }}
-        >
-          프로필 등록하기
-        </button>
+        <div className="sheet-body px-6 pt-6 pb-2">
+          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'rgba(183,110,121,0.3)' }} />
+          <p className="text-lg font-bold mb-1" style={{ color: '#2D1820' }}>설레는 만남은 추가 정보가 필요해요!</p>
+          <p className="text-xs mb-6" style={{ color: 'rgba(45,24,32,0.5)' }}>MBTI · 키 · 사진 3장을 등록하면 설레는 만남을 즐길 수 있어요</p>
+        </div>
+        <div className="sheet-footer px-6 pb-2">
+          <button
+            onClick={onRegister}
+            className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
+            style={{ background: 'linear-gradient(135deg, #B76E79 0%, #C9A84C 100%)' }}
+          >
+            프로필 등록하기
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -44,3 +44,33 @@ input, textarea, select {
     transform: translateY(0);
   }
 }
+
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet-container {
+  width: 100%;
+  max-width: 28rem;
+  border-top-left-radius: 1.5rem;
+  border-top-right-radius: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.sheet-footer {
+  flex-shrink: 0;
+}

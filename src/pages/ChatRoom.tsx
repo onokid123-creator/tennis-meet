@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Message, Profile } from '../types';
 import { ArrowLeft, Send, LogOut, X, ChevronLeft, ChevronRight, Users, MoreVertical, UtensilsCrossed } from 'lucide-react';
+import { useVisualViewport } from '../hooks/useVisualViewport';
 
 interface AfterProposalPayload {
   status: 'pending' | 'accepted' | 'declined';
@@ -541,6 +542,7 @@ export default function ChatRoom() {
   const { chatId } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const vpHeight = useVisualViewport();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -3522,12 +3524,12 @@ const closeAllPickers = () => {
             className="w-full max-w-sm rounded-t-3xl shadow-2xl flex flex-col"
             style={{
               background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)',
-              maxHeight: '80vh',
-              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              maxHeight: `${Math.floor(vpHeight * 0.80)}px`,
+              paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 pt-6 pb-4 flex-1 overflow-y-auto">
+            <div className="px-6 pt-6 pb-4 flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
               <div className="w-8 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(201,168,76,0.3)' }} />
               <h2 className="text-base font-bold text-gray-900 mb-1 text-center">식사 제안 거절</h2>
               <p className="text-xs text-gray-400 text-center mb-4">거절 이유를 직접 입력해주세요</p>
