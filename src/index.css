@@ -71,5 +71,5 @@ input, textarea, select {
 
 .sheet-footer {
   flex-shrink: 0;
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 32px);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 48px);
 }

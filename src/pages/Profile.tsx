@@ -1048,7 +1048,7 @@ export default function Profile() {
               <p className="text-lg font-bold text-gray-900 mb-1">코트위 설레는 만남 프로필 등록</p>
               <p className="text-xs text-gray-400 mb-6">코트위 설레는 만남은 사진 3장, MBTI, 키가 필수예요</p>
             </div>
-            <div className="sheet-footer px-6 pt-2">
+            <div className="px-6 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 52px)' }}>
               <button
                 onClick={() => { setShowDatingProfilePopup(false); navigate('/dating-profile-setup'); }}
                 className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
@@ -1077,7 +1077,7 @@ export default function Profile() {
               <p className="text-lg font-bold text-gray-900 mb-1">오직테니스 프로필 설정</p>
               <p className="text-sm text-gray-500 mb-6">사진 1장 · 구력 · 테니스 스타일을 등록해주세요</p>
             </div>
-            <div className="sheet-footer px-6 pt-2">
+            <div className="px-6 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 52px)' }}>
               <button
                 onClick={() => { setShowTennisSetupPopup(false); navigate('/tennis-profile-setup'); }}
                 className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"

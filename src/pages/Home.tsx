@@ -29,6 +29,7 @@ function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () =>
         style={{
           background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F0 100%)',
           maxHeight: `${maxH}px`,
+          marginBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -37,7 +38,7 @@ function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () =>
           <p className="text-lg font-bold mb-1" style={{ color: '#2D1820' }}>설레는 만남은 추가 정보가 필요해요!</p>
           <p className="text-xs mb-6" style={{ color: 'rgba(45,24,32,0.5)' }}>MBTI · 키 · 사진 3장을 등록하면 설레는 만남을 즐길 수 있어요</p>
         </div>
-        <div className="sheet-footer px-6 pt-2">
+        <div className="px-6 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 52px)' }}>
           <button
             onClick={onRegister}
             className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
