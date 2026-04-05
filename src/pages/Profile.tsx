@@ -1048,7 +1048,7 @@ export default function Profile() {
               <p className="text-lg font-bold text-gray-900 mb-1">코트위 설레는 만남 프로필 등록</p>
               <p className="text-xs text-gray-400 mb-6">코트위 설레는 만남은 사진 3장, MBTI, 키가 필수예요</p>
             </div>
-            <div className="px-6 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 52px)' }}>
+            <div className="px-6 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 80px)' }}>
               <button
                 onClick={() => { setShowDatingProfilePopup(false); navigate('/dating-profile-setup'); }}
                 className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
