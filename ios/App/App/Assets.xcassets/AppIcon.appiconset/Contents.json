@@ -1,0 +1,14 @@
+{
+  "images" : [
+    {
+      "filename" : "KakaoTalk_Photo_2026-04-28-11-14-02.jpeg",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

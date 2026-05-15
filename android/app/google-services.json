@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "582546552936",
+    "project_id": "tennis-meet-fccfa",
+    "storage_bucket": "tennis-meet-fccfa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:582546552936:android:2596b00fb6742ae00763dd",
+        "android_client_info": {
+          "package_name": "com.tennismeet.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoNTWIkSXp0M-yd48UO-I9GWT3T2ZVRtc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
