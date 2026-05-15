@@ -821,7 +821,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
 
 export default function Applications() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, getSafeUser } = useAuth();
   const vpHeight = useVisualViewport();
   const getInitialPurposeTab = (): PurposeTab => {
   const hasDatingProfile = !!profile?.mbti || !!profile?.height;
@@ -917,82 +917,103 @@ latestMealRequestRef.current = requestId;
 
 let nextPendingMealProposals: typeof pendingMealProposals = [];
 let nextResultMealProposals: typeof resultMealProposals = [];
-    if (!user) return;
 
-    const [
-      { data: pendingReceivedRaw },
-      { data: pendingSentRaw },
-      { data: resultRaw },
-    ] = await Promise.all([
-      supabase
-        .from('meal_proposals')
-        .select('id, sender_id, receiver_id, court_id, created_at')
-        .eq('receiver_id', user.id)
-        .eq('status', 'pending')
-        .eq('receiver_deleted', false)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('meal_proposals')
-        .select('id, sender_id, receiver_id, court_id, created_at')
-        .eq('sender_id', user.id)
-        .eq('status', 'pending')
-        .eq('sender_deleted', false)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('meal_proposals')
-        .select('id, sender_id, receiver_id, status, rejection_reason, created_at')
-        .eq('sender_id', user.id)
-        .eq('sender_seen', false)
-        .in('status', ['accepted', 'rejected'])
-        .order('created_at', { ascending: false }),
-    ]);
+    try {
+      const currentUser = await getSafeUser();
+      if (!currentUser) {
+        console.warn('[Applications] meal proposals currentUser 없음');
+        return;
+      }
 
-    const pending = [
-      ...(pendingReceivedRaw ?? []),
-      ...(pendingSentRaw ?? []),
-    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    const results = resultRaw ?? [];
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('meal_proposals_timeout')), 6000)
+      );
 
-    const allUserIds = [...new Set([
-      ...pending.map((p) => p.sender_id),
-      ...pending.map((p) => p.receiver_id),
-      ...results.map((p) => p.receiver_id),
-    ])];
+      const [
+        { data: pendingReceivedRaw },
+        { data: pendingSentRaw },
+        { data: resultRaw },
+      ] = await Promise.race([
+        Promise.all([
+          supabase
+            .from('meal_proposals')
+            .select('id, sender_id, receiver_id, court_id, created_at')
+            .eq('receiver_id', currentUser.id)
+            .eq('status', 'pending')
+            .eq('receiver_deleted', false)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('meal_proposals')
+            .select('id, sender_id, receiver_id, court_id, created_at')
+            .eq('sender_id', currentUser.id)
+            .eq('status', 'pending')
+            .eq('sender_deleted', false)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('meal_proposals')
+            .select('id, sender_id, receiver_id, status, rejection_reason, created_at')
+            .eq('sender_id', currentUser.id)
+            .eq('sender_seen', false)
+            .in('status', ['accepted', 'rejected'])
+            .order('created_at', { ascending: false }),
+        ]),
+        timeoutPromise,
+      ]);
 
-    let nameMap: Record<string, string> = {};
-    if (allUserIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, name')
-        .in('user_id', allUserIds);
-      (profilesData ?? []).forEach((p) => { nameMap[p.user_id] = p.name; });
+      const pending = [
+        ...(pendingReceivedRaw ?? []),
+        ...(pendingSentRaw ?? []),
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const results = resultRaw ?? [];
+
+      const allUserIds = [...new Set([
+        ...pending.map((p) => p.sender_id),
+        ...pending.map((p) => p.receiver_id),
+        ...results.map((p) => p.receiver_id),
+      ])];
+
+      let nameMap: Record<string, string> = {};
+      if (allUserIds.length > 0) {
+        const { data: profilesData } = await Promise.race([
+          supabase
+            .from('profiles')
+            .select('user_id, name')
+            .in('user_id', allUserIds),
+          new Promise<{ data: null }>((resolve) =>
+            setTimeout(() => resolve({ data: null }), 5000)
+          ),
+        ]);
+        (profilesData ?? []).forEach((p) => { nameMap[p.user_id] = p.name; });
+      }
+
+      nextPendingMealProposals = pending.map((p) => ({
+        id: p.id,
+        sender_id: p.sender_id,
+        receiver_id: p.receiver_id,
+        court_id: p.court_id ?? null,
+        sender_name: nameMap[p.sender_id],
+        receiver_name: nameMap[p.receiver_id],
+      }));
+
+      nextResultMealProposals = results.map((p) => ({
+        id: p.id,
+        sender_id: p.sender_id,
+        receiver_id: p.receiver_id,
+        receiver_name: nameMap[p.receiver_id],
+        status: p.status,
+        rejection_reason: p.rejection_reason ?? null,
+      }));
+
+      if (latestMealRequestRef.current !== requestId) {
+        return;
+      }
+
+      setPendingMealProposals(nextPendingMealProposals);
+      setResultMealProposals(nextResultMealProposals);
+    } catch (err) {
+      console.error('[Applications] 식사 제안 목록 가져오기 실패:', err);
     }
-
-    nextPendingMealProposals = pending.map((p) => ({
-  id: p.id,
-  sender_id: p.sender_id,
-  receiver_id: p.receiver_id,
-  court_id: p.court_id ?? null,
-  sender_name: nameMap[p.sender_id],
-  receiver_name: nameMap[p.receiver_id],
-}));
-
-nextResultMealProposals = results.map((p) => ({
-  id: p.id,
-  sender_id: p.sender_id,
-  receiver_id: p.receiver_id,
-  receiver_name: nameMap[p.receiver_id],
-  status: p.status,
-  rejection_reason: p.rejection_reason ?? null,
-}));
-
-if (latestMealRequestRef.current !== requestId) {
-  return;
-}
-
-setPendingMealProposals(nextPendingMealProposals);
-setResultMealProposals(nextResultMealProposals);
-  }, [user]);
+  }, [getSafeUser]);
 
   const handleMealProposalAccept = async (proposalId: string) => {
     await supabase.from('meal_proposals').update({ status: 'accepted', receiver_deleted: true }).eq('id', proposalId);
@@ -1036,28 +1057,42 @@ setResultMealProposals(nextResultMealProposals);
     }
   };
 
-  const fetchApplications = useCallback(async () => {
+  const fetchApplications = useCallback(async (options?: { silent?: boolean }) => {
 const requestId = latestApplicationsRequestRef.current + 1;
 latestApplicationsRequestRef.current = requestId;
 
 let nextReceivedApps: Application[] = [];
 let nextSentApps: Application[] = [];
-    if (!user) return;
-    
+    const silent = options?.silent ?? false;
+    if (!silent) setLoading(true);
+
     try {
-      const [{ data: receivedRaw }, { data: sentRaw }] = await Promise.all([
-        supabase
-          .from('applications')
-          .select(`*, court:court_id (*)`)
-          .eq('owner_id', user.id)
-          .eq('receiver_deleted', false)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('applications')
-          .select(`*, court:court_id (*)`)
-          .eq('applicant_id', user.id)
-          .eq('sender_deleted', false)
-          .order('created_at', { ascending: false }),
+      const currentUser = await getSafeUser();
+      if (!currentUser) {
+        console.warn('[Applications] currentUser 없음');
+        return;
+      }
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('applications_timeout')), 6000)
+      );
+
+      const [{ data: receivedRaw }, { data: sentRaw }] = await Promise.race([
+        Promise.all([
+          supabase
+            .from('applications')
+            .select(`*, court:court_id (*)`)
+            .eq('owner_id', currentUser.id)
+            .eq('receiver_deleted', false)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('applications')
+            .select(`*, court:court_id (*)`)
+            .eq('applicant_id', currentUser.id)
+            .eq('sender_deleted', false)
+            .order('created_at', { ascending: false }),
+        ]),
+        timeoutPromise,
       ]);
 
       const receivedList = receivedRaw || [];
@@ -1100,9 +1135,9 @@ setSentApps(nextSentApps);
     } catch (err) {
       console.error('신청 목록 가져오기 실패:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  }, [user]);
+  }, [getSafeUser]);
 
   useEffect(() => {
   fetchApplications();
@@ -1111,7 +1146,9 @@ setSentApps(nextSentApps);
   // auth-resynced 사용: AuthContext가 세션 갱신을 끝낸 뒤에 fetch
   // (이전 appStateChange는 세션 갱신 전에 실행돼서 stale 데이터를 불러옴)
   const handleResumed = () => {
-    fetchApplications();
+    // background 복귀 시에는 기존 목록을 유지한 채 조용히 갱신한다.
+    // 전체 loading을 켜면 목록이 사라졌다가 다시 뜨는 UX가 발생한다.
+    fetchApplications({ silent: true });
     fetchMealProposals();
   };
   window.addEventListener('auth-resynced', handleResumed);
