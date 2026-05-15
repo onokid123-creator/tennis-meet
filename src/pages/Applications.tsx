@@ -2099,7 +2099,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       )}
 
       <div className="px-4 py-5">
-        {loading ? (
+        {loading && filteredReceived.length === 0 && filteredSent.length === 0 && pendingMealProposals.length === 0 && resultMealProposals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: isDating ? 'rgba(201,99,122,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }} />
             <p className="text-sm" style={{ color: isDating ? 'rgba(201,99,122,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
