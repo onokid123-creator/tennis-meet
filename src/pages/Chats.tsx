@@ -190,8 +190,6 @@ const fetchChats = useCallback(async (options?: { silent?: boolean }) => {
       const currentBlockedIds = Array.from(new Set([...localBlocked, ...blockedByMe]));
       setBlockedIds(currentBlockedIds);
       // ── 1:1 and group chats via chat_participants ──
-      console.log('[Chats] participantRows fetch start:', currentUser.id);
-
       const { data: participantRows, error: participantRowsError } = await Promise.race([
         supabase
           .from('chat_participants')
