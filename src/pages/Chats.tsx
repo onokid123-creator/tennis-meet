@@ -106,12 +106,26 @@ useEffect(() => {
 }, [location.state]);
   const [blockedIds, setBlockedIds] = useState<string[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+ 
 const fetchSeqRef = useRef(0);
 const hasLoadedOnceRef = useRef(false);
   const showToast = (msg: string) => {
   setToast(msg);
   setTimeout(() => setToast(null), 3000);
 };
+
+// 채팅 목록 로딩 안전장치
+// iOS WebView 복귀 직후 auth/fetch가 지연되더라도 로딩 화면에 영구 고정되지 않게 한다.
+useEffect(() => {
+  if (!loading) return;
+
+  const timer = setTimeout(() => {
+    console.warn('[Chats] loading watchdog → loading만 해제, loaded 처리 안 함');
+    setLoading(false);
+  }, 6000);
+
+  return () => clearTimeout(timer);
+}, [loading]);
 
 useEffect(() => {
   setChats([]);
@@ -123,14 +137,25 @@ useEffect(() => {
 }, [user?.id]);
 
 const fetchChats = useCallback(async (options?: { silent?: boolean }) => {
-  const currentUser = await getSafeUser();
+  const requestId = ++fetchSeqRef.current;
+
+  // AuthContext의 user가 이미 있으면 즉시 사용한다.
+  // getSafeUser()를 먼저 기다리면 iOS WebView 복귀 직후 4초 이상 지연될 수 있다.
+  const currentUser = user ?? await Promise.race([
+    getSafeUser(),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+  ]);
+
   if (!currentUser) {
-    hasLoadedOnceRef.current = true;
-    setLoading(false);
+    if (requestId === fetchSeqRef.current) {
+      console.warn('[Chats] currentUser 없음 → fetch 중단');
+      hasLoadedOnceRef.current = true;
+      setHasLoadedOnce(true);
+      setLoading(false);
+    }
     return;
   }
 
-  const requestId = ++fetchSeqRef.current;
   const isLatest = () => requestId === fetchSeqRef.current;
 
   if (!options?.silent && !hasLoadedOnceRef.current) {
@@ -138,21 +163,47 @@ const fetchChats = useCallback(async (options?: { silent?: boolean }) => {
   }
 
   const timeoutId = setTimeout(() => {
-    if (isLatest()) setLoading(false);
+    if (isLatest()) {
+      hasLoadedOnceRef.current = true;
+      setHasLoadedOnce(true);
+      setLoading(false);
+    }
   }, 8000);
 
     try {
       const localBlockedRaw = localStorage.getItem('blocked_users');
       const localBlocked: string[] = localBlockedRaw ? JSON.parse(localBlockedRaw) : [];
-      const { data: dbBlockedData } = await supabase.from('blocks').select('blocked_id').eq('blocker_id', currentUser.id);
+      const { data: dbBlockedData } = await Promise.race([
+        supabase
+          .from('blocks')
+          .select('blocked_id')
+          .eq('blocker_id', currentUser.id),
+        new Promise<{ data: null }>((resolve) =>
+          setTimeout(() => {
+            console.warn('[Chats] blocks 조회 timeout → 빈 차단목록으로 진행');
+            resolve({ data: null });
+          }, 1500)
+        ),
+      ]);
+
       const blockedByMe = (dbBlockedData ?? []).map((r: { blocked_id: string }) => r.blocked_id);
       const currentBlockedIds = Array.from(new Set([...localBlocked, ...blockedByMe]));
       setBlockedIds(currentBlockedIds);
       // ── 1:1 and group chats via chat_participants ──
-      const { data: participantRows, error: participantRowsError } = await supabase
-  .from('chat_participants')
-  .select('chat_id')
-  .eq('user_id', currentUser.id);
+      console.log('[Chats] participantRows fetch start:', currentUser.id);
+
+      const { data: participantRows, error: participantRowsError } = await Promise.race([
+        supabase
+          .from('chat_participants')
+          .select('chat_id')
+          .eq('user_id', currentUser.id),
+        new Promise<{ data: null; error: Error }>((resolve) =>
+          setTimeout(() => {
+            console.warn('[Chats] participantRows 조회 timeout');
+            resolve({ data: null, error: new Error('participantRows_timeout') });
+          }, 3000)
+        ),
+      ]);
 
 if (participantRowsError) {
   console.warn('[Chats] participantRows error:', participantRowsError);
@@ -408,7 +459,14 @@ if (groupParticipantRowsError) {
 setHasLoadedOnce(true);
 setLoading(false);
 }
-  }, [user]);
+  }, [user]);  
+
+  const fetchChatsRef = useRef(fetchChats);
+
+  useEffect(() => {
+    fetchChatsRef.current = fetchChats;
+  }, [fetchChats]);
+ 
 
   useEffect(() => {
   if ((location.state as { leftChat?: boolean })?.leftChat) {
@@ -452,7 +510,7 @@ if (user) {
  const debouncedFetch = () => {
   if (debounceRef.current) clearTimeout(debounceRef.current);
   debounceRef.current = setTimeout(() => {
-    fetchChats({ silent: true });
+    fetchChatsRef.current({ silent: true });
   }, 700);
 };
 
@@ -518,7 +576,7 @@ const handleAuthResynced = () => {
   console.log('[Chats] auth-resynced → realtime 재생성 + 채팅목록 refetch');
   setupRealtime('auth-resynced');
   setTimeout(() => {
-    fetchChats({ silent: true });
+    fetchChatsRef.current({ silent: true });
   }, 1000);
 };
 
@@ -533,7 +591,7 @@ setupRealtime('init');
 if (realtimeSetupTimer) clearTimeout(realtimeSetupTimer);
 removeRealtimeChannels();
 };
-  }, [fetchChats, user]);
+  }, [user?.id]);
      
  
 

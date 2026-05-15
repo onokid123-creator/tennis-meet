@@ -1124,7 +1124,12 @@ useEffect(() => {
   }, 8000);
 
   const load = async () => {
-    const currentUser = await getSafeUser();
+    // AuthContext의 user가 이미 있으면 즉시 사용한다.
+    // iOS WebView 복귀 직후 getSafeUser/getUser가 지연되면 채팅방 로딩이 길어질 수 있다.
+    const currentUser = user ?? await Promise.race([
+      getSafeUser(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]);
     if (cancelled) return;
 
     if (!currentUser) {

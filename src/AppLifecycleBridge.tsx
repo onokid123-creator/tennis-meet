@@ -25,7 +25,7 @@ import { supabase } from './lib/supabase';
 // 이 시간 이상 background에 있었으면 reload
 // 30초 이상 background일 때만 reload한다. 짧은 background 복귀는 soft resync로 처리한다.
 // 짧은 알림 확인(2~3초)은 살아남고, 그 이상은 reload가 안전.
-const RELOAD_THRESHOLD_MS = 30_000;
+const RELOAD_THRESHOLD_MS = 8_000;
 
 export default function AppLifecycleBridge() {
   const backgroundAtRef = useRef<number | null>(null);
@@ -56,16 +56,22 @@ export default function AppLifecycleBridge() {
         return;
       }
 
-      // ── 3초 미만 → 연결이 살아있을 것, 가볍게 realtime만 확인 ──
+      // ── 아주 짧은 background 복귀는 아무것도 하지 않는다 ──
+      // iOS에서 1~5초 홈 화면/앱 전환만으로 auth-resync를 돌리면
+      // Chats/Auth 흐름이 오히려 흔들릴 수 있다.
+      if (backgroundDuration < 5_000) {
+        console.log('[LifecycleBridge] 짧은 background 복귀 → resync 생략', { backgroundDuration });
+        handlingRef.current = false;
+        return;
+      }
+
+      // ── 5초 이상 30초 미만 → 전체 reload 없이 soft resync ──
       try {
-        // realtime이 끊겼으면 다시 연결 시도 (짧은 시간이라 대개 성공)
         await supabase.realtime.connect();
-        // 화면들에게 복귀 알림 (가벼운 데이터 갱신용)
         window.dispatchEvent(new CustomEvent('app-resumed', {
           detail: { backgroundDuration },
         }));
       } catch (err) {
-        // 가벼운 복구가 실패하면 그냥 reload
         console.warn('[LifecycleBridge] 가벼운 복구 실패 → reload', err);
         window.location.reload();
         return;
