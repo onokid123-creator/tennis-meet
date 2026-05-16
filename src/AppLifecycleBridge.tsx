@@ -25,7 +25,7 @@ import { supabase } from './lib/supabase';
 // 이 시간 이상 background에 있었으면 reload
 // 30초 이상 background일 때만 reload한다. 짧은 background 복귀는 soft resync로 처리한다.
 // 짧은 알림 확인(2~3초)은 살아남고, 그 이상은 reload가 안전.
-const RELOAD_THRESHOLD_MS = 8000;
+const RELOAD_THRESHOLD_MS = 10 * 60 * 1000;
 
 export default function AppLifecycleBridge() {
   const backgroundAtRef = useRef<number | null>(null);
