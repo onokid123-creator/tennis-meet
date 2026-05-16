@@ -2567,9 +2567,9 @@ if (receiverProfile?.fcm_token) {
         style={{ background: avatarBg, boxShadow: `0 0 0 2px ${isDating ? 'rgba(201,168,76,0.3)' : 'rgba(45,106,79,0.2)'}` }}
         onClick={clickable && otherUser ? () => setShowProfilePopup(true) : undefined}
       >
-        {!isOpponentBlocked && (isDating ? otherUser?.photo_url : otherUser?.tennis_photo_url) ? (
+        {!isOpponentBlocked && (isDating ? otherUser?.photo_url : (otherUser?.tennis_photo_url || otherUser?.photo_url)) ? (
   <img
-    src={isDating ? otherUser!.photo_url! : otherUser!.tennis_photo_url!}
+    src={isDating ? otherUser!.photo_url! : (otherUser!.tennis_photo_url || otherUser!.photo_url)!}
     alt={opponentName}
     className="w-full h-full object-cover"
   />
@@ -3153,7 +3153,7 @@ paddingBottom: '14px',
               const isPending = isMe && msg.id.startsWith('temp_');
               const senderProf = msg.sender_id ? senderProfiles[msg.sender_id] : null;
              const senderPhoto = senderProf
-  ? (isDating ? (senderProf.photo_urls?.[0] ?? senderProf.photo_url) : senderProf.tennis_photo_url)
+  ? (isDating ? (senderProf.photo_urls?.[0] ?? senderProf.photo_url) : (senderProf.tennis_photo_url || senderProf.photo_url))
   : null;
               const senderName = senderProf
                 ? ((senderProf as Profile & { tennis_name?: string }).tennis_name && !isDating

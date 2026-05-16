@@ -1145,7 +1145,7 @@ function TennisChatRow({
     : groupTitle;
   const displayName = maskedGroupTitle ?? maskedName;
   const avatarInitial = isOtherBlocked ? '?' : (otherUser?.name?.charAt(0) ?? '?');
-  const tennisPhoto = isOtherBlocked ? undefined : otherUser?.tennis_photo_url;
+  const tennisPhoto = isOtherBlocked ? undefined : (otherUser?.tennis_photo_url || otherUser?.photo_url);
 
   return (
     <button
