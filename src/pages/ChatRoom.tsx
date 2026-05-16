@@ -820,9 +820,12 @@ const getCurrentUser = useCallback(async () => {
 }, []);
 
 const scrollToBottomAfterKeyboard = useCallback(() => {
-  // 키보드가 올라온 뒤 한 번만 스크롤. Keyboard 플러그인의
-  // keyboardDidShow 이벤트에서 호출되므로 타이밍이 정확하다.
-  scrollToBottom('instant');
+ 
+  requestAnimationFrame(() => scrollToBottom('instant'));
+
+  setTimeout(() => scrollToBottom('instant'), 80);
+  setTimeout(() => scrollToBottom('instant'), 180);
+  setTimeout(() => scrollToBottom('instant'), 320);
 }, [scrollToBottom]);
 
   // ── 키보드 처리 (카카오톡 방식) ──────────────────────
@@ -836,8 +839,7 @@ const scrollToBottomAfterKeyboard = useCallback(() => {
     let showListener: { remove: () => void } | null = null;
 
     Keyboard.addListener('keyboardDidShow', () => {
-      // 키보드가 완전히 올라온 뒤 스크롤 → 최근 메시지가 키보드 위에 보임
-      scrollToBottom('instant');
+      scrollToBottomAfterKeyboard();
     }).then((handle) => {
       showListener = handle;
     });
