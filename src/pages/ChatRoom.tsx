@@ -1188,6 +1188,10 @@ useEffect(() => {
         if (!alreadyReloaded && Capacitor.isNativePlatform()) {
           sessionStorage.setItem(reloadKey, '1');
           sessionStorage.setItem('resume_path', window.location.pathname);
+          if (sessionStorage.getItem('lifecycle_reload_in_progress') === '1') {
+            setLoading(false);
+            return;
+          }
           console.warn('[ChatRoom] 로드 실패 → reload');
           window.location.reload();
           return;
@@ -1581,7 +1585,8 @@ if (!profile.fcm_token) continue;
     e.preventDefault();
     if (!newMessage.trim()) return;
     sendMessage(newMessage);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    // iOS에서 메시지 전송 후 키보드가 내려갔다 다시 올라오는 현상 방지
+    // setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const sendAfterProposal = () => {
@@ -3300,36 +3305,38 @@ paddingBottom: '14px',
         )}
       </div>
 
-<div
+      <div
   className="px-3 pt-2 pb-3 flex-shrink-0 z-30 relative"
-style={inputAreaStyle}
+  style={inputAreaStyle}
 >
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">
-          <input
-            ref={inputRef}
-            type="text"
-            value={newMessage}
-            onChange={handleInputChange}
-onFocus={scrollToBottomAfterKeyboard}
-            placeholder={isDating ? '설레는 마음을 전해보세요...' : '메시지를 입력하세요...'}
-            className="flex-1 min-w-0 px-4 h-11 rounded-full focus:outline-none transition"
-            style={{
-              fontSize: '16px',
-              background: isDating ? 'rgba(255,228,235,0.35)' : '#fff',
-              border: isDating ? '1px solid rgba(201,100,120,0.18)' : '1px solid rgba(47,93,80,0.14)',
-              color: isDating ? '#2D1820' : '#0F2118',
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!newMessage.trim()}
-            className="w-10 h-10 min-w-[2.5rem] rounded-full flex items-center justify-center active:scale-95 transition disabled:opacity-35 flex-shrink-0"
-            style={sendBtnStyle}
-          >
-            <Send className="w-4 h-4 text-white" />
-          </button>
-        </form>
-      </div>
+  <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">
+    <input
+      ref={inputRef}
+      type="text"
+      value={newMessage}
+      onChange={handleInputChange}
+      onFocus={scrollToBottomAfterKeyboard}
+      placeholder={isDating ? '설레는 마음을 전해보세요...' : '메시지를 입력하세요...'}
+      className="flex-1 min-w-0 px-4 h-11 rounded-full focus:outline-none transition"
+      style={{
+        fontSize: '16px',
+        background: isDating ? 'rgba(255,228,235,0.35)' : '#fff',
+        border: isDating ? '1px solid rgba(201,100,120,0.18)' : '1px solid rgba(47,93,80,0.14)',
+        color: isDating ? '#2D1820' : '#0F2118',
+      }}
+    />
+    <button
+      type="submit"
+      disabled={!newMessage.trim()}
+      onMouseDown={(e) => e.preventDefault()}
+      onPointerDown={(e) => e.preventDefault()}
+      className="w-10 h-10 min-w-[2.5rem] rounded-full flex items-center justify-center active:scale-95 transition disabled:opacity-35 flex-shrink-0"
+      style={sendBtnStyle}
+    >
+      <Send className="w-4 h-4 text-white" />
+    </button>
+  </form>
+</div>
 
       {showLeaveRequestPopup && (
         <div

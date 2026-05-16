@@ -25,7 +25,7 @@ import { supabase } from './lib/supabase';
 // 이 시간 이상 background에 있었으면 reload
 // 30초 이상 background일 때만 reload한다. 짧은 background 복귀는 soft resync로 처리한다.
 // 짧은 알림 확인(2~3초)은 살아남고, 그 이상은 reload가 안전.
-const RELOAD_THRESHOLD_MS = 8_000;
+const RELOAD_THRESHOLD_MS = 8000;
 
 export default function AppLifecycleBridge() {
   const backgroundAtRef = useRef<number | null>(null);
@@ -49,10 +49,12 @@ export default function AppLifecycleBridge() {
         // reload 직전, 현재 경로를 저장해서 reload 후 같은 화면으로 복귀
         try {
           sessionStorage.setItem('resume_path', window.location.pathname + window.location.search);
+          sessionStorage.setItem('lifecycle_reload_in_progress', '1');
         } catch {
           // sessionStorage 접근 실패해도 무시
         }
-        window.location.reload();
+        
+        window.location.href = `${window.location.origin}/`;
         return;
       }
 
@@ -73,7 +75,12 @@ export default function AppLifecycleBridge() {
         }));
       } catch (err) {
         console.warn('[LifecycleBridge] 가벼운 복구 실패 → reload', err);
-        window.location.reload();
+        try {
+          sessionStorage.setItem('lifecycle_reload_in_progress', '1');
+        } catch {
+          // ignore
+        }
+        window.location.href = `${window.location.origin}/`;
         return;
       } finally {
         handlingRef.current = false;
