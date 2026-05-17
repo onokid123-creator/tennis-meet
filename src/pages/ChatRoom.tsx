@@ -793,7 +793,8 @@ const closeAllPickers = () => {
   setCancellingId(null);
   setIncludeMealProposal(false);
 };
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+const messagesEndRef = useRef<HTMLDivElement>(null);
+const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -815,17 +816,33 @@ const getCurrentUser = useCallback(async () => {
     setTimeout(() => setSimpleToast(null), 2500);
   };
 
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+const keyboardScrollTimersRef = useRef<number[]>([]);
+
+const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+  const el = messagesContainerRef.current;
+
+  if (el) {
+    el.scrollTop = el.scrollHeight;
+    return;
+  }
+
   messagesEndRef.current?.scrollIntoView({ behavior });
 }, []);
 
 const scrollToBottomAfterKeyboard = useCallback(() => {
- 
-  requestAnimationFrame(() => scrollToBottom('instant'));
+  keyboardScrollTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+  keyboardScrollTimersRef.current = [];
 
-  setTimeout(() => scrollToBottom('instant'), 80);
-  setTimeout(() => scrollToBottom('instant'), 180);
-  setTimeout(() => scrollToBottom('instant'), 320);
+  const run = () => scrollToBottom('auto');
+
+  requestAnimationFrame(run);
+
+  keyboardScrollTimersRef.current = [
+    window.setTimeout(run, 80),
+    window.setTimeout(run, 180),
+    window.setTimeout(run, 350),
+    window.setTimeout(run, 600),
+  ];
 }, [scrollToBottom]);
 
   // ── 키보드 처리 (카카오톡 방식) ──────────────────────
@@ -843,7 +860,7 @@ const scrollToBottomAfterKeyboard = useCallback(() => {
     }).then((handle) => {
       showListener = handle;
     });
-
+    
     return () => {
       showListener?.remove();
     };
@@ -1262,7 +1279,7 @@ useEffect(() => {
   useEffect(() => { if (messages.length > 0) scrollToBottom('smooth'); }, [messages.length]);
 // vpHeight 변화에 반응하던 useEffect 제거됨
 // (키보드 열림 → vpHeight 변경 → 스크롤 → 또 vpHeight 변경 무한루프가 깜빡임 원인)
-// 대신 onFocus에서 한 번만 스크롤한다
+// keyboardDidShow에서 한 번만 스크롤한다
   useEffect(() => {
     if (!chatId || !user) return;
 
@@ -2530,7 +2547,6 @@ if (receiverProfile?.fcm_token) {
   const isDeletedUser = !loading && !isGroupChat && !otherUser;
   const isOpponentBlocked = otherUser ? blockedUserIds.includes(otherUser.user_id) : false;
   const opponentName = isOpponentBlocked ? '알 수 없음' : (otherUser?.name ?? (loading ? '' : '알 수 없음'));
-  const opponentInitial = (!isOpponentBlocked && otherUser?.name) ? otherUser.name.charAt(0).toUpperCase() : '?';
 
   const groupChatTitle = (() => {
     if (!isGroupChat || groupAvatars.length === 0) return loading ? '' : null;
@@ -2567,9 +2583,9 @@ if (receiverProfile?.fcm_token) {
         style={{ background: avatarBg, boxShadow: `0 0 0 2px ${isDating ? 'rgba(201,168,76,0.3)' : 'rgba(45,106,79,0.2)'}` }}
         onClick={clickable && otherUser ? () => setShowProfilePopup(true) : undefined}
       >
-        {!isOpponentBlocked && (isDating ? otherUser?.photo_url : (otherUser?.tennis_photo_url || otherUser?.photo_url)) ? (
+        {!isOpponentBlocked && (isDating ? otherUser?.photo_url : otherUser?.tennis_photo_url) ? (
   <img
-    src={isDating ? otherUser!.photo_url! : (otherUser!.tennis_photo_url || otherUser!.photo_url)!}
+    src={isDating ? otherUser!.photo_url! : otherUser!.tennis_photo_url!}
     alt={opponentName}
     className="w-full h-full object-cover"
   />
@@ -2662,8 +2678,10 @@ if (receiverProfile?.fcm_token) {
           {(() => {
             const toastSender = Object.values(senderProfiles).find((p) => p.name === inAppToast.name);
             const toastPhoto = toastSender
-              ? (isDating ? toastSender.photo_url : ((toastSender as Profile & { tennis_photo_url?: string | null }).tennis_photo_url || toastSender.photo_url))
-              : null;
+            ? (isDating
+                ? toastSender.photo_url
+                : (toastSender as Profile & { tennis_photo_url?: string | null }).tennis_photo_url)
+            : null;
             return (
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0 overflow-hidden"
@@ -2671,7 +2689,7 @@ if (receiverProfile?.fcm_token) {
               >
                 {toastPhoto
                   ? <img src={toastPhoto} alt="" className="w-full h-full object-cover" />
-                  : <span>{inAppToast.name?.charAt(0) ?? '?'}</span>
+                  : <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={28} />
                 }
               </div>
             );
@@ -2737,9 +2755,9 @@ paddingBottom: '14px',
                       <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                    ) : (isDating ? av.photo_url : (av.tennis_photo_url || av.photo_url))
-                      ? <img src={(isDating ? av.photo_url : (av.tennis_photo_url || av.photo_url))!} alt={av.name} className="w-full h-full object-cover" />
-                      : <span>{av.name?.charAt(0) ?? '?'}</span>}
+                    ) : (isDating ? av.photo_url : av.tennis_photo_url)
+                        ? <img src={(isDating ? av.photo_url : av.tennis_photo_url)!} alt={av.name} className="w-full h-full object-cover" />
+                        : <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={28} />}
                   </div>
                 );
               })}
@@ -2918,7 +2936,7 @@ paddingBottom: '14px',
                   ) : avDropPhoto ? (
                     <img src={avDropPhoto} alt={avDropName} className="w-full h-full object-cover" />
                   ) : (
-                    <span>{avDropName?.charAt(0) ?? '?'}</span>
+                    <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={32} />
                   )}
                 </div>
                 <span className="flex-1 text-sm font-medium truncate" style={{ color: avDropBlocked ? '#9CA3AF' : (isDating ? '#2D1820' : '#0F2118') }}>
@@ -3000,7 +3018,11 @@ paddingBottom: '14px',
         </div>
       ))}
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 relative z-[1]" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto px-3 py-3 relative z-[1]"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div
@@ -3153,14 +3175,13 @@ paddingBottom: '14px',
               const isPending = isMe && msg.id.startsWith('temp_');
               const senderProf = msg.sender_id ? senderProfiles[msg.sender_id] : null;
              const senderPhoto = senderProf
-  ? (isDating ? (senderProf.photo_urls?.[0] ?? senderProf.photo_url) : (senderProf.tennis_photo_url || senderProf.photo_url))
+  ? (isDating ? (senderProf.photo_urls?.[0] ?? senderProf.photo_url) : senderProf.tennis_photo_url)
   : null;
               const senderName = senderProf
                 ? ((senderProf as Profile & { tennis_name?: string }).tennis_name && !isDating
                     ? (senderProf as Profile & { tennis_name?: string }).tennis_name!
                     : senderProf.name)
                 : null;
-              const senderInitial = senderName ? senderName.charAt(0) : '?';
               const showSenderName = isGroupChat && !isMe && senderName;
               const prevSenderId = prevMsg?.sender_id;
               const isFirstInGroup = isGroupChat && !isMe && prevSenderId !== msg.sender_id;
@@ -3273,7 +3294,7 @@ paddingBottom: '14px',
             })}
 
             {typingUsers.map((tu) => {
-              const tuPhoto = isDating ? tu.photo_url : (tu.tennis_photo_url || tu.photo_url);
+              const tuPhoto = isDating ? tu.photo_url : tu.tennis_photo_url;
               return (
                 <div key={tu.user_id} className="flex items-start gap-2 py-[1px] pr-10">
                   <div className="w-9 flex-shrink-0 mt-0.5" style={{ minWidth: 36 }}>
@@ -3284,7 +3305,7 @@ paddingBottom: '14px',
                       {tuPhoto ? (
                         <img src={tuPhoto} alt={tu.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-sm">{tu.name?.charAt(0) ?? '?'}</span>
+                        <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={36} />
                       )}
                     </div>
                   </div>
@@ -3306,9 +3327,9 @@ paddingBottom: '14px',
       </div>
 
       <div
-  className="px-3 pt-2 pb-3 flex-shrink-0 z-30 relative"
-  style={inputAreaStyle}
->
+      className="px-3 pt-2 pb-3 flex-shrink-0 z-30 relative"
+      style={inputAreaStyle}
+    >
   <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">
     <input
       ref={inputRef}
@@ -3564,10 +3585,10 @@ paddingBottom: '14px',
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                     ) : (isDating ? av.photo_url : av.tennis_photo_url) ? (
-  <img src={(isDating ? av.photo_url : av.tennis_photo_url)!} alt={av.name} className="w-full h-full object-cover" />
+                     ) : avPhoto ? (
+  <img src={avPhoto} alt={av.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span>{av.name?.charAt(0) ?? '?'}</span>
+                        <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />
                       )}
                     </div>
                     <span className="flex-1 text-sm font-semibold text-left" style={{ color: avIsBlocked ? '#9CA3AF' : '#1a1a1a' }}>
@@ -3639,7 +3660,7 @@ paddingBottom: '14px',
                       ) : avPhoto ? (
                         <img src={avPhoto} alt={otherUser.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span>{otherUser.name?.charAt(0) ?? '?'}</span>
+                        <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />
                       )}
                     </div>
                     <span className="flex-1 text-sm font-semibold text-left" style={{ color: avIsBlocked ? '#9CA3AF' : '#1a1a1a' }}>
@@ -3723,6 +3744,10 @@ paddingBottom: '14px',
                   return <p className="text-sm text-center py-4" style={{ color: 'rgba(0,0,0,0.4)' }}>확정된 참여자가 없습니다.</p>;
                 }
                 return cancelList.map((av) => {
+                  const avProfile = senderProfiles[av.user_id];
+                  const avPhoto = isDating
+                    ? (av.photo_url || avProfile?.photo_urls?.[0] || avProfile?.photo_url)
+                    : ((av as { tennis_photo_url?: string }).tennis_photo_url || avProfile?.tennis_photo_url);
                   const handleCancelRow = async () => {
                     if (pickerProcessingRef.current) return;
                     pickerProcessingRef.current = true;
@@ -3752,9 +3777,9 @@ paddingBottom: '14px',
                         className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
                         style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
                       >
-                        {(isDating ? av.photo_url : ((av as { tennis_photo_url?: string }).tennis_photo_url || av.photo_url))
-                          ? <img src={(isDating ? av.photo_url : (av as { tennis_photo_url?: string }).tennis_photo_url)!} alt={av.name} className="w-full h-full object-cover" />
-                          : <span>{av.name?.charAt(0) ?? '?'}</span>}
+                        {avPhoto
+                          ? <img src={avPhoto} alt={av.name} className="w-full h-full object-cover" />
+                          : <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />}
                       </div>
                       <span className="flex-1 text-sm font-semibold text-left" style={{ color: '#1a1a1a' }}>
                         {av.name}
@@ -3981,7 +4006,7 @@ paddingBottom: '14px',
               {groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => {
                 const isBlocked = blockedUserIds.includes(av.user_id);
                 const displayName = isBlocked ? '알 수 없음' : av.name;
-                const photo = isBlocked ? null : (isDating ? av.photo_url : (av.tennis_photo_url || av.photo_url));
+                const photo = isBlocked ? null : (isDating ? av.photo_url : av.tennis_photo_url);
                 return (
                   <button
                     key={av.user_id}
@@ -4027,7 +4052,7 @@ paddingBottom: '14px',
                       ) : photo ? (
                         <img src={photo} alt={displayName} className="w-full h-full object-cover" />
                       ) : (
-                        <span>{displayName.charAt(0)}</span>
+                        <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />
                       )}
                     </div>
                     <span
@@ -4080,7 +4105,7 @@ paddingBottom: '14px',
               {groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => {
                 const isBlocked = blockedUserIds.includes(av.user_id);
                 const displayName = isBlocked ? '알 수 없음' : av.name;
-                const photo = isBlocked ? null : (isDating ? av.photo_url : (av.tennis_photo_url || av.photo_url));
+                const photo = isBlocked ? null : (isDating ? av.photo_url : av.tennis_photo_url);
                 return (
                   <div
                     key={av.user_id}
@@ -4109,7 +4134,7 @@ paddingBottom: '14px',
                         ) : photo ? (
                           <img src={photo} alt={displayName} className="w-full h-full object-cover" />
                         ) : (
-                          <span>{displayName.charAt(0)}</span>
+                          <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />
                         )}
                       </div>
                     </button>

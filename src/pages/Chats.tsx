@@ -976,14 +976,14 @@ const hostPhoto = isHostBlocked ? undefined : host?.tennis_photo_url;
         className="w-14 h-14 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-xl"
         style={{ background: isHostBlocked ? '#E5E7EB' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
       >
-        {isHostBlocked ? (
+              {isHostBlocked ? (
           <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
-        ) : hostPhoto ? (
-          <img src={hostPhoto} alt={host!.name} className="w-full h-full object-cover" />
+        ) : host?.tennis_photo_url ? (
+          <img src={host.tennis_photo_url} alt={host.name} className="w-full h-full object-cover" />
         ) : (
-          <span>{host?.name?.charAt(0) ?? '🎾'}</span>
+          <DefaultAvatar type="tennis" size={56} />
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -1080,7 +1080,7 @@ function GroupAvatarGrid({
         ) : photo ? (
           <img src={photo} alt={p.name} className="w-full h-full object-cover" />
         ) : (
-          <span>{p.name?.charAt(0) ?? '?'}</span>
+          <DefaultAvatar type={isTennis ? "tennis" : "dating"} size={56} />
         )}
       </div>
     );
@@ -1107,7 +1107,7 @@ function GroupAvatarGrid({
             ) : photo ? (
               <img src={photo} alt={p.name} className="w-full h-full object-cover" />
             ) : (
-              <span>{p.name?.charAt(0) ?? '?'}</span>
+              <DefaultAvatar type={isTennis ? "tennis" : "dating"} size={count >= 4 ? 26 : 28} />
             )}
           </div>
         );
@@ -1144,8 +1144,7 @@ function TennisChatRow({
       }).join(', ')
     : groupTitle;
   const displayName = maskedGroupTitle ?? maskedName;
-  const avatarInitial = isOtherBlocked ? '?' : (otherUser?.name?.charAt(0) ?? '?');
-  const tennisPhoto = isOtherBlocked ? undefined : (otherUser?.tennis_photo_url || otherUser?.photo_url);
+  const tennisPhoto = isOtherBlocked ? undefined : otherUser?.tennis_photo_url;
 
   return (
     <button
@@ -1275,9 +1274,9 @@ function DatingGroupChatRow({ gc, blockedIds = [], onPress }: { gc: CourtGroupCh
             </svg>
           ) : host?.photo_url ? (
             <img src={host.photo_url} alt={host.name} className="w-full h-full object-cover" />
-          ) : (
-            <span>{host?.name?.charAt(0) ?? '🥂'}</span>
-          )}
+         ) : (
+  <DefaultAvatar type="dating" size={56} />
+)}
         </div>
         <div
           className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"

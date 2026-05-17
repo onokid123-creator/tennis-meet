@@ -11,6 +11,55 @@ interface ParticipantWithRead extends GroupChatParticipant {
   last_read_at?: string | null;
 }
 
+
+function DefaultProfileAvatar({
+  type = 'tennis',
+  size = 40,
+  radius = 999,
+}: {
+  type?: 'tennis' | 'dating' | 'blocked';
+  size?: number;
+  radius?: number;
+}) {
+  const isDating = type === 'dating';
+  const isBlocked = type === 'blocked';
+
+  return (
+    <div
+      className="flex items-center justify-center"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        background: isBlocked
+          ? '#F3F4F6'
+          : isDating
+            ? 'linear-gradient(135deg, #FFF7F9 0%, #FCE7EC 100%)'
+            : 'linear-gradient(135deg, #F7FAF8 0%, #E8F5EC 100%)',
+        border: isBlocked
+          ? '1px solid #E5E7EB'
+          : isDating
+            ? '1px solid rgba(201,84,122,0.18)'
+            : '1px solid rgba(45,106,79,0.16)',
+      }}
+    >
+      <svg
+        width={size * 0.46}
+        height={size * 0.46}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={isBlocked ? '#9CA3AF' : isDating ? '#C9547A' : '#2D6A4F'}
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M20 21a8 8 0 0 0-16 0" />
+        <circle cx="12" cy="8" r="4" />
+      </svg>
+    </div>
+  );
+}
+
 export default function GroupChatRoom() {
   const { groupChatId } = useParams();
   const navigate = useNavigate();
@@ -832,14 +881,14 @@ export default function GroupChatRoom() {
             className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden active:opacity-75 transition focus:outline-none mt-0.5"
             style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: `0 0 0 2px ${accentColor}40` }}
           >
-            {(isDating ? hostProfile?.photo_url : (hostProfile?.tennis_photo_url || hostProfile?.photo_url)) ? (
+            {(isDating ? hostProfile?.photo_url : hostProfile?.tennis_photo_url) ? (
               <img
-                src={(isDating ? hostProfile!.photo_url : (hostProfile!.tennis_photo_url || hostProfile!.photo_url))!}
+                src={(isDating ? hostProfile!.photo_url : hostProfile!.tennis_photo_url)!}
                 alt={hostProfile!.name}
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-sm">{hostProfile?.name?.charAt(0) ?? (isDating ? '🥂' : '🎾')}</span>
+              <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />
             )}
           </button>
           <div className="flex-1 min-w-0">
@@ -880,7 +929,7 @@ export default function GroupChatRoom() {
         >
           {participants.slice(0, 4).map((av, i) => {
             const avBlocked = blockedUserIds.includes(av.user_id);
-            const avPhoto = avBlocked ? null : (isDating ? av.profile?.photo_url : (av.profile?.tennis_photo_url || av.profile?.photo_url));
+            const avPhoto = avBlocked ? null : (isDating ? av.profile?.photo_url : av.profile?.tennis_photo_url);
             return (
               <div
                 key={av.id}
@@ -900,7 +949,7 @@ export default function GroupChatRoom() {
                 ) : avPhoto ? (
                   <img src={avPhoto} alt={av.profile?.name ?? ''} className="w-full h-full object-cover" />
                 ) : (
-                  <span style={{ fontSize: 9 }}>{av.profile?.name?.charAt(0) ?? '?'}</span>
+                  <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={22} />
                 )}
               </div>
             );
@@ -1062,7 +1111,7 @@ export default function GroupChatRoom() {
                 const isMe = p.user_id === user?.id;
                 const isBlocked = blockedUserIds.includes(p.user_id);
                 const displayName = isBlocked ? '알 수 없음' : (pProfile?.name ?? '알 수 없음');
-                const photo = isBlocked ? null : (isDating ? pProfile?.photo_url : (pProfile?.tennis_photo_url || pProfile?.photo_url));
+                const photo = isBlocked ? null : (isDating ? pProfile?.photo_url : pProfile?.tennis_photo_url);
 
                 return (
                   <div
@@ -1099,7 +1148,7 @@ export default function GroupChatRoom() {
                       ) : photo ? (
                         <img src={photo} alt={displayName} className="w-full h-full object-cover" />
                       ) : (
-                        <span>{displayName.charAt(0)}</span>
+                        <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1164,7 +1213,7 @@ export default function GroupChatRoom() {
                       {p.profile?.photo_url ? (
                         <img src={p.profile.photo_url} alt={p.profile.name} className="w-full h-full rounded-full object-cover" />
                       ) : (
-                        p.profile?.name?.charAt(0) || 'U'
+                        ''
                       )}
                     </div>
                     <span className="text-sm font-medium" style={{ color: participantTitleColor }}>{p.profile?.name}</span>
@@ -1319,7 +1368,7 @@ export default function GroupChatRoom() {
               const isLastInSenderGroup = !nextMsg || nextMsg.sender_id !== message.sender_id || nextMsg.type === 'system';
               const showAvatar = !isMe && isLastInSenderGroup;
               const isFirstInGroup = !isMe && (!prevMsg || prevMsg.sender_id !== message.sender_id);
-              const senderPhoto = senderProfile ? (isDating ? senderProfile.photo_url : (senderProfile.tennis_photo_url || senderProfile.photo_url)) : null;
+              const senderPhoto = senderProfile ? (isDating ? senderProfile.photo_url : senderProfile.tennis_photo_url) : null;
               const groupUnread = !message.id.startsWith('temp_') ? getGroupUnreadCount(message.created_at) : 0;
 
               return (
@@ -1368,7 +1417,7 @@ export default function GroupChatRoom() {
                                 ) : senderPhoto ? (
                                   <img src={senderPhoto} alt={senderProfile?.name ?? ''} className="w-full h-full object-cover" />
                                 ) : (
-                                  <span className="text-sm">{senderProfile?.name?.charAt(0) ?? '?'}</span>
+                                  <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />
                                 )}
                               </div>
                             );
@@ -1474,9 +1523,9 @@ export default function GroupChatRoom() {
                     className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
                     style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
                   >
-                    {(isDating ? p.photo_url : (p.tennis_photo_url || p.photo_url))
-                      ? <img src={(isDating ? p.photo_url : (p.tennis_photo_url || p.photo_url))!} alt={p.name} className="w-full h-full object-cover" />
-                      : <span>{p.name?.charAt(0) ?? '?'}</span>}
+                    {(isDating ? p.photo_url : p.tennis_photo_url)
+                      ? <img src={(isDating ? p.photo_url : p.tennis_photo_url)!} alt={p.name} className="w-full h-full object-cover" />
+                      : <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />}
                   </div>
                   <span className="flex-1 text-sm font-semibold" style={{ color: '#1a1a1a' }}>{p.name}</span>
                   <span
@@ -1628,7 +1677,7 @@ export default function GroupChatRoom() {
                 const isParticipantHost = p.user_id === hostId;
                 const isBlocked = blockedUserIds.includes(p.user_id);
                 const displayName = isBlocked ? '알 수 없음' : (pProfile?.name ?? '알 수 없음');
-                const photo = isBlocked ? null : (isDating ? pProfile?.photo_url : (pProfile?.tennis_photo_url || pProfile?.photo_url));
+                const photo = isBlocked ? null : (isDating ? pProfile?.photo_url : pProfile?.tennis_photo_url);
                 return (
                   <button
                     key={p.id}
@@ -1663,7 +1712,7 @@ export default function GroupChatRoom() {
                       ) : photo ? (
                         <img src={photo} alt={displayName} className="w-full h-full object-cover" />
                       ) : (
-                        <span>{displayName.charAt(0)}</span>
+                        <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={40} />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1702,7 +1751,7 @@ export default function GroupChatRoom() {
       {profilePopupUser && (() => {
         const popupPhoto = isDating
           ? (profilePopupUser.photo_url || null)
-          : (profilePopupUser.tennis_photo_url || profilePopupUser.photo_url || null);
+          : (profilePopupUser.tennis_photo_url || null);
         const popupPhotos: string[] = [];
         if (isDating) {
           if (profilePopupUser.photo_url) popupPhotos.push(profilePopupUser.photo_url);
@@ -1754,7 +1803,7 @@ export default function GroupChatRoom() {
                       <img src={popupPhotos[0]} alt={profilePopupUser.name} className="w-full h-full object-cover" style={{ objectPosition: 'center top' }} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #FDA4AF 0%, #FECDD3 100%)' }}>
-                        <span style={{ fontSize: '4rem', color: '#fff', fontWeight: 700 }}>{profilePopupUser.name?.charAt(0) ?? '?'}</span>
+                        <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={96} radius={24} />
                       </div>
                     )}
                   </div>
@@ -1852,7 +1901,7 @@ export default function GroupChatRoom() {
                         <img src={popupPhoto} alt={profilePopupUser.name} className="w-full h-full object-cover" style={{ objectPosition: 'center top' }} />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                          <span style={{ color: '#fff', fontSize: '1.8rem', fontWeight: 700 }}>{profilePopupUser.name?.charAt(0) ?? '?'}</span>
+                          <DefaultProfileAvatar type={isDating ? 'dating' : 'tennis'} size={48} />
                         </div>
                       )}
                     </div>

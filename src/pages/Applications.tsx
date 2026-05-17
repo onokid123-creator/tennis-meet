@@ -10,6 +10,55 @@ import { useVisualViewport } from '../hooks/useVisualViewport';
 type PurposeTab = 'tennis' | 'dating';
 type DirectionTab = 'received' | 'sent';
 
+function DefaultProfileAvatar({
+  type = 'tennis',
+  size = 96,
+  radius = 999,
+}: {
+  type?: 'tennis' | 'dating' | 'blocked';
+  size?: number;
+  radius?: number;
+}) {
+  const isDating = type === 'dating';
+  const isBlocked = type === 'blocked';
+
+  return (
+    <div
+      className="flex items-center justify-center"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        background: isBlocked
+          ? '#F3F4F6'
+          : isDating
+            ? 'linear-gradient(135deg, #FFF7F9 0%, #FCE7EC 100%)'
+            : 'linear-gradient(135deg, #F7FAF8 0%, #E8F5EC 100%)',
+        border: isBlocked
+          ? '1px solid #E5E7EB'
+          : isDating
+            ? '1px solid rgba(201,84,122,0.18)'
+            : '1px solid rgba(45,106,79,0.16)',
+      }}
+    >
+      <svg
+        width={size * 0.46}
+        height={size * 0.46}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={isBlocked ? '#9CA3AF' : isDating ? '#C9547A' : '#2D6A4F'}
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M20 21a8 8 0 0 0-16 0" />
+        <circle cx="12" cy="8" r="4" />
+      </svg>
+    </div>
+  );
+}
+
+
 interface ApplicantModalProps {
   app: Application;
   onClose: () => void;
@@ -61,7 +110,7 @@ function PhotoCarousel({ profile, dotColor }: { profile: Profile; dotColor: stri
           className="w-24 h-24 rounded-full flex items-center justify-center font-bold border-2"
           style={{ fontSize: '3rem', background: 'rgba(244,63,94,0.12)', borderColor: 'rgba(244,63,94,0.3)', color: '#F43F5E' }}
         >
-          {profile.name?.charAt(0) || '?'}
+          <DefaultProfileAvatar type="dating" size={96} />
         </div>
         <p className="text-sm mt-3 font-light" style={{ color: 'rgba(183,110,121,0.7)' }}>사진이 없습니다</p>
       </div>
@@ -175,7 +224,7 @@ function ApplicantPhotoCarousel({ profile }: { profile: Profile }) {
           className="w-28 h-28 rounded-full flex items-center justify-center text-white font-bold border-2 border-[#C9A84C]/50"
           style={{ fontSize: '3.5rem', background: 'rgba(201,168,76,0.15)' }}
         >
-          {profile.name?.charAt(0) || '?'}
+          <DefaultProfileAvatar type="dating" size={96} />
         </div>
         <p className="text-white/60 text-sm mt-4 font-light tracking-wide">사진이 없습니다</p>
       </div>
@@ -620,7 +669,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
                       className="w-20 h-20 rounded-full flex items-center justify-center font-bold"
                       style={{ fontSize: '2.8rem', background: 'rgba(26,92,53,0.3)', color: '#6CBF6C', border: '2px solid rgba(108,191,108,0.25)' }}
                     >
-                      {applicant.name?.charAt(0) || '?'}
+                      <DefaultProfileAvatar type="tennis" size={40} />
                     </div>
                   </div>
                 )}
@@ -1623,7 +1672,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 className="w-full h-full flex items-center justify-center"
                 style={{ background: '#F0F0F0' }}
               >
-                <span className="text-3xl font-bold text-gray-500">{applicant?.name?.charAt(0) || '?'}</span>
+                <DefaultProfileAvatar type="tennis" size={72} />
               </div>
             )}
             {photos.length > 1 && (
@@ -1823,7 +1872,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 className="w-full h-full flex items-center justify-center"
                 style={{ background: '#F0F0F0' }}
               >
-                <span className="text-3xl font-bold text-gray-500">{host?.name?.charAt(0) || 'U'}</span>
+                <DefaultProfileAvatar type="tennis" size={72} />
               </div>
             )}
           </div>

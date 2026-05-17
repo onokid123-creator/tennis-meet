@@ -67,7 +67,22 @@ function Avatar({ src, name, size = 36, border }: { src?: string; name?: string;
     }}>
       {src
         ? <img src={src} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
-        : <span style={{ color: WH, fontWeight: 700, fontSize: size * 0.4 }}>{name?.charAt(0) || 'T'}</span>
+        : (
+          <svg
+            width={size * 0.46}
+            height={size * 0.46}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={WH}
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ opacity: 0.9 }}
+          >
+            <path d="M20 21a8 8 0 0 0-16 0" />
+            <circle cx="12" cy="8" r="4" />
+          </svg>
+        )
       }
     </div>
   );
@@ -113,7 +128,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
   const [confirmedProfiles, setConfirmedProfiles] = useState<Profile[]>([]);
   const [loadingParticipants, setLoadingParticipants] = useState(true);
 
-  const photo = court.tennis_photo_url || profile?.tennis_photo_url || profile?.photo_url;
+  const photo = profile?.tennis_photo_url || null;
 
   const tm = court.male_count ?? 0;
   const tf = court.female_count ?? 0;
@@ -240,7 +255,19 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
           ) : (
             <div style={{ position: 'relative', margin: '4px 14px 0' }}>
               <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 20, background: `linear-gradient(135deg,${P},${P2})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: WH, fontSize: 52, fontWeight: 700, opacity: 0.35 }}>🎾</span>
+                <svg
+                  width="64"
+                  height="64"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.65)"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 21a8 8 0 0 0-16 0" />
+                  <circle cx="12" cy="8" r="4" />
+                </svg>
               </div>
               <button
                 onClick={onClose}
@@ -376,7 +403,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
               <InfoCard style={{ marginBottom: 10 }}>
                 <SectionHead label="호스트" />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: BG, borderRadius: 14, padding: '12px 14px', border: `1px solid ${L}` }}>
-                  <Avatar src={profile.tennis_photo_url || profile.photo_url} name={profile.name} size={52} border={`2.5px solid ${A}`} />
+                <Avatar src={profile.tennis_photo_url || undefined} name={profile.name} size={52} border={`2.5px solid ${A}`} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                       <span style={{ fontWeight: 700, fontSize: 15, color: T }}>{profile.name}</span>
@@ -442,7 +469,7 @@ export default function TennisCourtCard({ court, isOwner, onApply, onEdit, onDel
   const isClosingSoon = status === 'closing-soon';
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const photo = court.tennis_photo_url || profile?.tennis_photo_url || profile?.photo_url;
+  const photo = profile?.tennis_photo_url || null;
 
   const hostName = profile?.name ?? court.court_name;
   const hostGender = profile?.gender;
@@ -600,10 +627,20 @@ aspectRatio: '3/4',
         />
       ) : (
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 30, opacity: 0.55, marginBottom: 4 }}>🎾</div>
-          <div style={{ color: P, fontSize: 10, fontWeight: 900, letterSpacing: '0.04em' }}>
-            TENNIS
-          </div>
+          <svg
+            width="36"
+            height="36"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={P}
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ opacity: 0.72 }}
+          >
+            <path d="M20 21a8 8 0 0 0-16 0" />
+            <circle cx="12" cy="8" r="4" />
+          </svg>
         </div>
       )}
     </div>

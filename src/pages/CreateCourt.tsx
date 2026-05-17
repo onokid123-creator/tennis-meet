@@ -298,10 +298,11 @@ if (!currentUser) {
       if (purpose === 'tennis') {
         const { data: myProfile } = await supabase
           .from('profiles')
-          .select('tennis_photo_url, photo_url')
+          .select('tennis_photo_url')
           .eq('user_id', currentUser.id)
           .maybeSingle();
-        tennisPhotoUrl = myProfile?.tennis_photo_url || myProfile?.photo_url || null;
+
+        tennisPhotoUrl = myProfile?.tennis_photo_url || null;
       } else {
         tennisPhotoUrl = datingPhotos[0] || null;
       }

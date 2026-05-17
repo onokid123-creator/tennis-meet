@@ -7,6 +7,37 @@ import BottomNav from '../components/BottomNav';
 import { useVisualViewport } from '../hooks/useVisualViewport';
 import PaywallPopup from '../components/PaywallPopup';
 
+function TennisDefaultProfileCard() {
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-[#F7FAF8]">
+      <div
+        className="flex items-center justify-center"
+        style={{
+          width: 92,
+          height: 92,
+          borderRadius: 24,
+          background: 'linear-gradient(135deg, #F7FAF8 0%, #E8F5EC 100%)',
+          border: '1px solid rgba(45,106,79,0.16)',
+          boxShadow: '0 6px 18px rgba(27,67,50,0.08)',
+        }}
+      >
+        <svg
+          width="42"
+          height="42"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#2D6A4F"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M20 21a8 8 0 0 0-16 0" />
+          <circle cx="12" cy="8" r="4" />
+        </svg>
+      </div>
+    </div>
+  );
+}
 function ProfileSkeleton() {
   return (
     <div
@@ -100,6 +131,7 @@ const [profileTab, setProfileTab] =
   const [tennisForm, setTennisForm] = useState({ experience: '', tennis_style: '' });
   const [tennisPhotoFile, setTennisPhotoFile] = useState<File | null>(null);
   const [tennisPhotoPreview, setTennisPhotoPreview] = useState('');
+  const [tennisPhotoRemoved, setTennisPhotoRemoved] = useState(false);
   const [savingTennis, setSavingTennis] = useState(false);
   const tennisFileInputRef = useRef<HTMLInputElement>(null);
   const [showTennisCreatePopup, setShowTennisCreatePopup] = useState(false);
@@ -324,6 +356,7 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
     if (!file) return;
     setTennisPhotoFile(file);
     setTennisPhotoPreview(URL.createObjectURL(file));
+    setTennisPhotoRemoved(false);
     e.target.value = '';
   };
 
@@ -331,7 +364,7 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
     if (!tennisForm.experience || !tennisForm.tennis_style) return;
     setSavingTennis(true);
     try {
-      let tennisPhotoUrl: string | null = profile?.tennis_photo_url || null;
+      let tennisPhotoUrl: string | null = tennisPhotoRemoved ? null : (profile?.tennis_photo_url || null);
       if (tennisPhotoFile) {
         tennisPhotoUrl = await uploadPhoto(tennisPhotoFile);
       }
@@ -346,11 +379,12 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
       updateProfile({
         experience: tennisForm.experience,
         tennis_style: tennisForm.tennis_style,
-        tennis_photo_url: tennisPhotoUrl || undefined,
+        tennis_photo_url: tennisPhotoUrl,
       });
       setIsTennisEditing(false);
       setTennisPhotoFile(null);
       setTennisPhotoPreview('');
+      setTennisPhotoRemoved(false);
     } catch {
       alert('저장에 실패했습니다.');
     } finally {
@@ -475,10 +509,32 @@ const isSubscribed = profile?.is_subscribed ?? false;
               />
             </div>
           ) : (
-            <div className="w-full h-full bg-[#2D6A4F] flex items-center justify-center">
-              <span className="text-white text-6xl font-bold">
-                {profile?.name?.charAt(0) || '?'}
-              </span>
+            <div className="w-full h-full flex items-center justify-center bg-[#F7FAF8]">
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: 24,
+                  background: 'linear-gradient(135deg, #F7FAF8 0%, #E8F5EC 100%)',
+                  border: '1px solid rgba(45,106,79,0.16)',
+                  boxShadow: '0 6px 18px rgba(27,67,50,0.08)',
+                }}
+              >
+                <svg
+                  width="44"
+                  height="44"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#2D6A4F"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 21a8 8 0 0 0-16 0" />
+                  <circle cx="12" cy="8" r="4" />
+                </svg>
+              </div>
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
@@ -906,7 +962,7 @@ const isSubscribed = profile?.is_subscribed ?? false;
                         </button>
                         <button
                           type="button"
-                          onClick={() => { setTennisPhotoPreview(''); setTennisPhotoFile(null); }}
+                          onClick={() => { setTennisPhotoPreview(''); setTennisPhotoFile(null); setTennisPhotoRemoved(true); }}
                           className="bg-black/55 rounded-full p-1 hover:bg-red-500 transition"
                           title="사진 삭제"
                         >
@@ -977,7 +1033,7 @@ const isSubscribed = profile?.is_subscribed ?? false;
                   {savingTennis ? '저장 중...' : '저장'}
                 </button>
                 <button
-                  onClick={() => { setIsTennisEditing(false); setTennisPhotoFile(null); setTennisPhotoPreview(''); }}
+                  onClick={() => { setIsTennisEditing(false); setTennisPhotoFile(null); setTennisPhotoPreview(''); setTennisPhotoRemoved(false); }}
                   className="flex-1 bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-300 transition"
                 >
                   취소
@@ -999,11 +1055,9 @@ const isSubscribed = profile?.is_subscribed ?? false;
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                   </div>
-                ) : (
-                  <div className="w-full h-full bg-[#1B4332] flex items-center justify-center">
-                    <span className="text-6xl">🎾</span>
-                  </div>
-                )}
+              ) : (
+                <TennisDefaultProfileCard />
+              )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 px-5 pb-4 flex items-end justify-end">
                   <button
