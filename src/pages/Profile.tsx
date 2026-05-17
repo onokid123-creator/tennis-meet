@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Upload, LogOut, X, ChevronLeft, ChevronRight, Plus, Camera, Star, MessageSquare } from 'lucide-react';
@@ -458,7 +459,47 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
     ['ESTJ', 'ESFJ', 'ENFJ', 'ENTJ'],
   ];
   const heroPhoto = profileTab === 'dating' ? (allPhotos[0] || null) : null;
-const remainingTickets = profile?.ticket_count ?? 0;
+
+  const refreshTicketState = useCallback(async () => {
+    if (!user?.id) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('free_meeting_count, ticket_count, is_subscribed')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error || !data) return;
+
+    updateProfile({
+      free_meeting_count: data.free_meeting_count ?? 0,
+      ticket_count: data.ticket_count ?? 0,
+      is_subscribed: data.is_subscribed ?? false,
+    });
+  }, [user?.id, updateProfile]);
+
+  useEffect(() => {
+    refreshTicketState();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshTicketState();
+      }
+    };
+
+    window.addEventListener('focus', refreshTicketState);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', refreshTicketState);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshTicketState]);
+
+const usedFreeMeetings = profile?.free_meeting_count ?? 0;
+const freeRemainingTickets = Math.max(0, 3 - usedFreeMeetings);
+const paidTickets = profile?.ticket_count ?? 0;
+const remainingTickets = freeRemainingTickets + paidTickets;
 const isSubscribed = profile?.is_subscribed ?? false;
   if (!profileLoaded) return <ProfileSkeleton />;
 
