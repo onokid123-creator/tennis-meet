@@ -3549,6 +3549,12 @@ paddingBottom: '14px',
             <div className="flex flex-col gap-2 mb-3">
               {isGroupChat ? groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => {
                 const avIsBlocked = blockedUserIds.includes(av.user_id);
+                const avProfile = senderProfiles[av.user_id];
+                const avPhoto = avIsBlocked
+                  ? null
+                  : isDating
+                    ? (av.photo_url || avProfile?.photo_urls?.[0] || avProfile?.photo_url)
+                    : ((av as { tennis_photo_url?: string }).tennis_photo_url || avProfile?.tennis_photo_url);
                 const handleConfirmRow = async () => {
                   if (avIsBlocked) { showToastMsg('차단된 유저는 확정이 불가합니다.'); return; }
                   if (pickerProcessingRef.current) return;

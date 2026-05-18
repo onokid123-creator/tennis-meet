@@ -920,6 +920,8 @@ const isSubscribed = profile?.is_subscribed ?? false;
             )}
           </div>
 
+{profile?.gender !== '여성' && (
+  <>
 {/* 🎟️ 내 이용권 */}
 <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
   <h3 className="text-sm font-bold text-gray-800 mb-3">내 이용권</h3>
@@ -966,6 +968,8 @@ const isSubscribed = profile?.is_subscribed ?? false;
     </button>
   </div>
 </div>
+  </>
+)}
       </>
   )}
         {profileTab === 'tennis' && <div>

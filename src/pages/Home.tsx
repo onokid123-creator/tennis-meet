@@ -343,6 +343,7 @@ if (
 
   latestProfile = data;
 if (
+  latestProfile?.gender === '남성' &&
   !latestProfile?.is_subscribed &&
   (latestProfile?.free_meeting_count ?? 0) >= 3
 ) {
@@ -398,6 +399,7 @@ if (
 if (
   (applyTargetCourt.purpose === 'dating' ||
     (applyTargetCourt.purpose as string) === '설레는 만남') &&
+  latestProfile?.gender === '남성' &&
   !latestProfile?.is_subscribed
 ) {
   const nextCount = (latestProfile.free_meeting_count ?? 0) + 1;

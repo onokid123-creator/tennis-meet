@@ -493,7 +493,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
             {app.status !== 'pending' && (
               <div className="text-center py-4">
                 {app.status === 'accepted' ? (
-                  <span className="font-semibold" style={{ color: '#B83050' }}>매칭 확정됨</span>
+                  <span className="font-semibold" style={{ color: '#B83050' }}>신청 수락됨</span>
                 ) : (
                   <span className="font-semibold" style={{ color: '#9CA3AF' }}>거절됨</span>
                 )}
@@ -777,7 +777,7 @@ function ApplicantModal({ app, onClose, onAccept, onReject, processing, errorMsg
             {app.status !== 'pending' && (
               <div className="text-center py-4">
                 {app.status === 'accepted' ? (
-                  <span className="font-semibold" style={{ color: '#C9A84C' }}>매칭 확정됨</span>
+                  <span className="font-semibold" style={{ color: '#C9A84C' }}>신청 수락됨</span>
                 ) : (
                   <span className="text-white/40 font-semibold">거절됨</span>
                 )}
@@ -1313,9 +1313,8 @@ setSentApps(nextSentApps);
       .update({ is_confirmed: false })
       .eq('chat_id', chatId);
 
-    // ── Step 4: 코트 마감 처리 ──────────────────────────────
-    await supabase.from('courts').update({ status: 'closed' }).eq('id', courtId);
-
+    // 수락 시점에는 채팅방만 생성한다.
+    // 실제 모집마감/인원 확정은 채팅방에서 호스트가 매칭확정 버튼을 눌렀을 때 처리한다.
     return { chatId, isNew: true };
   };
 

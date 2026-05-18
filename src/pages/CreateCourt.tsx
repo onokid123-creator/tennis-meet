@@ -422,6 +422,9 @@ delete_at: deleteAt.toISOString(),
       alert(message || '저장에 실패했습니다.');
     }
   } finally {
+    setLoading(false);
+  }
+};
 
   const tennisFormats = ['단식', '남복', '여복', '혼복'];
 
