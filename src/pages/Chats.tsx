@@ -194,7 +194,8 @@ const fetchChats = useCallback(async (options?: { silent?: boolean }) => {
         supabase
           .from('chat_participants')
           .select('chat_id')
-          .eq('user_id', currentUser.id),
+          .eq('user_id', currentUser.id)
+          .eq('is_active', true),
         new Promise<{ data: null; error: Error }>((resolve) =>
           setTimeout(() => {
             console.warn('[Chats] participantRows 조회 timeout');
