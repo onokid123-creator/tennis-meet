@@ -1792,7 +1792,15 @@ if (!profile.fcm_token) continue;
       });
     }
 
-    await supabase.from('chat_participants').delete().eq('chat_id', chatId).eq('user_id', user.id);
+    await supabase
+      .from('chat_participants')
+      .update({
+        is_active: false,
+        left_at: new Date().toISOString(),
+        is_confirmed: false,
+      })
+      .eq('chat_id', chatId)
+      .eq('user_id', user.id);
 
     if (isHost) {
       await supabase.from('chats').update({ host_left: true }).eq('id', chatId);
@@ -3128,7 +3136,15 @@ paddingBottom: '14px',
     },
   })
   .eq('id', msg.id);
-                              await supabase.from('chat_participants').delete().eq('chat_id', chatId).eq('user_id', requesterId);
+                              await supabase
+                                .from('chat_participants')
+                                .update({
+                                  is_active: false,
+                                  left_at: new Date().toISOString(),
+                                  is_confirmed: false,
+                                })
+                                .eq('chat_id', chatId)
+                                .eq('user_id', requesterId);
                               await supabase.channel(`broadcast_${chatId}`).send({
                                 type: 'broadcast',
                                 event: 'kick_user',
