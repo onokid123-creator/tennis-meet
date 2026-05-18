@@ -663,7 +663,14 @@ export default function GroupChatRoom() {
       type: 'system',
       is_read: false,
     });
-    await supabase.from('court_group_chat_participants').delete().eq('group_chat_id', groupChatId!).eq('user_id', requesterId);
+    await supabase
+      .from('court_group_chat_participants')
+      .update({
+        status: 'left',
+        left_at: new Date().toISOString(),
+      })
+      .eq('group_chat_id', groupChatId!)
+      .eq('user_id', requesterId);
     await supabase.channel(`group_kick_${groupChatId}_${requesterId}`).send({
       type: 'broadcast',
       event: 'group_kick_user',
@@ -694,7 +701,14 @@ export default function GroupChatRoom() {
     setKickingId(targetId);
     try {
       const kickMsg = `${targetName}님이 퇴장되었습니다`;
-      await supabase.from('court_group_chat_participants').delete().eq('group_chat_id', groupChatId).eq('user_id', targetId);
+      await supabase
+        .from('court_group_chat_participants')
+        .update({
+          status: 'left',
+          left_at: new Date().toISOString(),
+        })
+        .eq('group_chat_id', groupChatId)
+        .eq('user_id', targetId);
       await supabase.from('court_group_chat_messages').insert({
         group_chat_id: groupChatId,
         sender_id: null,

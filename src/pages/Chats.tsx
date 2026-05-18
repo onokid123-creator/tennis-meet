@@ -392,7 +392,8 @@ const chatRows = chatsData.map((chat) => {
   .from('court_group_chat_participants')
   .select('group_chat_id')
   .eq('user_id', currentUser.id)
-  .neq('status', 'rejected');
+  .neq('status', 'rejected')
+  .neq('status', 'left');
 
 if (groupParticipantRowsError) {
   console.warn('[Chats] groupParticipantRows error:', groupParticipantRowsError);
