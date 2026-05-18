@@ -403,17 +403,25 @@ delete_at: deleteAt.toISOString(),
     throw new Error(error.message || '등록에 실패했습니다.');
   }
 
-             triggerRefresh();
+      triggerRefresh();
       localStorage.setItem('home_category_tab', purpose === 'tennis' ? 'tennis' : 'dating');
       localStorage.setItem('home_active_tab', 'mine');
+      localStorage.setItem('home_force_refresh', '1');
+      localStorage.removeItem(`cached_courts_${purpose === 'tennis' ? 'tennis' : 'dating'}_mine`);
       navigate('/home', { replace: true });
     }
   } catch (err) {
-      alert(err instanceof Error ? err.message : '저장에 실패했습니다.');
-    } finally {
-      setLoading(false);
+      const message = err instanceof Error ? err.message : '';
+    if (
+      (err instanceof DOMException && err.name === 'AbortError') ||
+      message.toLowerCase().includes('abort') ||
+      message.toLowerCase().includes('fetch is aborted')
+    ) {
+      alert('네트워크 요청이 중단되었습니다. 잠시 후 다시 시도해주세요.');
+    } else {
+      alert(message || '저장에 실패했습니다.');
     }
-  };
+  } finally {
 
   const tennisFormats = ['단식', '남복', '여복', '혼복'];
 

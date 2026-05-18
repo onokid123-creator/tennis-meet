@@ -68,7 +68,7 @@ const handlePurchase = async (productId: string) => {
   const { refreshKey, triggerRefresh } = useCourts();
 const vpHeight = useVisualViewport();
   const [courts, setCourts] = useState<Court[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const saved = localStorage.getItem('home_active_tab');
     localStorage.removeItem('home_active_tab');
@@ -140,13 +140,20 @@ const getCourtCacheKey = (purpose: CategoryTab, tab: Tab) => {
 const requestKey = getCourtCacheKey(purpose, tab);
 latestCourtRequestKeyRef.current = requestKey;
 const nowMs = Date.now();
+const forceRefresh = localStorage.getItem('home_force_refresh') === '1';
 
 if (
+  !forceRefresh &&
   lastCourtFetchRef.current.key === requestKey &&
   nowMs - lastCourtFetchRef.current.time < 1200
 ) {
   console.log('[Home] 중복 fetchCourts 차단:', requestKey);
   return;
+}
+
+if (forceRefresh) {
+  localStorage.removeItem('home_force_refresh');
+  localStorage.removeItem(requestKey);
 }
 
 lastCourtFetchRef.current = {
@@ -336,7 +343,6 @@ if (
 
   latestProfile = data;
 if (
-  latestProfile?.gender === '남성' &&
   !latestProfile?.is_subscribed &&
   (latestProfile?.free_meeting_count ?? 0) >= 3
 ) {
@@ -392,7 +398,6 @@ if (
 if (
   (applyTargetCourt.purpose === 'dating' ||
     (applyTargetCourt.purpose as string) === '설레는 만남') &&
-  latestProfile?.gender === '남성' &&
   !latestProfile?.is_subscribed
 ) {
   const nextCount = (latestProfile.free_meeting_count ?? 0) + 1;
