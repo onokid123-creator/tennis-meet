@@ -1126,12 +1126,34 @@ useEffect(() => {
   return () => {
     cancelled = true;
   };
-}, [chatId, user, forceRefreshUntilPopulated, resumeTick]);
+}, [chatId, user, forceRefreshUntilPopulated]);
 useEffect(() => {
   if (!chatId) return;
 
+  const cacheKey = `chatroom_messages_${chatId}`;
+
+  // 채팅방을 나갔다 다시 들어올 때 state는 사라지므로,
+  // DB 재조회 전에 마지막 성공 메시지를 먼저 복원한다.
+  if (messagesCountRef.current === 0) {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const cachedMessages = JSON.parse(cached) as Message[];
+        if (Array.isArray(cachedMessages) && cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+          setLoading(false);
+        }
+      }
+    } catch {
+      // cache 복원 실패는 무시하고 DB 조회로 진행
+    }
+  }
+
   let cancelled = false;
-  setLoading(true);
+  // 기존 메시지/캐시가 있으면 background 복귀/재진입 중에도 화면을 비우지 않는다.
+  if (messagesCountRef.current === 0 && !sessionStorage.getItem(cacheKey)) {
+    setLoading(true);
+  }
 
   // 안전장치: 어떤 이유로든 8초 안에 로딩이 안 끝나면 강제 해제
   // (무한 로딩 방지 - 데이터가 없어도 화면은 보여준다)
@@ -1140,7 +1162,7 @@ useEffect(() => {
       console.warn('[ChatRoom] 로딩 타임아웃 → 강제 해제');
       setLoading(false);
     }
-  }, 8000);
+  }, 12000);
 
   const load = async () => {
     // AuthContext의 user가 이미 있으면 즉시 사용한다.
@@ -1168,59 +1190,92 @@ useEffect(() => {
 
     try {
       // 1) 내 참여 정보
-      const { data: myPartData } = await supabase
-        .from('chat_participants')
-        .select('joined_at')
-        .eq('chat_id', chatId)
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-      if (cancelled) return;
-
-      const joinedAt = (myPartData as { joined_at?: string | null } | null)?.joined_at ?? null;
-      myJoinedAtRef.current = joinedAt;
-
-      // 2) 메시지 조회 (6초 타임아웃)
-      let query = supabase
-        .from('messages')
-        .select('id, chat_id, sender_id, content, is_read, type, created_at, payload')
-        .eq('chat_id', chatId)
-        .order('created_at', { ascending: false })
-        .limit(80);
-      if (joinedAt) query = query.gte('created_at', joinedAt);
-
-      const { data, error } = await Promise.race([
-        query,
+      // iOS background 복귀 직후 chat_participants 조회가 멈추면 메시지 조회까지 못 가는 문제가 있어 짧게 timeout 처리한다.
+      // joined_at을 못 가져와도 메시지 로딩은 계속 진행한다.
+      const myPartRes = await Promise.race([
+        supabase
+          .from('chat_participants')
+          .select('joined_at')
+          .eq('chat_id', chatId)
+          .eq('user_id', currentUser.id)
+          .maybeSingle(),
         new Promise<{ data: null; error: Error }>((resolve) =>
-          setTimeout(() => resolve({ data: null, error: new Error('messages_timeout') }), 6000)
+          setTimeout(() => resolve({ data: null, error: new Error('my_part_timeout') }), 2500)
         ),
       ]);
       if (cancelled) return;
 
-      if (error) {
-        console.error('[ChatRoom] messages load error:', error);
-        // 메시지 로드 실패 = 연결이 죽었을 가능성.
-        // 빈 화면을 보여주느니 reload가 낫다. 단 무한 reload는 막는다.
-        const reloadKey = 'chatroom_reload_' + chatId;
-        const alreadyReloaded = sessionStorage.getItem(reloadKey);
-        if (!alreadyReloaded && Capacitor.isNativePlatform()) {
-          sessionStorage.setItem(reloadKey, '1');
-          sessionStorage.setItem('resume_path', window.location.pathname);
-          if (sessionStorage.getItem('lifecycle_reload_in_progress') === '1') {
-            setLoading(false);
-            return;
-          }
-          console.warn('[ChatRoom] 로드 실패 → reload');
-          window.location.reload();
-          return;
+      if (myPartRes.error) {
+        console.warn('[ChatRoom] myPart load skipped:', myPartRes.error.message || myPartRes.error);
+      }
+
+      const joinedAt = (myPartRes.data as { joined_at?: string | null } | null)?.joined_at ?? null;
+      myJoinedAtRef.current = joinedAt;
+
+      // 2) 메시지 조회
+      // iOS background 복귀 직후 Supabase 요청이 한 번 멈출 수 있으므로 reload하지 않고 짧게 재시도한다.
+      const loadMessagesOnce = async (attempt: number) => {
+        let query = supabase
+          .from('messages')
+          .select('id, chat_id, sender_id, content, is_read, type, created_at, payload')
+          .eq('chat_id', chatId)
+          .order('created_at', { ascending: false })
+          .limit(attempt === 0 ? 80 : 40);
+
+        // joinedAt 조회가 성공했을 때만 필터 적용. 실패한 경우에는 전체 최근 메시지를 보여준다.
+        if (joinedAt) query = query.gte('created_at', joinedAt);
+
+        return Promise.race([
+          query,
+          new Promise<{ data: null; error: Error }>((resolve) =>
+            setTimeout(() => resolve({ data: null, error: new Error('messages_timeout') }), 9000)
+          ),
+        ]);
+      };
+
+      let data: Message[] | null = null;
+      let error: unknown = null;
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const result = await loadMessagesOnce(attempt);
+        if (cancelled) return;
+
+        if (!result.error) {
+          data = (result.data ?? []) as Message[];
+          error = null;
+          break;
         }
-        // 이미 reload 한 번 했는데도 실패 → 그냥 로딩 해제 (최소한 화면은 보임)
+
+        error = result.error;
+        const message = result.error instanceof Error ? result.error.message : String(result.error);
+        console.warn('[ChatRoom] messages load retry:', attempt + 1, message);
+
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 700));
+        }
+      }
+
+      if (cancelled) return;
+
+      if (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn('[ChatRoom] messages load failed, keep existing messages:', message);
+        // iOS background 복귀 직후 Supabase 조회가 실패해도 기존 메시지를 지우면 안 된다.
+        // 기존 화면을 유지하고 loading만 해제한다.
         setLoading(false);
         return;
       }
-      // 로드 성공 → reload 플래그 해제
+
       sessionStorage.removeItem('chatroom_reload_' + chatId);
 
       const msgs = ((data ?? []) as Message[]).reverse();
+
+      // 성공적으로 메시지를 가져온 경우에만 캐시를 갱신한다.
+      // timeout/일시적 빈 응답 때문에 기존 캐시를 지우지 않기 위해 빈 배열은 저장하지 않는다.
+      if (msgs.length > 0) {
+        sessionStorage.setItem(cacheKey, JSON.stringify(msgs));
+      }
+
       setMessages(msgs);
 
       if (msgs.some((m) => m.type === 'system' && (
@@ -1263,7 +1318,7 @@ useEffect(() => {
     cancelled = true;
     clearTimeout(loadingTimeout);
   };
-}, [chatId, user, resumeTick]);
+}, [chatId, user]);
 
   useEffect(() => { if (!loading) loadPendingMealProposals(); }, [loading, chatId, user]);
   useEffect(() => {
