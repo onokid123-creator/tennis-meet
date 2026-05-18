@@ -142,14 +142,6 @@ latestCourtRequestKeyRef.current = requestKey;
 const nowMs = Date.now();
 const forceRefresh = localStorage.getItem('home_force_refresh') === '1';
 
-if (
-  !forceRefresh &&
-  lastCourtFetchRef.current.key === requestKey &&
-  nowMs - lastCourtFetchRef.current.time < 1200
-) {
-  console.log('[Home] 중복 fetchCourts 차단:', requestKey);
-  return;
-}
 
 if (forceRefresh) {
   localStorage.removeItem('home_force_refresh');
