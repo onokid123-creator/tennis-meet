@@ -1,104 +1,164 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { FCM } from '@capacitor-community/fcm';
 import { supabase } from './lib/supabase';
 
+let pushInitialized = false;
+let pushRegistering = false;
+let lastSavedToken: string | null = null;
+
 export default function PushNotificationBootstrap() {
   const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
 
   useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
+
+  useEffect(() => {
+    if (pushInitialized) {
+      console.log('[PUSH] bootstrap skipped: already initialized');
+      return;
+    }
+
+    pushInitialized = true;
+
     const saveFcmToken = async (userId: string, tokenValue: string) => {
-  await supabase
-    .from('profiles')
-    .update({ fcm_token: tokenValue })
-    .eq('user_id', userId);
-};
-      
-   
+      if (!tokenValue) return;
+
+      const cacheKey = `${userId}:${tokenValue}`;
+      if (lastSavedToken === cacheKey) {
+        console.log('[PUSH] save skipped: same token');
+        return;
+      }
+
+      console.log('[PUSH] saveFcmToken start', userId, 'TOKEN_EXISTS');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ fcm_token: tokenValue })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('[PUSH] saveFcmToken error', error);
+      } else {
+        lastSavedToken = cacheKey;
+        console.log('[PUSH] saveFcmToken success');
+      }
+    };
 
     const registerAndSaveToken = async () => {
+      if (pushRegistering) {
+        console.log('[PUSH] register skipped: already running');
+        return;
+      }
+
+      pushRegistering = true;
+
       try {
         if (!Capacitor.isNativePlatform()) {
-          
+          console.log('[PUSH] skip: not native platform');
           return;
         }
 
         const permission = await PushNotifications.requestPermissions();
-       
+        console.log('[PUSH] permission', permission);
 
         if (permission.receive !== 'granted') {
-          
+          console.warn('[PUSH] permission not granted');
           return;
         }
 
         await PushNotifications.register();
-        
-        const fcmToken = await FCM.getToken();
-       
+        console.log('[PUSH] native push registered');
+
+        let tokenValue: string | null = null;
+
+        for (let i = 0; i < 3; i += 1) {
+          try {
+            const fcmToken = await FCM.getToken();
+            tokenValue = fcmToken?.token || null;
+            if (tokenValue) break;
+          } catch (e) {
+            console.warn('[PUSH] FCM getToken retry', i + 1, e);
+            await new Promise((resolve) => setTimeout(resolve, 700));
+          }
+        }
+
+        console.log('[PUSH] fcm token result', tokenValue ? 'TOKEN_EXISTS' : 'NO_TOKEN');
+
+        if (!tokenValue) return;
 
         const { data: userData } = await supabase.auth.getUser();
         const user = userData.user;
+        console.log('[PUSH] current user', user?.id || 'NO_USER');
 
         if (!user) {
-          localStorage.setItem('pending_fcm_token', fcmToken.token);
-          
+          localStorage.setItem('pending_fcm_token', tokenValue);
+          console.log('[PUSH] token saved to pending_fcm_token');
           return;
         }
 
-        await saveFcmToken(user.id, fcmToken.token);
+        await saveFcmToken(user.id, tokenValue);
         localStorage.removeItem('pending_fcm_token');
       } catch (e) {
-        
+        console.error('[PUSH] registerAndSaveToken error', e);
+      } finally {
+        pushRegistering = false;
       }
     };
 
-    PushNotifications.addListener('registrationError', (err) => {
-     
-    });
+    const setup = async () => {
+      await PushNotifications.addListener('registrationError', (err) => {
+        console.error('[PUSH] registrationError', err);
+      });
 
-    PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      console.log('[PUSH RECEIVED]', notification);
-    });
+      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('[PUSH RECEIVED]', notification);
+      });
 
-    PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-      const data = notification.notification.data;
-      const type = data?.type;
-      const chatId = data?.chatId;
+      await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+        const data = notification.notification.data;
+        const type = data?.type;
+        const chatId = data?.chatId;
 
-      if (type === 'chat' && chatId) {
-        navigate(`/chat/${chatId}`);
-        return;
-      }
+        if (type === 'chat' && chatId) {
+          navigateRef.current(`/chat/${chatId}`);
+          return;
+        }
 
-      if (type === 'meal_proposal') {
-        navigate('/applications');
-        return;
-      }
+        if (
+          type === 'meal_proposal' ||
+          type === 'application_accepted' ||
+          type === 'application_rejected' ||
+          type === 'match'
+        ) {
+          navigateRef.current('/applications');
+          return;
+        }
 
-      if (
-        (type === 'meal_proposal_accepted' ||
-          type === 'meal_proposal_rejected' ||
-          type === 'match_confirmed' ||
-          type === 'match_cancelled') &&
-        chatId
-      ) {
-        navigate(`/chat/${chatId}`);
-        return;
-      }
+        if (
+          (type === 'meal_proposal_accepted' ||
+            type === 'meal_proposal_rejected' ||
+            type === 'match_confirmed' ||
+            type === 'match_cancelled') &&
+          chatId
+        ) {
+          navigateRef.current(`/chat/${chatId}`);
+          return;
+        }
 
-      if (type === 'match') {
-        navigate('/applications');
-        return;
-      }
+        if (type === 'court') {
+          navigateRef.current('/home');
+        }
+      });
 
-      if (type === 'court') {
-        navigate('/home');
-      }
-    });
+      await registerAndSaveToken();
+    };
 
-    registerAndSaveToken();
+    setup();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const pendingToken = localStorage.getItem('pending_fcm_token');
@@ -108,16 +168,17 @@ export default function PushNotificationBootstrap() {
         localStorage.removeItem('pending_fcm_token');
       }
 
-      if (session?.user && Capacitor.isNativePlatform()) {
-        await registerAndSaveToken();
-      }
+      // 앱 시작 시 이미 registerAndSaveToken을 1회 실행한다.
+      // auth 이벤트마다 다시 requestPermissions/register/getToken을 호출하면 iOS 복귀/라우팅 중 요청이 반복될 수 있다.
+      // 로그인 이후에는 pending_fcm_token 저장만 처리한다.
     });
 
     return () => {
-      PushNotifications.removeAllListeners();
       authListener.subscription.unsubscribe();
+      // PushNotifications listener는 앱 생명주기 동안 유지한다.
+      // removeAllListeners/removeListener를 호출하면 라우팅 중 재등록이 반복되어 화면 fetch와 충돌할 수 있다.
     };
-  }, [navigate]);
+  }, []);
 
   return null;
 }

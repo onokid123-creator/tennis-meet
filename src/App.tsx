@@ -2,7 +2,7 @@ import AppLifecycleBridge from './AppLifecycleBridge';
 import AppLaunchSplash from './AppLaunchSplash';
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-//import PushNotificationBootstrap from './PushNotificationBootstrap';
+import PushNotificationBootstrap from './PushNotificationBootstrap';
 import { Suspense, lazy, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CourtsProvider } from './contexts/CourtsContext';
@@ -332,16 +332,15 @@ if (showSplash) {
   return <AppLaunchSplash onFinish={() => setShowSplash(false)} />;
 }
   return (
-      <BrowserRouter>
+    <BrowserRouter>
+      <PushNotificationBootstrap />
       <AuthProvider>
         <CourtsProvider>
-          {/* <PushNotificationBootstrap /> */}
-<AppLifecycleBridge />
-        <AppRoutes />
+          <AppLifecycleBridge />
+          <AppRoutes />
         </CourtsProvider>
       </AuthProvider>
     </BrowserRouter>
-
-);
+  );
 }
 export default App;
