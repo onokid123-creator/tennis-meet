@@ -1060,7 +1060,11 @@ let nextResultMealProposals: typeof resultMealProposals = [];
       setPendingMealProposals(nextPendingMealProposals);
       setResultMealProposals(nextResultMealProposals);
     } catch (err) {
-      console.error('[Applications] 식사 제안 목록 가져오기 실패:', err);
+      console.error('[Applications] 식사 제안 목록 가져오기 실패:', {
+        name: err instanceof Error ? err.name : undefined,
+        message: err instanceof Error ? err.message : String(err),
+        raw: err,
+      });
     }
   }, [getSafeUser]);
 
@@ -1131,7 +1135,7 @@ let nextSentApps: Application[] = [];
           supabase
             .from('applications')
             .select(`*, court:court_id (*)`)
-            .eq('owner_id', currentUser.id)
+            .eq('host_id', currentUser.id)
             .eq('receiver_deleted', false)
             .order('created_at', { ascending: false }),
           supabase
@@ -1148,7 +1152,7 @@ let nextSentApps: Application[] = [];
       const sentList = sentRaw || [];
 
       const applicantIds = [...new Set(receivedList.map((a) => a.applicant_id).filter(Boolean))];
-      const ownerIds = [...new Set(sentList.map((a) => a.owner_id).filter(Boolean))];
+      const ownerIds = [...new Set(sentList.map((a) => a.host_id).filter(Boolean))];
       const allProfileIds = [...new Set([...applicantIds, ...ownerIds])];
 
       let profileMap: Record<string, Profile> = {};
@@ -1169,7 +1173,7 @@ let nextSentApps: Application[] = [];
 
       const sent = sentList.map((a) => ({
         ...a,
-        owner: profileMap[a.owner_id] ?? null,
+        owner: profileMap[a.host_id] ?? null,
       }));
 
      nextReceivedApps = received;
@@ -1182,7 +1186,11 @@ if (latestApplicationsRequestRef.current !== requestId) {
 setReceivedApps(nextReceivedApps);
 setSentApps(nextSentApps);
     } catch (err) {
-      console.error('신청 목록 가져오기 실패:', err);
+      console.error('신청 목록 가져오기 실패:', {
+        name: err instanceof Error ? err.name : undefined,
+        message: err instanceof Error ? err.message : String(err),
+        raw: err,
+      });
     } finally {
       if (!silent) setLoading(false);
     }
@@ -1192,15 +1200,9 @@ setSentApps(nextSentApps);
   fetchApplications();
   fetchMealProposals();
 
-  // auth-resynced 사용: AuthContext가 세션 갱신을 끝낸 뒤에 fetch
-  // (이전 appStateChange는 세션 갱신 전에 실행돼서 stale 데이터를 불러옴)
-  const handleResumed = () => {
-    // background 복귀 시에는 기존 목록을 유지한 채 조용히 갱신한다.
-    // 전체 loading을 켜면 목록이 사라졌다가 다시 뜨는 UX가 발생한다.
-    fetchApplications({ silent: true });
-    fetchMealProposals();
-  };
-  window.addEventListener('auth-resynced', handleResumed);
+  // iOS foreground 복귀 직후에는 Supabase 요청이 timeout 나기 쉬워 auth-resynced 즉시 재조회는 비활성화한다.
+  // 초기 진입/realtime 변경/사용자 직접 진입 시 fetch만 사용한다.
+  const handleResumed = () => {};
 
   const channel = supabase
     .channel('applications_changes')
@@ -1212,7 +1214,7 @@ setSentApps(nextSentApps);
 
   return () => {
     supabase.removeChannel(channel);
-    window.removeEventListener('auth-resynced', handleResumed);
+    // window.removeEventListener('auth-resynced', handleResumed);
   };
 }, [fetchApplications, fetchMealProposals]);
 
@@ -1534,7 +1536,7 @@ if (applicantProfile?.fcm_token) {
 
     try {
       const updateData =
-        app.owner_id === user.id
+        app.host_id === user.id
           ? { receiver_deleted: true }
           : { sender_deleted: true };
 
