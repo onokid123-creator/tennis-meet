@@ -173,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const resyncSession = async () => {
       if (resyncingRef.current) return;
       resyncingRef.current = true;
+      let didResync = false;
       console.log('[AuthContext] app-resumed → 세션 갱신');
 
       try {
@@ -200,6 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearProfileCache(freshUser.id);
         const profileData = await fetchProfileById(freshUser.id);
         if (!cancelled) setProfile(profileData);
+        didResync = true;
 
         // 토큰 만료 5분 이내면 refresh
         const { data: { session } } = await supabase.auth.getSession();
@@ -213,8 +215,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('[AuthContext] resync 예외:', err);
       } finally {
         resyncingRef.current = false;
-        // 화면들에게 "세션 준비 완료" 알림 (즉시)
-        if (!cancelled) {
+        // 세션 확인이 실제로 성공했을 때만 화면들에게 갱신 알림을 보낸다.
+        // getUser timeout 상태에서 auth-resynced를 쏘면 Home/Applications/Chats가 불필요하게 재조회되며 느려진다.
+        if (!cancelled && didResync) {
           window.dispatchEvent(new CustomEvent('auth-resynced'));
         }
       }
