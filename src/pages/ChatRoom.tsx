@@ -905,7 +905,8 @@ const scrollToBottomAfterKeyboard = useCallback(() => {
     const { data: parts, error } = await supabase
       .from('chat_participants')
       .select('user_id, is_confirmed, last_read_at')
-      .eq('chat_id', chatId);
+      .eq('chat_id', chatId)
+      .eq('is_active', true);
     if (error) {
       console.warn('[refreshParticipantCount] 에러:', error);
       return;
@@ -940,7 +941,8 @@ const scrollToBottomAfterKeyboard = useCallback(() => {
     const { data: parts } = await supabase
       .from('chat_participants')
       .select('user_id')
-      .eq('chat_id', chatId);
+      .eq('chat_id', chatId)
+      .eq('is_active', true);
     const n = (parts ?? []).length;
     setParticipantCount(n);
     if (n === 0 && attempt < 6) {
@@ -975,7 +977,8 @@ useEffect(() => {
       supabase
         .from('chat_participants')
         .select('user_id, is_confirmed, last_read_at, joined_at')
-        .eq('chat_id', chatId),
+        .eq('chat_id', chatId)
+        .eq('is_active', true),
       supabase
         .from('chats')
         .select('id, user1_id, user2_id, purpose, court_id, is_group, confirmed_user_ids')
@@ -1085,15 +1088,11 @@ useEffect(() => {
 
     if (oppFromParticipants) {
       opponentId = oppFromParticipants.user_id;
-    } else if (chat) {
-      opponentId =
-        chat.user1_id === currentUser.id ? chat.user2_id : chat.user1_id;
     }
 
     if (!opponentId && !isGroup) {
-      if (attempt < 3) {
-        setTimeout(() => { if (!cancelled) loadRoomInfo(attempt + 1); }, 500);
-      }
+      setOtherUser(null);
+      setOtherLastRead(null);
       return;
     }
 
@@ -1110,6 +1109,7 @@ useEffect(() => {
         .select('last_read_at')
         .eq('chat_id', chatId)
         .eq('user_id', opponentId)
+        .eq('is_active', true)
         .maybeSingle(),
     ]);
 
@@ -1602,7 +1602,8 @@ const sendMessage = async (content: string, type: string = 'user', extraPayload?
     const { data: participants } = await supabase
       .from('chat_participants')
       .select('user_id')
-      .eq('chat_id', chatId);
+      .eq('chat_id', chatId)
+      .eq('is_active', true);
 
     const otherIds = (participants ?? [])
       .map((p) => p.user_id)
@@ -2609,7 +2610,9 @@ if (receiverProfile?.fcm_token) {
   const isDating = chatPurpose === 'dating';
   const isDeletedUser = !loading && !isGroupChat && !otherUser;
   const isOpponentBlocked = otherUser ? blockedUserIds.includes(otherUser.user_id) : false;
-  const opponentName = isOpponentBlocked ? '알 수 없음' : (otherUser?.name ?? (loading ? '' : '알 수 없음'));
+  const opponentName = isOpponentBlocked
+    ? '알 수 없음'
+    : (otherUser?.name ?? (loading ? '' : '대화상대가 없습니다'));
 
   const groupChatTitle = (() => {
     if (!isGroupChat || groupAvatars.length === 0) return loading ? '' : null;
@@ -2921,7 +2924,7 @@ paddingBottom: '14px',
         </div>
       </header>
 
-      {isHost && !hostBarDismissed && (
+      {isHost && !hostBarDismissed && (isGroupChat || !!otherUser) && (
  <div
   className="px-3 py-3 flex-shrink-0 relative"
   style={{

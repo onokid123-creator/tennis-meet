@@ -281,7 +281,8 @@ const [allMessagesRes, unreadMessagesRes, allGroupPartsRes] = await Promise.all(
   supabase
     .from('chat_participants')
     .select('chat_id, user_id')
-    .in('chat_id', directChatIds),
+    .in('chat_id', directChatIds)
+    .eq('is_active', true),
 ]);
 
 const lastMsgMap: Record<string, any> = {};
@@ -334,21 +335,29 @@ chatsData
     }));
   });
 
-const chatRows = chatsData.map((chat) => {
-  const isGroup = !!chat.is_group;
-  const opponentId = !isGroup
-    ? (chat.user1_id === currentUser.id ? chat.user2_id : chat.user1_id)
-    : null;
+const chatRows = chatsData
+  .filter((chat) => {
+    if (chat.is_group) return true;
 
-  return {
-    chat,
-    opponentId,
-    lastMsg: lastMsgMap[chat.id],
-    unreadCount: unreadCountMap[chat.id] ?? 0,
-    groupTitle: groupTitleMap[chat.id],
-    groupParticipantPhotos: groupParticipantPhotosMap[chat.id],
-  };
-});
+    return allGroupParts.some(
+      (p) => p.chat_id === chat.id && p.user_id !== currentUser.id
+    );
+  })
+  .map((chat) => {
+    const isGroup = !!chat.is_group;
+    const opponentId = !isGroup
+      ? (chat.user1_id === currentUser.id ? chat.user2_id : chat.user1_id)
+      : null;
+
+    return {
+      chat,
+      opponentId,
+      lastMsg: lastMsgMap[chat.id],
+      unreadCount: unreadCountMap[chat.id] ?? 0,
+      groupTitle: groupTitleMap[chat.id],
+      groupParticipantPhotos: groupParticipantPhotosMap[chat.id],
+    };
+  });
 
 
 
