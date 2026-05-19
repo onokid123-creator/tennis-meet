@@ -1762,6 +1762,55 @@ if (!profile.fcm_token) continue;
     return [];
   };
 
+  const releaseConfirmedCourtSlot = async (participantId: string) => {
+    if (!courtId || !chatId) return;
+
+    const [courtRes, participantProfRes, participantRowRes] = await Promise.all([
+      supabase
+        .from('courts')
+        .select('confirmed_male_slots, confirmed_female_slots, current_participants, status')
+        .eq('id', courtId)
+        .maybeSingle(),
+      supabase
+        .from('profiles')
+        .select('gender')
+        .eq('user_id', participantId)
+        .maybeSingle(),
+      supabase
+        .from('chat_participants')
+        .select('is_confirmed')
+        .eq('chat_id', chatId)
+        .eq('user_id', participantId)
+        .maybeSingle(),
+    ]);
+
+    const courtData = courtRes.data as {
+      confirmed_male_slots?: number | null;
+      confirmed_female_slots?: number | null;
+      current_participants?: number | null;
+      status?: string | null;
+    } | null;
+
+    if (!courtData || !participantRowRes.data?.is_confirmed) return;
+
+    const gender = participantProfRes.data?.gender;
+    const isMale = gender === 'male' || gender === '남성';
+
+    await supabase
+      .from('courts')
+      .update({
+        confirmed_male_slots: isMale
+          ? Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1)
+          : (courtData.confirmed_male_slots ?? 0),
+        confirmed_female_slots: !isMale
+          ? Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1)
+          : (courtData.confirmed_female_slots ?? 0),
+        current_participants: Math.max(0, (courtData.current_participants ?? 0) - 1),
+        ...(courtData.status === 'closed' ? { status: 'open' } : {}),
+      } as never)
+      .eq('id', courtId);
+  };
+
   const doLeaveAndCleanup = async () => {
     if (!chatId || !user) return;
 
@@ -1792,6 +1841,8 @@ if (!profile.fcm_token) continue;
         type: 'system',
       });
     }
+
+    await releaseConfirmedCourtSlot(user.id);
 
     await supabase
       .from('chat_participants')
@@ -1913,9 +1964,15 @@ if (!profile.fcm_token) continue;
         }
       }
 
+      await releaseConfirmedCourtSlot(targetId);
+
       const { error: delError } = await supabase
         .from('chat_participants')
-        .delete()
+        .update({
+          is_active: false,
+          left_at: new Date().toISOString(),
+          is_confirmed: false,
+        })
         .eq('chat_id', chatId)
         .eq('user_id', targetId);
 
@@ -3139,6 +3196,8 @@ paddingBottom: '14px',
     },
   })
   .eq('id', msg.id);
+                              await releaseConfirmedCourtSlot(requesterId);
+
                               await supabase
                                 .from('chat_participants')
                                 .update({
