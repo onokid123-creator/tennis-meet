@@ -1763,26 +1763,56 @@ if (!profile.fcm_token) continue;
   };
 
   const releaseConfirmedCourtSlot = async (participantId: string) => {
-    if (!courtId || !chatId) return;
+    if (!chatId) return;
 
-    const [courtRes, participantProfRes, participantRowRes] = await Promise.all([
+    const { data: participantRow, error: participantErr } = await supabase
+      .from('chat_participants')
+      .select('is_confirmed')
+      .eq('chat_id', chatId)
+      .eq('user_id', participantId)
+      .maybeSingle();
+
+    if (participantErr) {
+      console.warn('[releaseConfirmedCourtSlot] participant 조회 실패:', participantErr);
+      return;
+    }
+
+    if (!participantRow?.is_confirmed) return;
+
+    const { data: chatRow, error: chatErr } = await supabase
+      .from('chats')
+      .select('court_id')
+      .eq('id', chatId)
+      .maybeSingle();
+
+    if (chatErr) {
+      console.warn('[releaseConfirmedCourtSlot] chat 조회 실패:', chatErr);
+      return;
+    }
+
+    const effectiveCourtId = courtId ?? chatRow?.court_id;
+    if (!effectiveCourtId) {
+      console.warn('[releaseConfirmedCourtSlot] courtId 없음:', { chatId, participantId });
+      return;
+    }
+
+    const [courtRes, participantProfRes] = await Promise.all([
       supabase
         .from('courts')
         .select('confirmed_male_slots, confirmed_female_slots, current_participants, status')
-        .eq('id', courtId)
+        .eq('id', effectiveCourtId)
         .maybeSingle(),
       supabase
         .from('profiles')
         .select('gender')
         .eq('user_id', participantId)
         .maybeSingle(),
-      supabase
-        .from('chat_participants')
-        .select('is_confirmed')
-        .eq('chat_id', chatId)
-        .eq('user_id', participantId)
-        .maybeSingle(),
     ]);
+
+    if (courtRes.error) {
+      console.warn('[releaseConfirmedCourtSlot] court 조회 실패:', courtRes.error);
+      return;
+    }
 
     const courtData = courtRes.data as {
       confirmed_male_slots?: number | null;
@@ -1791,24 +1821,29 @@ if (!profile.fcm_token) continue;
       status?: string | null;
     } | null;
 
-    if (!courtData || !participantRowRes.data?.is_confirmed) return;
+    if (!courtData) return;
 
     const gender = participantProfRes.data?.gender;
     const isMale = gender === 'male' || gender === '남성';
+    const isFemale = gender === 'female' || gender === '여성';
 
-    await supabase
+    const { error: updateErr } = await supabase
       .from('courts')
       .update({
         confirmed_male_slots: isMale
           ? Math.max(0, (courtData.confirmed_male_slots ?? 0) - 1)
           : (courtData.confirmed_male_slots ?? 0),
-        confirmed_female_slots: !isMale
+        confirmed_female_slots: isFemale
           ? Math.max(0, (courtData.confirmed_female_slots ?? 0) - 1)
           : (courtData.confirmed_female_slots ?? 0),
         current_participants: Math.max(0, (courtData.current_participants ?? 0) - 1),
         ...(courtData.status === 'closed' ? { status: 'open' } : {}),
       } as never)
-      .eq('id', courtId);
+      .eq('id', effectiveCourtId);
+
+    if (updateErr) {
+      console.warn('[releaseConfirmedCourtSlot] court 슬롯 해제 실패:', updateErr);
+    }
   };
 
   const doLeaveAndCleanup = async () => {
@@ -2207,8 +2242,13 @@ if (senderProfile?.fcm_token) {
     }
   };
 
- const handleMatchConfirm = () => {
+ const handleMatchConfirm = async () => {
   closeAllPickers();
+
+  if (isGroupChat) {
+    await refreshParticipantCount();
+  }
+
   requestAnimationFrame(() => {
     pickerProcessingRef.current = false;
     setShowConfirmPicker(true);
