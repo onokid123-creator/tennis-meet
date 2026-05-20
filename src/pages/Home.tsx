@@ -320,38 +320,11 @@ useEffect(() => {
   const handleApplySubmit = async () => {
     if (!user || !profile || !applyTargetCourt) return;
     if (applyLoading) return;
-// 🚨 설레는 만남 무료 횟수 제한 체크 (신청)
-let latestProfile = null;
 
-if (
-  applyTargetCourt.purpose === 'dating' ||
-  (applyTargetCourt.purpose as string) === '설레는 만남'
-) {
-  const { data } = await supabase
-    .from('profiles')
-    .select('free_meeting_count, is_subscribed, gender, ticket_count')
-    .eq('user_id', user.id)
-    .single();
+    const isDatingApply =
+      applyTargetCourt.purpose === 'dating' ||
+      (applyTargetCourt.purpose as string) === '설레는 만남';
 
-  latestProfile = data;
-if (
-  latestProfile?.gender === '남성' &&
-  !latestProfile?.is_subscribed &&
-  (latestProfile?.free_meeting_count ?? 0) >= 3
-) {
-  if ((latestProfile?.ticket_count ?? 0) > 0) {
-    await supabase
-      .from('profiles')
-      .update({ ticket_count: (latestProfile?.ticket_count ?? 0) - 1 })
-      .eq('user_id', user.id);
-  } else {
-    setApplyTargetCourt(null);
-    setShowPaywallPopup(true);
-   setPaywallStep('first_limit');
-    return;
-  }
-}
-}
     const { data: existingApp } = await supabase
       .from('applications')
       .select('id, status')
@@ -371,6 +344,44 @@ if (
       return;
     }
 
+    let latestProfile: {
+      free_meeting_count?: number | null;
+      is_subscribed?: boolean | null;
+      gender?: string | null;
+      ticket_count?: number | null;
+    } | null = null;
+
+    let useFreeMeeting = false;
+    let useTicket = false;
+
+    if (isDatingApply) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('free_meeting_count, is_subscribed, gender, ticket_count')
+        .eq('user_id', user.id)
+        .single();
+
+      latestProfile = data;
+
+      const isMale = latestProfile?.gender === '남성' || latestProfile?.gender === 'male';
+      const isSubscribed = !!latestProfile?.is_subscribed;
+      const freeCount = latestProfile?.free_meeting_count ?? 0;
+      const ticketCount = latestProfile?.ticket_count ?? 0;
+
+      if (isMale && !isSubscribed) {
+        if (freeCount < 3) {
+          useFreeMeeting = true;
+        } else if (ticketCount > 0) {
+          useTicket = true;
+        } else {
+          setApplyTargetCourt(null);
+          setShowPaywallPopup(true);
+          setPaywallStep('first_limit');
+          return;
+        }
+      }
+    }
+
     setApplyLoading(true);
     const { error } = await supabase.from('applications').insert({
       court_id: applyTargetCourt.id,
@@ -387,20 +398,20 @@ if (
       alert('신청에 실패했습니다. 다시 시도해주세요.');
       return;
     }
-// ✅ 신청 성공 시 무료 횟수 증가
-if (
-  (applyTargetCourt.purpose === 'dating' ||
-    (applyTargetCourt.purpose as string) === '설레는 만남') &&
-  latestProfile?.gender === '남성' &&
-  !latestProfile?.is_subscribed
-) {
-  const nextCount = (latestProfile.free_meeting_count ?? 0) + 1;
 
-  await supabase
-    .from('profiles')
-    .update({ free_meeting_count: nextCount })
-    .eq('user_id', user.id);
-}
+    if (isDatingApply && latestProfile?.gender && !latestProfile?.is_subscribed) {
+      if (useFreeMeeting) {
+        await supabase
+          .from('profiles')
+          .update({ free_meeting_count: (latestProfile.free_meeting_count ?? 0) + 1 })
+          .eq('user_id', user.id);
+      } else if (useTicket) {
+        await supabase
+          .from('profiles')
+          .update({ ticket_count: Math.max(0, (latestProfile.ticket_count ?? 0) - 1) })
+          .eq('user_id', user.id);
+      }
+    }
 const { data: applicantProfile } = await supabase
   .from('profiles')
   .select('name')
