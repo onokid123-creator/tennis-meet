@@ -2819,7 +2819,7 @@ if (receiverProfile?.fcm_token) {
  <div
   className="fixed inset-0 flex flex-col"
   style={{
-    height: '100dvh',
+    height: `${Math.floor(Math.max(0, vpHeight - 8))}px`,
     bottom: 'var(--android-nav-bottom, 0px)',
     width: '100vw',
     overflow: 'hidden',
