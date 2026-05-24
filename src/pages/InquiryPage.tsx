@@ -483,7 +483,10 @@ export default function InquiryPage() {
           </div>
         </div>
 
-        <div className="px-4 pb-8 pt-2">
+        <div
+          className="px-4 pt-2"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 56px)' }}
+        >
           <button
             onClick={handleSubmit}
             disabled={!title.trim() || !content.trim() || submitting}

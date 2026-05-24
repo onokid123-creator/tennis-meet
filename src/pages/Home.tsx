@@ -14,6 +14,15 @@ import { useVisualViewport } from '../hooks/useVisualViewport';
 
 type Tab = 'others' | 'mine';
 type CategoryTab = 'tennis' | 'dating';
+type AgeFilter = 'all' | '20s' | '30s' | '40s' | '50s';
+
+const AGE_FILTERS: Array<{ key: AgeFilter; label: string }> = [
+  { key: 'all', label: '전체' },
+  { key: '20s', label: '20대' },
+  { key: '30s', label: '30대' },
+  { key: '40s', label: '40대' },
+  { key: '50s', label: '50대 이상' },
+];
 
 function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () => void; onClose: () => void }) {
   const vpHeight = useVisualViewport();
@@ -75,6 +84,7 @@ const vpHeight = useVisualViewport();
     return saved === 'mine' ? 'mine' : 'others';
   });
  const [categoryTab, setCategoryTab] = useState<CategoryTab | null>(null);
+  const [selectedAgeFilters, setSelectedAgeFilters] = useState<AgeFilter[]>(['all']);
   const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
 const [showPaywallPopup, setShowPaywallPopup] = useState(false);
 const [paywallStep, setPaywallStep] = useState<'first_limit' | 'ticket_pack' | 'out_of_tickets' | null>(null);
@@ -473,6 +483,36 @@ if (!categoryTab) {
 }
   const isDating = categoryTab === 'dating';
 
+  const toggleAgeFilter = (filter: AgeFilter) => {
+    setSelectedAgeFilters((prev) => {
+      if (filter === 'all') return ['all'];
+
+      const withoutAll = prev.filter((item) => item !== 'all');
+      const next = withoutAll.includes(filter)
+        ? withoutAll.filter((item) => item !== filter)
+        : [...withoutAll, filter];
+
+      return next.length === 0 ? ['all'] : next;
+    });
+  };
+
+  const isAgeMatched = (age: number | null | undefined) => {
+    if (selectedAgeFilters.includes('all')) return true;
+    if (!age) return false;
+
+    return selectedAgeFilters.some((filter) => {
+      if (filter === '20s') return age >= 20 && age < 30;
+      if (filter === '30s') return age >= 30 && age < 40;
+      if (filter === '40s') return age >= 40 && age < 50;
+      if (filter === '50s') return age >= 50;
+      return true;
+    });
+  };
+
+  const filteredCourts = activeTab === 'others'
+    ? courts.filter((court) => isAgeMatched(court.owner_age))
+    : courts;
+
   const headerBg = isDating
     ? 'linear-gradient(180deg, #F43F5E 0%, #FECDD3 100%)'
     : '#1B4332';
@@ -577,7 +617,46 @@ onTouchEnd={(e) => {
             />
             <p className="text-sm" style={{ color: isDating ? 'rgba(251,113,133,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
           </div>
-        ) : courts.length === 0 ? (
+        ) : (
+          <>
+            {activeTab === 'others' && (
+              <div className="px-1 pb-3">
+                <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide">
+                {AGE_FILTERS.map((filter) => {
+                  const selected = selectedAgeFilters.includes(filter.key);
+                  return (
+                    <button
+                      key={filter.key}
+                      type="button"
+                      onClick={() => toggleAgeFilter(filter.key)}
+                      className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
+                      style={{
+                        background: selected
+                          ? isDating
+                            ? '#FB7185'
+                            : '#2D6A4F'
+                          : isDating
+                            ? 'rgba(251,113,133,0.1)'
+                            : 'rgba(45,106,79,0.1)',
+                        color: selected
+                          ? '#fff'
+                          : isDating
+                            ? '#BE4B63'
+                            : '#2D6A4F',
+                        border: selected
+                          ? '1px solid transparent'
+                          : `1px solid ${isDating ? 'rgba(251,113,133,0.22)' : 'rgba(45,106,79,0.18)'}`,
+                      }}
+                    >
+                      {filter.label}
+                    </button>
+                  );
+                })}
+                </div>
+              </div>
+            )}
+
+            {filteredCourts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-5">
             {isDating ? (
               <div
@@ -609,18 +688,18 @@ onTouchEnd={(e) => {
               </p>
             </div>
           </div>
-        ) : isDating ? (
-          <SwipeCourtDeck
-            courts={courts}
-            onApply={(court) => openApplyPopup(court)}
-            isOwnerMode={activeTab === 'mine'}
-            onEdit={(court) => handleEdit(court)}
-            onDelete={(court) => handleDelete(court.id)}
-          />
-        ) : (
-          <div className="space-y-4">
-            {courts.map((court) => (
-              <TennisCourtCard
+            ) : isDating ? (
+              <SwipeCourtDeck
+                courts={filteredCourts}
+                onApply={(court) => openApplyPopup(court)}
+                isOwnerMode={activeTab === 'mine'}
+                onEdit={(court) => handleEdit(court)}
+                onDelete={(court) => handleDelete(court.id)}
+              />
+            ) : (
+              <div className="space-y-4">
+                {filteredCourts.map((court) => (
+                  <TennisCourtCard
                 key={court.id}
                 court={court}
                 isOwner={court.user_id === user?.id}
@@ -628,8 +707,10 @@ onTouchEnd={(e) => {
                 onEdit={() => handleEdit(court)}
                 onDelete={() => handleDelete(court.id)}
               />
-            ))}
-          </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
