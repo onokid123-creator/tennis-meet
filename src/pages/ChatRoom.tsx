@@ -3501,8 +3501,11 @@ paddingBottom: '14px',
       </div>
 
       <div
-      className="px-3 pt-2 pb-3 flex-shrink-0 z-30 relative"
-      style={inputAreaStyle}
+      className="px-3 pt-2 flex-shrink-0 z-30 relative"
+      style={{
+        ...inputAreaStyle,
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
+      }}
     >
   <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">
     <input
