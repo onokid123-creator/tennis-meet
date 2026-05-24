@@ -2747,18 +2747,36 @@ if (receiverProfile?.fcm_token) {
         style={{ background: avatarBg, boxShadow: `0 0 0 2px ${isDating ? 'rgba(201,168,76,0.3)' : 'rgba(45,106,79,0.2)'}` }}
         onClick={clickable && otherUser ? () => setShowProfilePopup(true) : undefined}
       >
-        {!isOpponentBlocked && (isDating ? otherUser?.photo_url : otherUser?.tennis_photo_url) ? (
-  <img
-    src={isDating ? otherUser!.photo_url! : otherUser!.tennis_photo_url!}
-    alt={opponentName}
-    className="w-full h-full object-cover"
-  />
-) : (
-  <DefaultProfileAvatar
-    type={isDating ? 'dating' : 'tennis'}
-    size={size === 'md' ? 40 : 32}
-  />
-)}
+        {(() => {
+          const headerPhoto = !isOpponentBlocked
+            ? isDating
+              ? (
+                otherUser?.photo_url ||
+                groupAvatars.find((av) => av.photo_url)?.photo_url ||
+                confirmedParticipants.find((p) => p.photo_url)?.photo_url ||
+                null
+              )
+              : (
+                otherUser?.tennis_photo_url ||
+                groupAvatars.find((av) => av.tennis_photo_url)?.tennis_photo_url ||
+                confirmedParticipants.find((p) => p.tennis_photo_url)?.tennis_photo_url ||
+                null
+              )
+            : null;
+
+          return headerPhoto ? (
+            <img
+              src={headerPhoto}
+              alt={opponentName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <DefaultProfileAvatar
+              type={isDating ? 'dating' : 'tennis'}
+              size={size === 'md' ? 40 : 32}
+            />
+          );
+        })()}
       </div>
     );
   };
@@ -2802,6 +2820,7 @@ if (receiverProfile?.fcm_token) {
   className="fixed inset-0 flex flex-col"
   style={{
     height: '100dvh',
+    bottom: 'var(--android-nav-bottom, 0px)',
     width: '100vw',
     overflow: 'hidden',
     ...bgStyle,
@@ -3504,7 +3523,7 @@ paddingBottom: '14px',
       className="px-3 pt-2 flex-shrink-0 z-30 relative"
       style={{
         ...inputAreaStyle,
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 20px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
       }}
     >
   <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">

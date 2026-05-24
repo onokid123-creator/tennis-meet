@@ -83,3 +83,11 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
 }
+
+:root {
+  --android-nav-bottom: 0px;
+}
+
+html.is-android {
+  --android-nav-bottom: 8px;
+}
