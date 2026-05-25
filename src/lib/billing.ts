@@ -1,8 +1,14 @@
+import { Capacitor } from '@capacitor/core';
 import { supabase } from './supabase';
+
 declare const CdvPurchase: any;
 
-const TICKET_5_ID = 'tennis_meet_ticket';
-const TICKET_10_ID = 'tennis_meet_ticket_10';
+const IOS_TICKET_5_ID = 'tennis_meet_ticket';
+const IOS_TICKET_10_ID = 'tennis_meet_ticket_10';
+
+const ANDROID_TICKET_5_ID = 'dating_ticket_5';
+const ANDROID_TICKET_10_ID = 'dating_ticket_10';
+
 const MONTHLY_PREMIUM_ID = 'dating_monthly_premium';
 
 let billingInitialized = false;
@@ -15,9 +21,61 @@ function isBillingAvailable() {
   );
 }
 
-function getPlatform() {
+function getNativePlatformName() {
+  return Capacitor.getPlatform();
+}
+
+function getBillingPlatform() {
   const { Platform } = CdvPurchase;
-  return Platform.APPLE_APPSTORE;
+  const platform = getNativePlatformName();
+
+  if (platform === 'ios') return Platform.APPLE_APPSTORE;
+  if (platform === 'android') return Platform.GOOGLE_PLAY;
+
+  return Platform.TEST;
+}
+
+function getPlatformProductIds() {
+  const platform = getNativePlatformName();
+
+  if (platform === 'android') {
+    return {
+      ticket5: ANDROID_TICKET_5_ID,
+      ticket10: ANDROID_TICKET_10_ID,
+      monthlyPremium: MONTHLY_PREMIUM_ID,
+    };
+  }
+
+  return {
+    ticket5: IOS_TICKET_5_ID,
+    ticket10: IOS_TICKET_10_ID,
+    monthlyPremium: MONTHLY_PREMIUM_ID,
+  };
+}
+
+function resolveProductId(productId: string) {
+  const ids = getPlatformProductIds();
+  const platform = getNativePlatformName();
+
+  if (platform === 'android') {
+    if (productId === IOS_TICKET_5_ID) return ids.ticket5;
+    if (productId === IOS_TICKET_10_ID) return ids.ticket10;
+  }
+
+  if (platform === 'ios') {
+    if (productId === ANDROID_TICKET_5_ID) return ids.ticket5;
+    if (productId === ANDROID_TICKET_10_ID) return ids.ticket10;
+  }
+
+  return productId;
+}
+
+function isTicket5(productId: string) {
+  return productId === IOS_TICKET_5_ID || productId === ANDROID_TICKET_5_ID;
+}
+
+function isTicket10(productId: string) {
+  return productId === IOS_TICKET_10_ID || productId === ANDROID_TICKET_10_ID;
 }
 
 async function waitForProduct(productId: string, platform: any, timeoutMs = 8000) {
@@ -60,23 +118,24 @@ export async function initBilling() {
   }
 
   const { store, ProductType, LogLevel } = CdvPurchase;
-  const platform = getPlatform();
+  const platform = getBillingPlatform();
+  const ids = getPlatformProductIds();
 
   store.verbosity = LogLevel.DEBUG;
 
-    store.register([
+  store.register([
     {
-      id: TICKET_5_ID,
+      id: ids.ticket5,
       type: ProductType.CONSUMABLE,
       platform,
     },
     {
-      id: TICKET_10_ID,
+      id: ids.ticket10,
       type: ProductType.CONSUMABLE,
       platform,
     },
     {
-      id: MONTHLY_PREMIUM_ID,
+      id: ids.monthlyPremium,
       type: ProductType.PAID_SUBSCRIPTION,
       platform,
     },
@@ -100,8 +159,8 @@ export async function initBilling() {
       return;
     }
 
-    if (productId === TICKET_5_ID || productId === TICKET_10_ID) {
-      const addCount = productId === TICKET_5_ID ? 5 : 10;
+    if (isTicket5(productId) || isTicket10(productId)) {
+      const addCount = isTicket5(productId) ? 5 : 10;
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -118,6 +177,7 @@ export async function initBilling() {
         })
         .eq('user_id', user.id);
     }
+
     if (productId === MONTHLY_PREMIUM_ID) {
       await supabase
         .from('profiles')
@@ -126,6 +186,7 @@ export async function initBilling() {
         })
         .eq('user_id', user.id);
     }
+
     transaction.finish();
   });
 
@@ -159,33 +220,43 @@ export async function purchaseProduct(productId: string) {
   }
 
   const { store } = CdvPurchase;
-  const platform = getPlatform();
+  const platform = getBillingPlatform();
+  const resolvedProductId = resolveProductId(productId);
 
-  const product = await waitForProduct(productId, platform);
+  const product = await waitForProduct(resolvedProductId, platform);
 
   if (!product) {
-    throw new Error(`상품을 찾을 수 없습니다: ${productId}`);
+    throw new Error(`상품을 찾을 수 없습니다: ${resolvedProductId}`);
   }
 
   const offer = product.getOffer ? product.getOffer() : product.offers?.[0];
 
-if (!offer) {
-  throw new Error(`구매 가능한 오퍼가 없습니다: ${productId}`);
-}
+  if (!offer) {
+    throw new Error(`구매 가능한 오퍼가 없습니다: ${resolvedProductId}`);
+  }
 
-const error = await offer.order();
+  const error = offer.order
+    ? await offer.order()
+    : await store.order(offer);
 
-if (error) {
-  throw new Error(error.message || '결제 요청에 실패했습니다.');
-}
+  if (error) {
+    throw new Error(error.message || '결제 요청에 실패했습니다.');
+  }
 }
 
 export async function openSubscriptionManager() {
   if (!isBillingAvailable()) return;
+
+  const { store } = CdvPurchase;
+  const platform = getBillingPlatform();
+
+  if (store.manageSubscriptions) {
+    await store.manageSubscriptions(platform);
+  }
 }
 
 export const BILLING_IDS = {
-  ticket5: TICKET_5_ID,
-  ticket10: TICKET_10_ID,
+  ticket5: IOS_TICKET_5_ID,
+  ticket10: IOS_TICKET_10_ID,
   monthlyPremium: MONTHLY_PREMIUM_ID,
 };
