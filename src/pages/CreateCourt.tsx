@@ -259,18 +259,18 @@ const isTennis = purpose === 'tennis';
   };
 
   const handleSubmit = async () => {
-   if (loading) return;
+    if (loading) return;
 
-if (!canProceed) {
-  alert('입력값이 부족합니다. 이전 단계 내용을 다시 확인해주세요.');
-  return;
-}
-const currentUser = await getSafeUser();
-if (!currentUser) {
-  alert('로그인 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
-  return;
-}
-// 🚨 설레는 만남 무료 횟수 제한 체크
+    if (!canProceed) {
+      alert('입력값이 부족합니다. 이전 단계 내용을 다시 확인해주세요.');
+      return;
+    }
+    const currentUser = await getSafeUser();
+    if (!currentUser) {
+      alert('로그인 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    // 🚨 설레는 만남 무료 횟수 제한 체크
     setLoading(true);
 
     try {
@@ -294,28 +294,28 @@ if (!currentUser) {
         )
       );
 
+      const { data: myProfile } = await supabase
+        .from('profiles')
+        .select('name,age,gender,photo_url,photo_urls,tennis_photo_url,experience,mbti,height,bio')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
       let tennisPhotoUrl: string | null = null;
       if (purpose === 'tennis') {
-        const { data: myProfile } = await supabase
-          .from('profiles')
-          .select('tennis_photo_url')
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
         tennisPhotoUrl = myProfile?.tennis_photo_url || null;
       } else {
-        tennisPhotoUrl = datingPhotos[0] || null;
+        tennisPhotoUrl = datingPhotos[0] || myProfile?.photo_url || null;
       }
 
-const [year, month, day] = selectedDate.split('-').map(Number);
+      const [year, month, day] = selectedDate.split('-').map(Number);
 
-const deleteAt = new Date(year, month - 1, day + 1, 0, 0, 0);
-const courtData: Record<string, unknown> = {
+      const deleteAt = new Date(year, month - 1, day + 1, 0, 0, 0);
+      const courtData: Record<string, unknown> = {
         user_id: currentUser.id,
         host_id: currentUser.id,
         purpose,
         court_name: selectedCourt!.name,
-delete_at: deleteAt.toISOString(),
+        delete_at: deleteAt.toISOString(),
         date: selectedDate,
         start_time: selectedTime,
         end_time: endTime,
@@ -328,6 +328,15 @@ delete_at: deleteAt.toISOString(),
         male_count: maleSlots,
         female_count: femaleSlots,
         tennis_photo_url: tennisPhotoUrl,
+        owner_name: myProfile?.name ?? null,
+        owner_age: myProfile?.age ?? null,
+        owner_gender: myProfile?.gender ?? null,
+        owner_photo: myProfile?.photo_url ?? null,
+        owner_photos: myProfile?.photo_urls ?? null,
+        owner_mbti: myProfile?.mbti ?? null,
+        owner_height: myProfile?.height ?? null,
+        owner_bio: myProfile?.bio ?? null,
+        owner_experience: myProfile?.experience ?? null,
       };
 
       if (!isEditing) {
@@ -357,26 +366,26 @@ delete_at: deleteAt.toISOString(),
           courtData.owner_photos = finalPhotos;
           courtData.owner_photo = finalPhotos[0] || null;
           courtData.tennis_photo_url = finalPhotos[0] || null;
-          courtData.owner_mbti = datingProfile?.mbti || editCourt!.owner_mbti || null;
-          courtData.owner_height = datingProfile?.height || editCourt!.owner_height || null;
-          courtData.owner_bio = datingProfile?.bio || editCourt!.owner_bio || null;
-          courtData.owner_experience = datingProfile?.experience || editCourt!.owner_experience || null;
-          courtData.owner_gender = datingProfile?.gender || editCourt!.owner_gender || null;
-          courtData.owner_age = datingProfile?.age || editCourt!.owner_age || null;
-          courtData.owner_name = datingProfile?.name || editCourt!.owner_name || null;
+          courtData.owner_mbti = datingProfile?.mbti || myProfile?.mbti || editCourt!.owner_mbti || null;
+          courtData.owner_height = datingProfile?.height || myProfile?.height || editCourt!.owner_height || null;
+          courtData.owner_bio = datingProfile?.bio || myProfile?.bio || editCourt!.owner_bio || null;
+          courtData.owner_experience = datingProfile?.experience || myProfile?.experience || editCourt!.owner_experience || null;
+          courtData.owner_gender = datingProfile?.gender || myProfile?.gender || editCourt!.owner_gender || null;
+          courtData.owner_age = datingProfile?.age || myProfile?.age || editCourt!.owner_age || null;
+          courtData.owner_name = datingProfile?.name || myProfile?.name || editCourt!.owner_name || null;
         } else {
           courtData.confirmed_male_slots = 0;
           courtData.confirmed_female_slots = 0;
           courtData.owner_photos = datingPhotos;
           courtData.owner_photo = datingPhotos[0] || null;
           courtData.tennis_photo_url = datingPhotos[0] || null;
-          courtData.owner_mbti = datingProfile?.mbti || null;
-          courtData.owner_height = datingProfile?.height || null;
-          courtData.owner_bio = datingProfile?.bio || null;
-          courtData.owner_experience = datingProfile?.experience || null;
-          courtData.owner_gender = datingProfile?.gender || null;
-          courtData.owner_age = datingProfile?.age || null;
-          courtData.owner_name = datingProfile?.name || null;
+          courtData.owner_mbti = datingProfile?.mbti || myProfile?.mbti || null;
+          courtData.owner_height = datingProfile?.height || myProfile?.height || null;
+          courtData.owner_bio = datingProfile?.bio || myProfile?.bio || null;
+          courtData.owner_experience = datingProfile?.experience || myProfile?.experience || null;
+          courtData.owner_gender = datingProfile?.gender || myProfile?.gender || null;
+          courtData.owner_age = datingProfile?.age || myProfile?.age || null;
+          courtData.owner_name = datingProfile?.name || myProfile?.name || null;
         }
       }
 
