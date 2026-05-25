@@ -1,5 +1,6 @@
 import AppLifecycleBridge from './AppLifecycleBridge';
 import AppLaunchSplash from './AppLaunchSplash';
+import AppVersionGate from './AppVersionGate';
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import PushNotificationBootstrap from './PushNotificationBootstrap';
@@ -333,6 +334,7 @@ if (showSplash) {
 }
   return (
     <BrowserRouter>
+      <AppVersionGate />
       <PushNotificationBootstrap />
       <AuthProvider>
         <CourtsProvider>
