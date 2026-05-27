@@ -145,6 +145,11 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
   useEffect(() => {
     if (!authLoading) {
       setProfileLoaded(true);
+
+      if (isEditing || isTennisEditing || saving || savingTennis) {
+        return;
+      }
+
       if (profile) {
         const photos = profile.photo_urls?.length
           ? profile.photo_urls
@@ -164,7 +169,7 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
        setProfileTab(getInitialProfileTab());
       }
     }
-  }, [authLoading, profile]);
+  }, [authLoading, profile, isEditing, isTennisEditing, saving, savingTennis]);
 
   const allPhotos: string[] = profile?.photo_urls?.length
     ? profile.photo_urls
