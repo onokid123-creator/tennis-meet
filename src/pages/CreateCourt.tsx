@@ -199,9 +199,15 @@ const isTennis = purpose === 'tennis';
     }
   }, []);
 
+  const reservationMode =
+    new URLSearchParams(window.location.search).get('mode') === 'planning'
+      ? 'planning'
+      : 'confirmed';
+  const isPlanningMode = reservationMode === 'planning';
+
   const canProceed = (() => {
     if (step === 1) return !!selectedCourt;
-    if (step === 2) return !!selectedDate && !!selectedTime && !!selectedEndTime;
+    if (step === 2) return isPlanningMode ? !!selectedDate : !!selectedDate && !!selectedTime && !!selectedEndTime;
     if (step === 3) {
       if (isTennis) return !!format && (maleSlots > 0 || femaleSlots > 0) && courtFee.trim() !== '' && Number(courtFee) >= 0;
       return !!format && !!costOption && (maleSlots > 0 || femaleSlots > 0);
@@ -317,8 +323,10 @@ const isTennis = purpose === 'tennis';
         court_name: selectedCourt!.name,
         delete_at: deleteAt.toISOString(),
         date: selectedDate,
-        start_time: selectedTime,
-        end_time: endTime,
+        reservation_mode: reservationMode,
+        experience_wanted: experienceWanted.trim() || null,
+        start_time: isPlanningMode ? null : selectedTime,
+        end_time: isPlanningMode ? null : endTime,
         format: format || '단식',
         match_type: format || '단식',
         description,
@@ -345,7 +353,6 @@ const isTennis = purpose === 'tennis';
       }
 
       if (isTennis) {
-        courtData.experience_wanted = experienceWanted;
         courtData.court_fee = courtFee ? Number(courtFee) : null;
       }
 
@@ -439,14 +446,14 @@ const isTennis = purpose === 'tennis';
 
   const stepTitles = isTennis
     ? [
-        '어디서 치실 건가요? 🎾',
-        '언제 만날까요? 📅',
+        isPlanningMode ? '어디서 치실 예정이세요?' : '어디서 치실 건가요? 🎾',
+        isPlanningMode ? '언제 만나고 싶으세요?' : '언제 만날까요? 📅',
         '어떤 경기 원하세요? 🏆',
         '같이 칠 분들께 한마디! 💬',
       ]
     : [
-        '코트 위 설레는 만남을 등록해봐요 🥂',
-        '언제 만나고 싶으세요? 💫',
+        isPlanningMode ? '어디서 치실 예정이세요?' : '코트 위 설레는 만남을 등록해봐요 🥂',
+        isPlanningMode ? '언제 만나고 싶으세요?' : '언제 만나고 싶으세요? 💫',
         '어떤 분을 찾고 계세요? 💝',
         '설레는 첫인상을 남겨요 💌',
       ];
@@ -530,9 +537,10 @@ const isTennis = purpose === 'tennis';
             title={stepTitles[1]}
             accentColor={accentColor}
             selectedDate={selectedDate}
-            selectedTime={selectedTime}
-            selectedEndTime={selectedEndTime}
-            showEndTime={true}
+            selectedTime={isPlanningMode ? '' : selectedTime}
+            selectedEndTime={isPlanningMode ? '' : selectedEndTime}
+            showEndTime={!isPlanningMode}
+            hideTime={isPlanningMode}
             onDateChange={setSelectedDate}
             onTimeChange={setSelectedTime}
             onEndTimeChange={setSelectedEndTime}
@@ -587,6 +595,20 @@ const isTennis = purpose === 'tennis';
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-2">어떤 분이랑 치고 싶으세요?</p>
+              <input
+                type="text"
+                value={experienceWanted}
+                onChange={(e) => setExperienceWanted(e.target.value.slice(0, 10))}
+                placeholder="예) 1년, 2년, 3년 이상"
+                maxLength={10}
+                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:border-transparent text-sm font-medium"
+                style={{ outlineColor: accentColor }}
+              />
+              <p className="text-xs text-gray-400 mt-1">신청자가 참고할 수 있는 원하는 구력대를 짧게 입력해주세요</p>
             </div>
 
             <div>
@@ -676,6 +698,20 @@ const isTennis = purpose === 'tennis';
             </div>
 
             <div>
+              <p className="text-sm font-semibold text-gray-700 mb-2">어떤 분이랑 치고 싶으세요?</p>
+              <input
+                type="text"
+                value={experienceWanted}
+                onChange={(e) => setExperienceWanted(e.target.value.slice(0, 10))}
+                placeholder="예) 1년, 2년, 3년 이상"
+                maxLength={10}
+                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:border-transparent text-sm font-medium"
+                style={{ outlineColor: accentColor }}
+              />
+              <p className="text-xs text-gray-400 mt-1">신청자가 참고할 수 있는 원하는 구력대를 짧게 입력해주세요</p>
+            </div>
+
+            <div>
               <p className="text-sm font-semibold text-gray-700 mb-3">코트비</p>
               <div className="grid grid-cols-2 gap-3">
                 {[
@@ -711,18 +747,20 @@ const isTennis = purpose === 'tennis';
               </p>
             )}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <p className="text-sm font-semibold text-gray-700 mb-2">코트 번호 <span className="text-gray-400 font-normal text-xs">(선택)</span></p>
-              <input
-                type="text"
-                value={courtNumber}
-                onChange={(e) => setCourtNumber(e.target.value)}
-                placeholder="예) 3번 코트"
-                maxLength={20}
-                className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gray-400 placeholder-gray-400"
-              />
-              <p className="text-xs text-gray-400 mt-1.5">참가자들이 현장에서 찾기 쉽도록 입력해주세요</p>
-            </div>
+            {!isPlanningMode && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">코트 번호 <span className="text-gray-400 font-normal text-xs">(선택)</span></p>
+                <input
+                  type="text"
+                  value={courtNumber}
+                  onChange={(e) => setCourtNumber(e.target.value)}
+                  placeholder="예) 3번 코트"
+                  maxLength={20}
+                  className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gray-400 placeholder-gray-400"
+                />
+                <p className="text-xs text-gray-400 mt-1.5">참가자들이 현장에서 찾기 쉽도록 입력해주세요</p>
+              </div>
+            )}
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <textarea
@@ -747,11 +785,11 @@ const isTennis = purpose === 'tennis';
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">등록 요약</p>
               <div className="flex gap-2 text-sm">
                 <span className="text-gray-500 w-16 flex-shrink-0">장소</span>
-                <span className="font-medium text-gray-900 truncate">{selectedCourt?.name}{courtNumber.trim() ? ` · ${courtNumber.trim()}` : ''}</span>
+                <span className="font-medium text-gray-900 truncate">{selectedCourt?.name}{!isPlanningMode && courtNumber.trim() ? ` · ${courtNumber.trim()}` : ''}</span>
               </div>
               <div className="flex gap-2 text-sm">
                 <span className="text-gray-500 w-16 flex-shrink-0">날짜</span>
-                <span className="font-medium text-gray-900">{selectedDate} {selectedTime}{selectedEndTime ? ` ~ ${selectedEndTime}` : ''}</span>
+                <span className="font-medium text-gray-900">{isPlanningMode ? `${selectedDate} (협의)` : `${selectedDate} ${selectedTime}${selectedEndTime ? ` ~ ${selectedEndTime}` : ''}`}</span>
               </div>
               {isTennis && format && (
                 <div className="flex gap-2 text-sm">

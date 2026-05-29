@@ -34,3 +34,7 @@ ios/App/Pods
 ios/App/build
 ios/App/xcuserdata
 ios/App/*.xcworkspace/xcuserdata
+
+# Android signing keys
+android/key.properties
+android/app/*.jks

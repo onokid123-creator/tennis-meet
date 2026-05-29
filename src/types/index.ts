@@ -16,6 +16,7 @@ export interface Profile {
   height?: number;
   tennis_style?: string;
   profile_completed: boolean;
+  reservation_mode?: 'confirmed' | 'planning' | null;
   created_at: string;
 }
 
@@ -54,6 +55,7 @@ export interface Court {
   owner_name?: string;
   court_intro?: string;
   court_number?: string;
+  reservation_mode?: 'confirmed' | 'planning' | null;
   created_at: string;
   profile?: Profile;
 }
@@ -69,6 +71,7 @@ export interface Application {
   rejection_reason?: string | null;
   chat_id?: string | null;
   applicant_notified?: boolean;
+  reservation_mode?: 'confirmed' | 'planning' | null;
   created_at: string;
   applicant?: Profile;
   owner?: Profile;
@@ -84,6 +87,7 @@ export interface Chat {
   is_group?: boolean;
   left_by?: string[];
   confirmed_user_ids?: string[];
+  reservation_mode?: 'confirmed' | 'planning' | null;
   created_at: string;
   user1?: Profile;
   user2?: Profile;
@@ -108,6 +112,7 @@ export interface Message {
   is_read: boolean;
   type: 'user' | 'system' | 'after_proposal' | 'leave_request';
   payload?: Record<string, unknown> | null;
+  reservation_mode?: 'confirmed' | 'planning' | null;
   created_at: string;
   sender?: Profile;
   _failed?: boolean;
@@ -121,6 +126,7 @@ export interface GroupChatMessage {
   type: 'user' | 'system' | 'leave_request';
   is_read: boolean;
   payload?: Record<string, unknown> | null;
+  reservation_mode?: 'confirmed' | 'planning' | null;
   created_at: string;
   sender?: Profile;
 }
@@ -143,6 +149,7 @@ export interface MealProposal {
   receiver_id: string;
   status: 'pending' | 'accepted' | 'rejected';
   rejection_reason?: string | null;
+  reservation_mode?: 'confirmed' | 'planning' | null;
   created_at: string;
   sender?: Profile;
   receiver?: Profile;
@@ -153,6 +160,7 @@ export interface CourtGroupChat {
   court_id: string;
   host_id: string;
   purpose?: string;
+  reservation_mode?: 'confirmed' | 'planning' | null;
   created_at: string;
   court?: Court;
   host?: Profile;

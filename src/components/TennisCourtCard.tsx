@@ -416,11 +416,11 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
               </InfoCard>
             )}
 
-            {/* 구력 조건 */}
+            {/* 선호 구력 */}
             {court.experience_wanted && (
               <div style={{ background: L, borderRadius: 14, padding: '11px 16px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 9, border: '1px solid rgba(108,191,108,0.35)' }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: A, flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: P, fontWeight: 600 }}>구력 조건: {court.experience_wanted}</span>
+                <span style={{ fontSize: 13, color: P, fontWeight: 600 }}>선호 구력: {court.experience_wanted}</span>
               </div>
             )}
 
@@ -678,6 +678,11 @@ aspectRatio: '3/4',
               )}
               {isClosed && (
                 <span style={{ background: '#FEE2E2', border: `1px solid rgba(239,68,68,0.2)`, borderRadius: 10, padding: '4px 9px', fontSize: 11, color: '#EF4444', fontWeight: 700, lineHeight: 1.4 }}>모집 마감</span>
+              )}
+              {court.experience_wanted && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(26,92,53,0.08)', border: `1px solid rgba(26,92,53,0.18)`, color: P, borderRadius: 10, padding: '4px 9px', fontSize: 11, fontWeight: 700, lineHeight: 1.4 }}>
+                  선호 구력: {court.experience_wanted}
+                </span>
               )}
             </div>
 

@@ -284,6 +284,26 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                   onClick={() => { setLbIdx(pidx); setLbOpen(true); }}
                 />
               </div>
+              {/* reservation mode badge */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  left: 12,
+                  zIndex: 4,
+                  padding: '6px 11px',
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: court.reservation_mode === 'planning' ? '#9A5A12' : '#166534',
+                  background: court.reservation_mode === 'planning' ? '#FFF3D6' : '#DCFCE7',
+                  border: court.reservation_mode === 'planning' ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(22,101,52,0.18)',
+                  boxShadow: '0 3px 10px rgba(0,0,0,0.14)',
+                }}
+              >
+                {court.reservation_mode === 'planning' ? '🗓️ 코트 협의' : '🎾 코트 확정'}
+              </div>
+
               {/* dark gradient */}
               <div style={{ position: 'absolute', inset: 0, borderRadius: 20, background: 'linear-gradient(to bottom,transparent 48%,rgba(0,0,0,0.6) 100%)', pointerEvents: 'none' }} />
               {/* name overlay */}
@@ -395,11 +415,18 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                     </div>
                   )}
                 </div>
-                {cost(court) && (
-                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,126,138,0.1)' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: ROSE, border: '1px solid rgba(255,126,138,0.22)', color: PINK, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
-                      💳 {cost(court)}
-                    </span>
+                {(cost(court) || court.experience_wanted) && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,126,138,0.1)' }}>
+                    {cost(court) && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: ROSE, border: '1px solid rgba(255,126,138,0.22)', color: PINK, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
+                        💳 {cost(court)}
+                      </span>
+                    )}
+                    {court.experience_wanted && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FFF5F7', border: '1px solid rgba(255,126,138,0.22)', color: PINK, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
+                        선호 구력: {court.experience_wanted}
+                      </span>
+                    )}
                   </div>
                 )}
               </Card>
@@ -674,6 +701,26 @@ const closeLightbox = () => {
                 />
               </div>
 
+              {/* reservation mode badge */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  left: 12,
+                  zIndex: 4,
+                  padding: '6px 11px',
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: court.reservation_mode === 'planning' ? '#9A5A12' : '#166534',
+                  background: court.reservation_mode === 'planning' ? '#FFF3D6' : '#DCFCE7',
+                  border: court.reservation_mode === 'planning' ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(22,101,52,0.18)',
+                  boxShadow: '0 3px 10px rgba(0,0,0,0.14)',
+                }}
+              >
+                {court.reservation_mode === 'planning' ? '🗓️ 코트 협의' : '🎾 코트 확정'}
+              </div>
+
               {/* gradient */}
               <div style={{ position: 'absolute', inset: 0, borderRadius: 18, background: 'linear-gradient(to bottom,transparent 42%,rgba(0,0,0,0.68) 100%)', pointerEvents: 'none' }} />
 
@@ -784,6 +831,11 @@ const closeLightbox = () => {
             {cost(court) && (
               <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: GOLD, fontWeight: 600 }}>
                 {cost(court)}
+              </span>
+            )}
+            {court.experience_wanted && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(255,126,138,0.08)', border: '1px solid rgba(255,126,138,0.18)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: PINK, fontWeight: 600 }}>
+                선호 구력: {court.experience_wanted}
               </span>
             )}
           </div>

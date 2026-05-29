@@ -8,6 +8,7 @@ interface DateTimePickerProps {
   selectedTime: string;
   selectedEndTime?: string;
   showEndTime?: boolean;
+  hideTime?: boolean;
   onDateChange: (date: string) => void;
   onTimeChange: (time: string) => void;
   onEndTimeChange?: (time: string) => void;
@@ -100,6 +101,7 @@ export default function DateTimePicker({
   selectedTime,
   selectedEndTime,
   showEndTime = false,
+  hideTime = false,
   onDateChange,
   onTimeChange,
   onEndTimeChange,
@@ -211,7 +213,7 @@ export default function DateTimePicker({
       </div>
 
       {/* Time Selection - standard (tennis) */}
-      {!showEndTime && (
+      {!hideTime && !showEndTime && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
           <TimeColumn
             label="시간 선택"
@@ -224,7 +226,7 @@ export default function DateTimePicker({
       )}
 
       {/* Time Selection - side by side (dating) */}
-      {showEndTime && (
+      {!hideTime && showEndTime && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3">
           <div className="flex gap-3">
             <TimeColumn

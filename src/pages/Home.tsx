@@ -139,7 +139,7 @@ useEffect(() => {
     });
   }, [user]);
 
-  const COURT_FIELDS = 'id,user_id,purpose,status,court_name,court_number,date,start_time,end_time,format,match_type,description,male_slots,female_slots,male_count,female_count,confirmed_male_slots,confirmed_female_slots,current_participants,capacity,cost,experience_wanted,court_fee,tennis_photo_url,owner_photo,owner_photos,owner_name,owner_age,owner_gender,owner_mbti,owner_height,owner_bio,owner_experience,court_intro,created_at';
+  const COURT_FIELDS = 'id,user_id,purpose,status,court_name,court_number,date,start_time,end_time,format,match_type,description,male_slots,female_slots,male_count,female_count,confirmed_male_slots,confirmed_female_slots,current_participants,capacity,cost,experience_wanted,court_fee,tennis_photo_url,owner_photo,owner_photos,owner_name,owner_age,owner_gender,owner_mbti,owner_height,owner_bio,owner_experience,court_intro,reservation_mode,created_at';
   const PROFILE_FIELDS = 'user_id,name,photo_url,photo_urls,tennis_photo_url,experience,tennis_style,age,gender,purpose,mbti,height';
 const getCourtCacheKey = (purpose: CategoryTab, tab: Tab) => {
   return `cached_courts_${purpose}_${tab}`;
@@ -317,6 +317,7 @@ useEffect(() => {
       }
     }
 
+    setCourts([]);
     setCategoryTab(tab);
     setActiveTab('others');
     localStorage.setItem('home_category_tab', tab);
@@ -470,9 +471,9 @@ if (hostProfile?.fcm_token) {
   const handleEdit = (court: Court) => {
     navigate('/create-court', { state: { editCourt: court } });
   };
-const handleCreateCourt = () => {
-  console.log('[Home] 코트 등록 버튼 클릭');
-  navigate('/create-court', { state: { purpose: categoryTab } });
+const handleCreateCourt = (mode: 'confirmed' | 'planning') => {
+  console.log('[Home] 코트 등록 버튼 클릭', mode);
+  navigate(`/create-court?mode=${mode}`, { state: { purpose: categoryTab } });
 };
 if (!categoryTab) {
   return (
@@ -509,9 +510,11 @@ if (!categoryTab) {
     });
   };
 
+  const purposeMatchedCourts = courts.filter((court) => court.purpose === categoryTab);
+
   const filteredCourts = activeTab === 'others'
-    ? courts.filter((court) => isAgeMatched(court.owner_age))
-    : courts;
+    ? purposeMatchedCourts.filter((court) => isAgeMatched(court.owner_age))
+    : purposeMatchedCourts;
 
   const headerBg = isDating
     ? 'linear-gradient(180deg, #F43F5E 0%, #FECDD3 100%)'
@@ -539,20 +542,47 @@ if (!categoryTab) {
   }}
 >
        
-        <div className="px-5 pt-4 pb-3 flex items-center justify-between">
-          <BrandLogo size="sm" light={true} />
-          <button
-           onClick={handleCreateCourt}
-onTouchEnd={(e) => {
-  e.preventDefault();
-  handleCreateCourt();
-}}
-           className="relative z-[101] flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-sm transition active:scale-95"
-            style={{ background: accentGold, color: '#fff', boxShadow: '0 2px 8px rgba(201,168,76,0.4)' }}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>코트 등록</span>
-          </button>
+        <div className="px-5 pt-4 pb-3 flex flex-col gap-3">
+          {!isDating ? (
+            <div className="flex items-center justify-between gap-3">
+              <BrandLogo size="sm" light={true} />
+              <button
+                type="button"
+                onClick={() => handleCreateCourt('confirmed')}
+                className="relative z-[101] flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-sm whitespace-nowrap transition active:scale-95"
+                style={{ background: accentGold, color: '#fff', boxShadow: '0 2px 8px rgba(201,168,76,0.4)' }}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>코트 잡았어요</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <BrandLogo size="sm" light={true} />
+              </div>
+              <div className="relative z-[101] grid grid-cols-2 gap-2 w-full">
+                <button
+                  type="button"
+                  onClick={() => handleCreateCourt('confirmed')}
+                  className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition active:scale-95"
+                  style={{ background: accentGold, color: '#fff', boxShadow: '0 2px 8px rgba(201,168,76,0.35)' }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>코트 잡았어요</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCreateCourt('planning')}
+                  className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition active:scale-95"
+                  style={{ background: '#FFF3D6', color: '#9A5A12', border: '1.5px solid rgba(201,168,76,0.45)', boxShadow: '0 2px 8px rgba(201,168,76,0.18)' }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>사람부터 구할래요</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="px-4 pb-3 flex gap-2">
