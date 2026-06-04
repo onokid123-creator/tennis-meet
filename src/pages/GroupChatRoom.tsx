@@ -631,7 +631,7 @@ export default function GroupChatRoom() {
     if (leaveReason.trim().length < 10) return;
 
     const myName = profile?.name ?? '알 수 없음';
-    const leaveRequestMsg = `${myName}님이 나가기를 요청했어요. 사유: '${leaveReason.trim()}'`;
+    const leaveRequestMsg = `${myName}님이 나가기를 요청했어요. 나가기사유: '${leaveReason.trim()}'`;
     await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: user!.id,
@@ -646,52 +646,99 @@ export default function GroupChatRoom() {
   };
 
   const handleLeaveRequestAccept = async (messageId: string, requesterId: string, reason: string) => {
-    const { data: requesterProfile } = await supabase
-      .from('profiles')
-      .select('name')
-      .eq('user_id', requesterId)
-      .maybeSingle();
+    alert('나가기 수락 버튼 클릭됨');
+    console.log('[GroupChatRoom] leave accept clicked', { messageId, requesterId, reason, groupChatId, hostId, userId: user?.id });
 
-    const requesterName = requesterProfile?.name ?? '알 수 없음';
-    const systemMsg = `${requesterName}님이 나갔어요`;
+    if (!groupChatId || !user) {
+      alert('채팅방 정보를 불러오지 못했습니다. 다시 시도해주세요.');
+      return;
+    }
 
-    await supabase.from('court_group_chat_messages').update({ payload: { reason, requester_id: requesterId, status: 'accepted' } }).eq('id', messageId);
-    await supabase.from('court_group_chat_messages').insert({
-      group_chat_id: groupChatId!,
-      sender_id: null,
-      content: systemMsg,
-      type: 'system',
-      is_read: false,
-    });
-    await supabase
-      .from('court_group_chat_participants')
-      .update({
-        status: 'left',
-        left_at: new Date().toISOString(),
-      })
-      .eq('group_chat_id', groupChatId!)
-      .eq('user_id', requesterId);
-    await supabase.channel(`group_kick_${groupChatId}_${requesterId}`).send({
-      type: 'broadcast',
-      event: 'group_kick_user',
-      payload: { kicked_user_id: requesterId },
-    });
+    try {
+      const { data: requesterProfile, error: requesterProfileError } = await supabase
+        .from('profiles')
+        .select('name, gender')
+        .eq('user_id', requesterId)
+        .maybeSingle();
 
-    if (court) {
-      const { data: reqProfile } = await supabase.from('profiles').select('gender').eq('user_id', requesterId).maybeSingle();
-      const courtExtra = court as Court & { current_participants?: number; status?: string };
-      const isMaleLeaver = reqProfile?.gender === 'male' || reqProfile?.gender === '남성';
-      const updates: Record<string, unknown> = {};
-      if (isMaleLeaver && (court.confirmed_male_slots ?? 0) > 0) {
-        updates.confirmed_male_slots = (court.confirmed_male_slots ?? 1) - 1;
-        updates.male_slots = (court.male_slots ?? 0) + 1;
-      } else if (!isMaleLeaver && (court.confirmed_female_slots ?? 0) > 0) {
-        updates.confirmed_female_slots = (court.confirmed_female_slots ?? 1) - 1;
-        updates.female_slots = (court.female_slots ?? 0) + 1;
+      console.log('[GroupChatRoom] requester profile result', { requesterProfile, requesterProfileError });
+      if (requesterProfileError) throw requesterProfileError;
+
+      const requesterName = requesterProfile?.name ?? '알 수 없음';
+      const systemMsg = `${requesterName}님이 나갔어요`;
+
+      const leaveMsgUpdate = await supabase
+        .from('court_group_chat_messages')
+        .update({ payload: { reason, requester_id: requesterId, status: 'accepted' } })
+        .eq('id', messageId);
+
+      console.log('[GroupChatRoom] leave message update result', leaveMsgUpdate);
+      if (leaveMsgUpdate.error) throw leaveMsgUpdate.error;
+
+      const systemInsert = await supabase.from('court_group_chat_messages').insert({
+        group_chat_id: groupChatId,
+        sender_id: null,
+        content: systemMsg,
+        type: 'system',
+        is_read: false,
+      });
+
+      console.log('[GroupChatRoom] leave system message insert result', systemInsert);
+      if (systemInsert.error) throw systemInsert.error;
+
+      const participantUpdate = await supabase
+        .from('court_group_chat_participants')
+        .update({
+          status: 'left',
+          left_at: new Date().toISOString(),
+        })
+        .eq('group_chat_id', groupChatId)
+        .eq('user_id', requesterId);
+
+      console.log('[GroupChatRoom] leave participant update result', participantUpdate);
+      if (participantUpdate.error) throw participantUpdate.error;
+
+      await supabase.channel(`group_kick_${groupChatId}_${requesterId}`).send({
+        type: 'broadcast',
+        event: 'group_kick_user',
+        payload: { kicked_user_id: requesterId },
+      });
+
+      if (court) {
+        const courtExtra = court as Court & { current_participants?: number; status?: string };
+        const isMaleLeaver = requesterProfile?.gender === 'male' || requesterProfile?.gender === '남성';
+        const updates: Record<string, unknown> = {};
+
+        if (isMaleLeaver && (court.confirmed_male_slots ?? 0) > 0) {
+          updates.confirmed_male_slots = Math.max(0, (court.confirmed_male_slots ?? 0) - 1);
+          updates.male_slots = (court.male_slots ?? 0) + 1;
+        } else if (!isMaleLeaver && (court.confirmed_female_slots ?? 0) > 0) {
+          updates.confirmed_female_slots = Math.max(0, (court.confirmed_female_slots ?? 0) - 1);
+          updates.female_slots = (court.female_slots ?? 0) + 1;
+        }
+
+        updates.current_participants = Math.max(0, (courtExtra.current_participants ?? 0) - 1);
+        if (courtExtra.status === 'closed') updates.status = 'open';
+
+        const courtUpdate = await supabase.from('courts').update(updates as never).eq('id', court.id);
+        console.log('[GroupChatRoom] leave court update result', courtUpdate);
+        if (courtUpdate.error) throw courtUpdate.error;
       }
-      updates.current_participants = Math.max(0, (courtExtra.current_participants ?? 0) - 1);
-      if (courtExtra.status === 'closed') updates.status = 'open';
-      await supabase.from('courts').update(updates as never).eq('id', court.id);
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, payload: { reason, requester_id: requesterId, status: 'accepted' } }
+            : m
+        )
+      );
+
+      setParticipants((prev) => prev.filter((p) => p.user_id !== requesterId));
+
+      alert('나가기 요청을 수락했습니다.');
+    } catch (e) {
+      console.error('[GroupChatRoom] leave accept failed', e);
+      alert(`나가기 수락 처리에 실패했습니다. 콘솔 로그를 확인해주세요.\n${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
@@ -1332,10 +1379,36 @@ export default function GroupChatRoom() {
                       {isHost && reqStatus === 'pending' && (
                         <div className="flex border-t border-red-100">
                           <button
-                            onClick={() => handleLeaveRequestAccept(message.id, requesterId, reason)}
-                            className="flex-1 py-2.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 transition"
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onTouchStart={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onTouchEnd={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleLeaveRequestAccept(message.id, requesterId, reason);
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleLeaveRequestAccept(message.id, requesterId, reason);
+                            }}
+                            className="flex-1 py-2.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 transition active:opacity-80"
+                            style={{
+                              WebkitUserSelect: 'none',
+                              userSelect: 'none',
+                              WebkitTouchCallout: 'none',
+                              touchAction: 'manipulation',
+                            }}
                           >
-                            나가기 수락
+                            <span style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}>
+                              나가기 수락
+                            </span>
                           </button>
                         </div>
                       )}

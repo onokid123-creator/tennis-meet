@@ -301,7 +301,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                   boxShadow: '0 3px 10px rgba(0,0,0,0.14)',
                 }}
               >
-                {court.reservation_mode === 'planning' ? '🗓️ 코트 협의' : '🎾 코트 확정'}
+                {court.reservation_mode === 'planning' ? '🗓️ 코트 협의' : '🎾 코트 예약 완료'}
               </div>
 
               {/* dark gradient */}
@@ -675,178 +675,158 @@ const closeLightbox = () => {
           </div>
         )}
 
-        {/* ── Main photo ── */}
-        <div
-          style={{ position: 'relative', margin: isOwner ? '8px 12px 0' : '12px 12px 0', borderRadius: 18, overflow: 'hidden' }}
-          onTouchStart={(e) => { tx.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => {
-            if (tx.current === null) return;
-            const d = tx.current - e.changedTouches[0].clientX;
-            if (Math.abs(d) > 40 && photos.length > 1) {
-              e.stopPropagation();
-              setPidx(d > 0 ? (pidx + 1) % photos.length : (pidx - 1 + photos.length) % photos.length);
-            }
-            tx.current = null;
-          }}
-        >
-          {photos.length > 0 ? (
-            <>
-              {/* photo */}
-              <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', borderRadius: 18 }}>
-                <img
-                  src={photos[pidx]} alt={name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
-                  draggable={false}
-                  onClick={(e) => { e.stopPropagation(); openLightbox(pidx); }}
-                />
+        {/* ── Compact profile/court summary ── */}
+        <div style={{ padding: isOwner ? '12px 14px 0' : '16px 14px 0' }}>
+          <div
+            style={{
+              border: '1px solid rgba(255,126,138,0.12)',
+              borderRadius: 20,
+              padding: '14px 14px 15px',
+              background: 'linear-gradient(135deg, #FFFFFF 0%, #FFF9FA 100%)',
+            }}
+          >
+            {/* top row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 17 }}>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '5px 11px',
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: court.reservation_mode === 'planning' ? '#9A5A12' : '#166534',
+                    background: court.reservation_mode === 'planning' ? '#FFF3D6' : '#DCFCE7',
+                    border: court.reservation_mode === 'planning' ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(22,101,52,0.18)',
+                  }}
+                >
+                  {court.reservation_mode === 'planning' ? '🗓️ 코트 협의' : '🎾 코트 완료'}
+                </span>
+                {badge(court) && (
+                  <span style={{ color: PINK, fontSize: 12, fontWeight: 800 }}>
+                    {badge(court)}
+                  </span>
+                )}
               </div>
 
-              {/* reservation mode badge */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 12,
-                  left: 12,
-                  zIndex: 4,
-                  padding: '6px 11px',
-                  borderRadius: 999,
-                  fontSize: 12,
-                  fontWeight: 800,
-                  color: court.reservation_mode === 'planning' ? '#9A5A12' : '#166534',
-                  background: court.reservation_mode === 'planning' ? '#FFF3D6' : '#DCFCE7',
-                  border: court.reservation_mode === 'planning' ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(22,101,52,0.18)',
-                  boxShadow: '0 3px 10px rgba(0,0,0,0.14)',
-                }}
-              >
-                {court.reservation_mode === 'planning' ? '🗓️ 코트 협의' : '🎾 코트 확정'}
-              </div>
 
-              {/* gradient */}
-              <div style={{ position: 'absolute', inset: 0, borderRadius: 18, background: 'linear-gradient(to bottom,transparent 42%,rgba(0,0,0,0.68) 100%)', pointerEvents: 'none' }} />
+            </div>
 
-              {/* name & badges */}
-              <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, zIndex: 2 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 7 }}>
-                  <span style={{ fontWeight: 800, fontSize: 20, color: WHITE, letterSpacing: '-0.03em', textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>{name}</span>
-                  {gender && <span style={{ fontSize: 12, fontWeight: 700, color: genderClr, background: 'rgba(255,255,255,0.15)', borderRadius: 99, padding: '1px 7px', backdropFilter: 'blur(4px)' }}>{gender}</span>}
-                  {closed && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: 'rgba(239,68,68,0.85)', color: WHITE }}>마감</span>}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {badge(court) && <span style={{ background: `linear-gradient(135deg,${PINK},${PINK2})`, color: WHITE, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{badge(court)}</span>}
-                  {exp          && <span style={{ background: 'rgba(255,255,255,0.18)', color: WHITE, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 600, backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.2)' }}>{exp}</span>}
-                </div>
-              </div>
-
-              {/* photo count badge */}
-              {photos.length > 1 && (
-                <div style={{ position: 'absolute', top: 11, right: 11, background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(6px)', borderRadius: 99, padding: '3px 8px', fontSize: 11, color: WHITE, fontWeight: 600, zIndex: 3 }}>
-                  {pidx + 1} / {photos.length}
+            {/* court info */}
+            <div style={{ marginBottom: 12 }}>
+              {court.court_name && (
+                <div style={{ fontSize: 17, color: DARK, fontWeight: 850, letterSpacing: '-0.04em', marginBottom: 10 }}>
+                  {court.court_name}
                 </div>
               )}
-{photos.length > 1 && (
-  <div
-    style={{
-      position: 'absolute',
-      bottom: 12,
-      left: 0,
-      right: 0,
-      display: 'flex',
-      justifyContent: 'center',
-      gap: 5,
-      zIndex: 3,
-    }}
-  >
-    {photos.map((_, i) => (
-      <button
-        key={i}
-        onClick={(e) => {
-          e.stopPropagation();
-          setPidx(i);
-        }}
-        style={{
-          width: i === pidx ? 18 : 6,
-          height: 6,
-          borderRadius: 99,
-          border: 'none',
-          padding: 0,
-          cursor: 'pointer',
-          background: i === pidx ? WHITE : 'rgba(255,255,255,0.45)',
-          transition: 'all 0.2s',
-        }}
-      />
-    ))}
-  </div>
-)}
-            </>
-          ) : (
-            <div style={{ width: '100%', aspectRatio: '3/4', borderRadius: 18, background: `linear-gradient(135deg,${PINK},${PINK2})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: WHITE, fontSize: 56, fontWeight: 700, opacity: 0.42 }}>{name?.charAt(0) ?? '?'}</span>
+
+              {(court.date || court.start_time) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#6B7280', fontSize: 13, fontWeight: 650, marginBottom: 7 }}>
+                  <Calendar style={{ width: 14, height: 14, color: PINK, flexShrink: 0 }} />
+                  <span>
+                    {court.date ? fmtDate(court.date) : ''}
+                    {court.start_time ? ` · ${court.start_time}${court.end_time ? `–${court.end_time}` : ''}` : ''}
+                    {court.reservation_mode === 'planning' && !court.start_time ? ' · 협의' : ''}
+                  </span>
+                </div>
+              )}
+
+              {court.court_name && fmtCourtNum((court as { court_number?: string }).court_number) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#6B7280', fontSize: 12, fontWeight: 650, marginBottom: 7 }}>
+                  <MapPin style={{ width: 14, height: 14, color: PINK, flexShrink: 0 }} />
+                  <span>{fmtCourtNum((court as { court_number?: string }).court_number)}</span>
+                </div>
+              )}
+
+              {cost(court) && (
+                <div style={{ color: PINK, fontSize: 14, fontWeight: 850, marginTop: 7 }}>
+                  매칭비 {cost(court)}
+                </div>
+              )}
             </div>
-          )}
+
+            {/* badges + profile */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minWidth: 0 }}>
+              {showSlots && !closed && (
+                <>
+                  {tm > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.16)', borderRadius: 999, padding: '4px 10px', fontSize: 11, color: '#60A5FA', fontWeight: 700 }}>
+                      남 {rmM <= 0 ? '마감' : `${rmM}명`}
+                    </span>
+                  )}
+                  {tf > 0 && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', background: `rgba(255,126,138,0.08)`, border: `1px solid rgba(255,126,138,0.16)`, borderRadius: 999, padding: '4px 10px', fontSize: 11, color: PINK, fontWeight: 700 }}>
+                      여 {rmF <= 0 ? '마감' : `${rmF}명`}
+                    </span>
+                  )}
+                </>
+              )}
+              {closed && (
+                <span style={{ background: ROSE, border: '1px solid rgba(255,126,138,0.2)', borderRadius: 999, padding: '4px 10px', fontSize: 11, color: PINK, fontWeight: 800 }}>
+                  모집 마감
+                </span>
+              )}
+              {court.experience_wanted && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 999, padding: '4px 10px', fontSize: 11, color: '#374151', fontWeight: 800 }}>
+                  선호: {court.experience_wanted}
+                </span>
+              )}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, textAlign: 'center' }}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (photos[0]) openLightbox(0);
+                  }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    background: photos[0] ? '#F3F4F6' : `linear-gradient(135deg,${PINK},${PINK2})`,
+                    overflow: 'hidden',
+                    padding: 0,
+                    cursor: photos[0] ? 'pointer' : 'default',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {photos[0] ? (
+                    <img
+                      src={photos[0]}
+                      alt={name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
+                      draggable={false}
+                    />
+                  ) : (
+                    <span style={{ color: WHITE, fontSize: 14, fontWeight: 800 }}>{name?.charAt(0) ?? '?'}</span>
+                  )}
+                </button>
+
+                <div style={{ minWidth: 58, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: DARK, lineHeight: 1.25, whiteSpace: 'nowrap', maxWidth: 86, overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                  <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, marginTop: 2, whiteSpace: 'nowrap' }}>
+                    {court.owner_age ? `${court.owner_age} · ` : ''}{gender || ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* ── Info strip ── */}
-        <div style={{ padding: '12px 14px 14px' }}>
-
-          {/* location / date row */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 10 }}>
-            {court.court_name && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <MapPin style={{ width: 11, height: 11, color: PINK, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {court.court_name}{fmtCourtNum((court as { court_number?: string }).court_number) ? ` · ${fmtCourtNum((court as { court_number?: string }).court_number)}` : ''}
-                </span>
-              </div>
-            )}
-            {(court.date || court.start_time) && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Calendar style={{ width: 11, height: 11, color: PINK, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: '#6B7280' }}>
-                  {court.date ? fmtDate(court.date) : ''}
-                  {court.start_time ? `  ${court.start_time}${court.end_time ? ` – ${court.end_time}` : ''}` : ''}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* slots + cost row */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {showSlots && !closed && (
-              <>
-                {tm > 0 && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.16)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: '#60A5FA', fontWeight: 600 }}>
-                    남 {rmM <= 0 ? '마감' : `${rmM}명`}
-                  </span>
-                )}
-                {tf > 0 && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: `rgba(255,126,138,0.08)`, border: `1px solid rgba(255,126,138,0.16)`, borderRadius: 99, padding: '3px 9px', fontSize: 11, color: PINK, fontWeight: 600 }}>
-                    여 {rmF <= 0 ? '마감' : `${rmF}명`}
-                  </span>
-                )}
-              </>
-            )}
-            {closed && (
-              <span style={{ background: ROSE, border: '1px solid rgba(255,126,138,0.2)', borderRadius: 99, padding: '3px 10px', fontSize: 11, color: PINK, fontWeight: 700 }}>모집 마감</span>
-            )}
-            {cost(court) && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.18)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: GOLD, fontWeight: 600 }}>
-                {cost(court)}
-              </span>
-            )}
-            {court.experience_wanted && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(255,126,138,0.08)', border: '1px solid rgba(255,126,138,0.18)', borderRadius: 99, padding: '3px 9px', fontSize: 11, color: PINK, fontWeight: 600 }}>
-                선호 구력: {court.experience_wanted}
-              </span>
-            )}
-          </div>
-
+        <div style={{ padding: '8px 14px 14px' }}>
           {/* CTA row */}
           <div style={{ display: 'flex', gap: 8 }}>
             {/* 자세히 보기 */}
             <button
               onClick={(e) => { e.stopPropagation(); openDetail(); }}
               style={{
-                flex: 1, padding: '12px 0', borderRadius: 14, border: `1.5px solid rgba(255,126,138,0.22)`,
+                flex: 1, padding: '11px 0', borderRadius: 14, border: `1.5px solid rgba(255,126,138,0.22)`,
                 background: ROSE, color: PINK, fontWeight: 700, fontSize: 13, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
               }}
@@ -865,7 +845,7 @@ const closeLightbox = () => {
                 <button
                   onClick={(e) => { e.stopPropagation(); onApply(); }}
                   style={{
-                    flex: 1.6, padding: '12px 0', borderRadius: 14, border: 'none',
+                    flex: 1.6, padding: '11px 0', borderRadius: 14, border: 'none',
                     background: `linear-gradient(135deg,${PINK},${PINK2})`,
                     color: WHITE, fontWeight: 800, fontSize: 13, cursor: 'pointer',
                     boxShadow: '0 5px 16px rgba(255,126,138,0.33)',
@@ -894,7 +874,7 @@ const closeLightbox = () => {
         />
       )}
 
-      {lbOpen && <Lightbox photos={photos} index={lbIdx} onClose={closeLightbox} onChange={setLbIdx} />}
+      {lbOpen && <Lightbox photos={photos.slice(0, 1)} index={0} onClose={closeLightbox} onChange={setLbIdx} />}
     </>
   );
 }

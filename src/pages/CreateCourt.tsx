@@ -199,10 +199,11 @@ const isTennis = purpose === 'tennis';
     }
   }, []);
 
+  const modeParam = new URLSearchParams(location.search).get('mode');
   const reservationMode =
-    new URLSearchParams(window.location.search).get('mode') === 'planning'
-      ? 'planning'
-      : 'confirmed';
+    isEditing
+      ? (editCourt?.reservation_mode === 'planning' || modeParam === 'planning' ? 'planning' : 'confirmed')
+      : (modeParam === 'planning' ? 'planning' : 'confirmed');
   const isPlanningMode = reservationMode === 'planning';
 
   const canProceed = (() => {
@@ -396,28 +397,29 @@ const isTennis = purpose === 'tennis';
         }
       }
 
-    if (isEditing) {
-  const { error } = await supabase
-    .from('courts')
-    .update(courtData)
-    .eq('id', editCourt!.id)
-    .eq('user_id', currentUser.id);
+      if (isEditing) {
+        const { error } = await supabase
+          .from('courts')
+          .update(courtData)
+          .eq('id', editCourt!.id)
+          .eq('user_id', currentUser.id);
 
-  if (error) {
-    console.error('[CreateCourt] update error:', error);
-    throw new Error(error.message || '수정에 실패했습니다.');
-  }
-} else {
-  const { error } = await supabase
-    .from('courts')
-    .insert(courtData)
-    .select()
-    .single();
+        if (error) {
+          console.error('[CreateCourt] update error:', error);
+          throw new Error(error.message || '수정에 실패했습니다.');
+        }
+      } else {
+        const { error } = await supabase
+          .from('courts')
+          .insert(courtData)
+          .select()
+          .single();
 
-  if (error) {
-    console.error('[CreateCourt] insert error:', error);
-    throw new Error(error.message || '등록에 실패했습니다.');
-  }
+        if (error) {
+          console.error('[CreateCourt] insert error:', error);
+          throw new Error(error.message || '등록에 실패했습니다.');
+        }
+      }
 
       triggerRefresh();
       localStorage.setItem('home_category_tab', purpose === 'tennis' ? 'tennis' : 'dating');
@@ -425,7 +427,6 @@ const isTennis = purpose === 'tennis';
       localStorage.setItem('home_force_refresh', '1');
       localStorage.removeItem(`cached_courts_${purpose === 'tennis' ? 'tennis' : 'dating'}_mine`);
       navigate('/home', { replace: true });
-    }
   } catch (err) {
       const message = err instanceof Error ? err.message : '';
     if (
@@ -508,7 +509,7 @@ const isTennis = purpose === 'tennis';
         <div className="flex-1">
           <StepBar currentStep={step} totalSteps={TOTAL_STEPS} color={accentColor} />
         </div>
-       <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition relative z-50">
+       <button onClick={() => { localStorage.setItem('home_force_refresh', '1'); navigate('/home', { replace: true }); }} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition relative z-50">
           <X className="w-5 h-5 text-gray-400" />
         </button>
       </header>

@@ -38,3 +38,5 @@ ios/App/*.xcworkspace/xcuserdata
 # Android signing keys
 android/key.properties
 android/app/*.jks
+
+ios_backup_*/

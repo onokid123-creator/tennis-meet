@@ -117,6 +117,7 @@ const [profileTab, setProfileTab] =
     newPhotos: [] as File[],
     newPreviews: [] as string[],
     replaceIndex: null as number | null,
+    name: '',
     age: '',
     experience: '',
     mbti: '',
@@ -161,6 +162,7 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
           newPhotos: [],
           newPreviews: [],
           replaceIndex: null,
+          name: profile.name || '',
           age: profile.age?.toString() || '',
           experience: profile.experience || '',
           mbti: profile.mbti || '',
@@ -347,6 +349,7 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
       const { error } = await supabase
         .from('profiles')
         .update({
+          name: formData.name.trim(),
           age: Number(formData.age),
           experience: formData.experience,
           mbti: formData.mbti || null,
@@ -359,6 +362,7 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
       if (error) throw new Error('프로필 업데이트에 실패했습니다.');
 
       updateProfile({
+        name: formData.name.trim(),
         age: Number(formData.age),
         experience: formData.experience,
         mbti: formData.mbti || undefined,
@@ -752,7 +756,18 @@ const isSubscribed = profile?.is_subscribed ?? false;
           <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
             {/* 이름 / 나이 / 성별 */}
             <div className="flex items-baseline gap-2 mb-4 pb-4 border-b border-gray-100">
-              <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value.slice(0, 12) })}
+                  placeholder="닉네임"
+                  maxLength={12}
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                />
+              ) : (
+                <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
+              )}
               {profile?.age && (
                 <span className="text-gray-500 font-medium">{profile.age}세</span>
               )}
@@ -930,6 +945,7 @@ const isSubscribed = profile?.is_subscribed ?? false;
                       newPhotos: [],
                       newPreviews: [],
                       replaceIndex: null,
+                      name: profile?.name || '',
                       age: profile?.age?.toString() || '',
                       experience: profile?.experience || '',
                       mbti: profile?.mbti || '',

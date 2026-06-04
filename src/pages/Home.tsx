@@ -469,7 +469,8 @@ if (hostProfile?.fcm_token) {
   };
 
   const handleEdit = (court: Court) => {
-    navigate('/create-court', { state: { editCourt: court } });
+    const mode = court.reservation_mode === 'planning' ? 'planning' : 'confirmed';
+    navigate(`/create-court?mode=${mode}`, { state: { editCourt: court } });
   };
 const handleCreateCourt = (mode: 'confirmed' | 'planning') => {
   console.log('[Home] 코트 등록 버튼 클릭', mode);

@@ -1751,6 +1751,94 @@ if (!profile.fcm_token) continue;
     setShowLeaveRequestPopup(false);
   };
 
+  const handleLeaveRequestAccept = async (messageId: string, requesterId: string, reason: string) => {
+    if (!chatId || !user || !requesterId) return;
+
+    showToastMsg('나가기 요청 처리 중...');
+
+    try {
+      const { data: requesterProfile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', requesterId)
+        .maybeSingle();
+
+      const requesterName = requesterProfile?.name ?? '참여자';
+
+      const leaveUpdate = await supabase
+        .from('messages')
+        .update({
+          payload: {
+            reason,
+            requester_id: requesterId,
+            status: 'accepted',
+          },
+        })
+        .eq('id', messageId);
+
+      if (leaveUpdate.error) throw leaveUpdate.error;
+
+      await releaseConfirmedCourtSlot(requesterId);
+
+      const participantUpdate = await supabase
+        .from('chat_participants')
+        .update({
+          is_active: false,
+          left_at: new Date().toISOString(),
+          is_confirmed: false,
+        })
+        .eq('chat_id', chatId)
+        .eq('user_id', requesterId);
+
+      if (participantUpdate.error) throw participantUpdate.error;
+
+      await supabase.from('messages').insert({
+        chat_id: chatId,
+        sender_id: user.id,
+        content: chatPurpose === 'dating'
+          ? `💌 ${requesterName}님이 자리를 떠났습니다`
+          : `🎾 ${requesterName}님이 코트를 떠났습니다`,
+        is_read: false,
+        type: 'system',
+      });
+
+      await supabase.channel(`broadcast_${chatId}`).send({
+        type: 'broadcast',
+        event: 'kick_user',
+        payload: { kicked_user_id: requesterId },
+      });
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                payload: {
+                  reason,
+                  requester_id: requesterId,
+                  status: 'accepted',
+                },
+              }
+            : m
+        )
+      );
+
+      setGroupAvatars((prev) => prev.filter((av) => av.user_id !== requesterId));
+      setParticipantCount((prev) => prev !== null ? Math.max(0, prev - 1) : null);
+      setParticipantLastReads((prev) => {
+        const next = { ...prev };
+        delete next[requesterId];
+        return next;
+      });
+
+      await refreshParticipantCount();
+      showToastMsg('나가기 요청을 수락했습니다.');
+    } catch (e) {
+      console.error('[ChatRoom] leave request accept failed:', e);
+      showToastMsg('나가기 요청 처리에 실패했습니다.');
+    }
+  };
+
   const getOtherParticipantIds = (): string[] => {
     if (groupAvatars.length > 0) {
       return groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => av.user_id);
@@ -3245,38 +3333,30 @@ paddingBottom: '14px',
                       {isHost && reqStatus === 'pending' && (
                         <div className="flex border-t border-red-100">
                           <button
-                            onClick={async () => {
-                              if (!chatId || !user) return;
-                             await supabase
-  .from('messages')
-  .update({
-    payload: {
-      ...(msg.payload as Record<string, unknown>),
-      status: 'accepted',
-    },
-  })
-  .eq('id', msg.id);
-                              await releaseConfirmedCourtSlot(requesterId);
-
-                              await supabase
-                                .from('chat_participants')
-                                .update({
-                                  is_active: false,
-                                  left_at: new Date().toISOString(),
-                                  is_confirmed: false,
-                                })
-                                .eq('chat_id', chatId)
-                                .eq('user_id', requesterId);
-                              await supabase.channel(`broadcast_${chatId}`).send({
-                                type: 'broadcast',
-                                event: 'kick_user',
-                                payload: { kicked_user_id: requesterId },
-                              });
-                              refreshParticipantCount();
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleLeaveRequestAccept(msg.id, requesterId, reason);
                             }}
-                            className="flex-1 py-2.5 text-xs font-semibold text-white bg-red-500"
+                            className="flex-1 py-2.5 text-xs font-semibold text-white bg-red-500 active:bg-red-700"
+                            style={{
+                              WebkitUserSelect: 'none',
+                              userSelect: 'none',
+                              WebkitTouchCallout: 'none',
+                              touchAction: 'manipulation',
+                            }}
                           >
-                            나가기 수락
+                            <span
+                              style={{
+                                WebkitUserSelect: 'none',
+                                userSelect: 'none',
+                                WebkitTouchCallout: 'none',
+                                pointerEvents: 'none',
+                              }}
+                            >
+                              나가기 수락
+                            </span>
                           </button>
                         </div>
                       )}
