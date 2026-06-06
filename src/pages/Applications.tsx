@@ -1958,7 +1958,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 : { background: 'rgba(255,255,255,0.08)', color: isDating ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.5)', border: `1.5px solid ${isDating ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}` }
               }
             >
-              {tab === 'tennis' ? '🎾 테니스 신청' : '🥂 설레는 만남'}
+              {tab === 'tennis' ? '🎾 테니스 신청' : '🎾 테니스 메이트'}
             </button>
           ))}
         </div>

@@ -707,7 +707,7 @@ if (tab === 'tennis') {
         <div className="flex gap-0">
           {([
             { key: 'tennis' as const, label: '테니스 모임', icon: '🎾', unread: totalTennisUnread },
-            { key: 'dating' as const, label: '설레는 만남', icon: '🥂', unread: totalDatingUnread },
+            { key: 'dating' as const, label: '테니스 메이트', icon: '🎾', unread: totalDatingUnread },
           ]).map((tab) => {
             const isActive = activeTab === tab.key;
             const accent = tab.key === 'dating' ? '#C9547A' : '#2D6A4F';

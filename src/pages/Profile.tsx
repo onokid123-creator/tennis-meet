@@ -547,7 +547,7 @@ const isSubscribed = profile?.is_subscribed ?? false;
                 : 'border-transparent text-gray-400'
             }`}
           >
-            🥂 코트 위 설레는 만남
+            🎾 테니스 메이트
           </button>
           <button
             onClick={() => handleTabClick('tennis')}
