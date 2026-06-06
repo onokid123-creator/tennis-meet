@@ -176,6 +176,12 @@ const isTennis = purpose === 'tennis';
   const [femaleSlots, setFemaleSlots] = useState(0);
   const [costOption, setCostOption] = useState('');
   const [courtFee, setCourtFee] = useState('');
+  const [datingPhotoVisibility, setDatingPhotoVisibility] = useState<'public' | 'private'>(
+    (editCourt as Court & { dating_photo_visibility?: 'public' | 'private' })?.dating_photo_visibility || 'public'
+  );
+  const [datingRepresentativePhotoUrl, setDatingRepresentativePhotoUrl] = useState<string>(
+    (editCourt as Court & { dating_representative_photo_url?: string | null })?.dating_representative_photo_url || ''
+  );
 
   const [description, setDescription] = useState('');
   const [courtNumber, setCourtNumber] = useState('');
@@ -196,6 +202,12 @@ const isTennis = purpose === 'tennis';
       setCostOption(editCourt.cost || '');
       setCourtFee(editCourt.court_fee?.toString() || '');
       setCourtNumber(editCourt.court_number || '');
+      setDatingPhotoVisibility(
+        ((editCourt as Court & { dating_photo_visibility?: 'public' | 'private' }).dating_photo_visibility) || 'public'
+      );
+      setDatingRepresentativePhotoUrl(
+        ((editCourt as Court & { dating_representative_photo_url?: string | null }).dating_representative_photo_url) || ''
+      );
     }
   }, []);
 
@@ -205,6 +217,21 @@ const isTennis = purpose === 'tennis';
       ? (editCourt?.reservation_mode === 'planning' || modeParam === 'planning' ? 'planning' : 'confirmed')
       : (modeParam === 'planning' ? 'planning' : 'confirmed');
   const isPlanningMode = reservationMode === 'planning';
+
+  const datingAvailablePhotos: string[] = (() => {
+    if (isTennis) return [];
+    try {
+      const datingProfile = JSON.parse(localStorage.getItem('dating_profile') || localStorage.getItem('optimistic_profile') || '{}');
+      if (datingProfile?.photos?.length) return datingProfile.photos;
+      if (datingProfile?.photo_urls?.length) return datingProfile.photo_urls;
+      if (datingProfile?.photo_url) return [datingProfile.photo_url];
+    } catch {
+      // Ignore invalid local profile cache.
+    }
+    if (profile?.photo_urls?.length) return profile.photo_urls;
+    if (profile?.photo_url) return [profile.photo_url];
+    return [];
+  })();
 
   const canProceed = (() => {
     if (step === 1) return !!selectedCourt;
@@ -346,6 +373,8 @@ const isTennis = purpose === 'tennis';
         owner_height: myProfile?.height ?? null,
         owner_bio: myProfile?.bio ?? null,
         owner_experience: myProfile?.experience ?? null,
+        dating_photo_visibility: isTennis ? 'public' : datingPhotoVisibility,
+        dating_representative_photo_url: isTennis ? null : datingRepresentativePhotoUrl || null,
       };
 
       if (!isEditing) {
@@ -735,6 +764,79 @@ const isTennis = purpose === 'tennis';
                 ))}
               </div>
             </div>
+
+            <div>
+              <p className="text-sm font-semibold text-gray-700 mb-3">사진 공개 범위</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDatingPhotoVisibility('public')}
+                  className="py-4 px-3 rounded-2xl border-2 text-sm font-semibold transition text-left"
+                  style={
+                    datingPhotoVisibility === 'public'
+                      ? { backgroundColor: accentColor, borderColor: accentColor, color: '#fff' }
+                      : { borderColor: '#E5E7EB', backgroundColor: '#fff', color: '#374151' }
+                  }
+                >
+                  <div>공개</div>
+                  <div className="text-[11px] font-normal mt-1 opacity-75">사진 전체 노출</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDatingPhotoVisibility('private');
+                    if (!datingRepresentativePhotoUrl && datingAvailablePhotos[0]) {
+                      setDatingRepresentativePhotoUrl(datingAvailablePhotos[0]);
+                    }
+                  }}
+                  className="py-4 px-3 rounded-2xl border-2 text-sm font-semibold transition text-left"
+                  style={
+                    datingPhotoVisibility === 'private'
+                      ? { backgroundColor: accentColor, borderColor: accentColor, color: '#fff' }
+                      : { borderColor: '#E5E7EB', backgroundColor: '#fff', color: '#374151' }
+                  }
+                >
+                  <div>비공개</div>
+                  <div className="text-[11px] font-normal mt-1 opacity-75">1장만 노출, 수락 후 전체 공개</div>
+                </button>
+              </div>
+
+              {datingPhotoVisibility === 'private' && datingAvailablePhotos.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">대표 사진 선택</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {datingAvailablePhotos.map((photo, idx) => (
+                      <button
+                        key={`${photo}-${idx}`}
+                        type="button"
+                        onClick={() => setDatingRepresentativePhotoUrl(photo)}
+                        className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 flex-shrink-0"
+                        style={{
+                          borderColor: datingRepresentativePhotoUrl === photo ? accentColor : 'transparent',
+                        }}
+                      >
+                        <img
+                          src={photo}
+                          alt={`대표 사진 ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                        {datingRepresentativePhotoUrl === photo && (
+                          <span
+                            className="absolute inset-x-1 bottom-1 rounded-full text-white text-[10px] font-bold py-0.5"
+                            style={{ backgroundColor: accentColor }}
+                          >
+                            대표
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 

@@ -77,7 +77,7 @@ localStorage.setItem('home_active_tab', 'others');
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col items-center justify-center p-6">
             <div className="text-white text-center mb-4">
-              <h3 className="text-2xl font-bold mb-2">취미를 넘어, 설레는 사랑으로</h3>
+              <h3 className="text-2xl font-bold mb-2">테니스로 시작하는 인연</h3>
               <p className="text-sm opacity-90">코트 밖에서도 이어지는 특별한 만남</p>
             </div>
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">

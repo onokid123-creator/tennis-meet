@@ -139,8 +139,8 @@ useEffect(() => {
     });
   }, [user]);
 
-  const COURT_FIELDS = 'id,user_id,purpose,status,court_name,court_number,date,start_time,end_time,format,match_type,description,male_slots,female_slots,male_count,female_count,confirmed_male_slots,confirmed_female_slots,current_participants,capacity,cost,experience_wanted,court_fee,tennis_photo_url,owner_photo,owner_photos,owner_name,owner_age,owner_gender,owner_mbti,owner_height,owner_bio,owner_experience,court_intro,reservation_mode,created_at';
-  const PROFILE_FIELDS = 'user_id,name,photo_url,photo_urls,tennis_photo_url,experience,tennis_style,age,gender,purpose,mbti,height';
+  const COURT_FIELDS = 'id,user_id,purpose,status,court_name,court_number,date,start_time,end_time,format,match_type,description,male_slots,female_slots,male_count,female_count,confirmed_male_slots,confirmed_female_slots,current_participants,capacity,cost,experience_wanted,court_fee,tennis_photo_url,owner_photo,owner_photos,dating_photo_visibility,dating_representative_photo_url,owner_name,owner_age,owner_gender,owner_mbti,owner_height,owner_bio,owner_experience,court_intro,reservation_mode,created_at';
+  const PROFILE_FIELDS = 'user_id,name,photo_url,photo_urls,dating_photo_visibility,dating_representative_photo_url,tennis_photo_url,experience,tennis_style,age,gender,purpose,mbti,height';
 const getCourtCacheKey = (purpose: CategoryTab, tab: Tab) => {
   return `cached_courts_${purpose}_${tab}`;
 };
@@ -605,7 +605,7 @@ if (!categoryTab) {
               : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
             }
           >
-            🥂 설레는 만남
+            🎾 테니스 메이트
           </button>
         </div>
 

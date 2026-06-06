@@ -46,6 +46,8 @@ export interface Court {
   court_fee?: number;
   owner_photos?: string[];
   owner_photo?: string;
+  dating_photo_visibility?: 'public' | 'private';
+  dating_representative_photo_url?: string | null;
   owner_mbti?: string;
   owner_height?: number;
   owner_bio?: string;

@@ -631,7 +631,7 @@ export default function GroupChatRoom() {
     if (leaveReason.trim().length < 10) return;
 
     const myName = profile?.name ?? '알 수 없음';
-    const leaveRequestMsg = `${myName}님이 나가기를 요청했어요. 나가기사유: '${leaveReason.trim()}'`;
+    const leaveRequestMsg = `${myName}님이 나가기를 요청했어요. 나가기 사유: '${leaveReason.trim()}'`;
     await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: user!.id,
