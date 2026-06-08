@@ -562,7 +562,10 @@ const setupRealtime = (reason: string) => {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_participants' }, debouncedFetch)
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_participants' }, debouncedFetch)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'court_group_chat_messages' }, debouncedFetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'court_group_chat_messages' }, debouncedFetch)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'court_group_chat_participants' }, debouncedFetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'court_group_chat_participants' }, debouncedFetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'court_group_chat_participants' }, debouncedFetch)
       .subscribe((status) => {
         console.log('[Chats] realtime channel status:', status);
       });

@@ -1629,8 +1629,12 @@ const { data: senderProfile } = await supabase
 
       for (const profile of targetProfiles ?? []) {
         
-if (!profile.fcm_token) continue;
- await supabase.functions.invoke('send-push', {
+if (!profile.fcm_token) {
+  console.warn('[PUSH] skip target without fcm_token:', profile.user_id);
+  continue;
+}
+
+const pushResult = await supabase.functions.invoke('send-push', {
   body: {
     token: profile.fcm_token,
     title: title,
@@ -1638,10 +1642,16 @@ if (!profile.fcm_token) continue;
     data: {
       type: 'chat',
       chatId,
-     senderId: currentUser.id, 
+      senderId: currentUser.id,
     },
   },
-}); 
+});
+
+console.log('[PUSH] send-push result:', JSON.stringify({
+  targetUserId: profile.user_id,
+  error: pushResult.error?.message || null,
+  data: pushResult.data || null,
+}));
 
       }
     }
@@ -1788,9 +1798,15 @@ if (!profile.fcm_token) continue;
           is_confirmed: false,
         })
         .eq('chat_id', chatId)
-        .eq('user_id', requesterId);
+        .eq('user_id', requesterId)
+        .select('user_id');
 
       if (participantUpdate.error) throw participantUpdate.error;
+
+      if (!participantUpdate.data || participantUpdate.data.length === 0) {
+        console.warn('[ChatRoom] leave accept updated 0 participants:', { chatId, requesterId });
+        throw new Error('나가기 대상 참여자를 찾을 수 없습니다.');
+      }
 
       await supabase.from('messages').insert({
         chat_id: chatId,
@@ -1825,6 +1841,18 @@ if (!profile.fcm_token) continue;
 
       setGroupAvatars((prev) => prev.filter((av) => av.user_id !== requesterId));
       setParticipantCount((prev) => prev !== null ? Math.max(0, prev - 1) : null);
+
+      const remainingActiveParticipants = await supabase
+        .from('chat_participants')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('chat_id', chatId)
+        .eq('is_active', true);
+
+      if ((remainingActiveParticipants.count || 0) < 2) {
+        navigate('/chats', { replace: true });
+        return;
+      }
+
       setParticipantLastReads((prev) => {
         const next = { ...prev };
         delete next[requesterId];

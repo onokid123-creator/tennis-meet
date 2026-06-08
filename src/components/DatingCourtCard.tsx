@@ -7,14 +7,14 @@ import {
 import { supabase } from '../lib/supabase';
 
 /* ─────────── Design tokens ─────────── */
-const PINK  = '#C9637A';
-const PINK2 = '#D4849A';
-const ROSE  = '#FFF5F7';
+const PINK  = '#3D6B4E';
+const PINK2 = '#5A8A6E';
+const ROSE  = '#EEF5EF';
 const GOLD  = '#C9A84C';
 const DARK  = '#1a1a1a';
 const MUTED = '#9CA3AF';
 const WHITE = '#FFFFFF';
-const PAGE  = '#FFF8F6';
+const PAGE  = '#F0F4ED';
 
 /* ─────────── Helpers ─────────── */
 function isClosed(court: Court) {
@@ -56,7 +56,7 @@ function Avatar({
       width: size, height: size, borderRadius: '50%', flexShrink: 0, overflow: 'hidden',
       background: `linear-gradient(135deg,${PINK},${PINK2})`,
       border: ring ?? `2px solid ${WHITE}`,
-      boxShadow: '0 2px 8px rgba(255,126,138,0.22)',
+      boxShadow: '0 2px 8px rgba(74,124,92,0.22)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {src
@@ -126,8 +126,8 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   return (
     <div style={{
       background: WHITE, borderRadius: 20, padding: '16px 18px',
-      boxShadow: '0 2px 14px rgba(255,126,138,0.08)',
-      border: '1px solid rgba(255,126,138,0.11)',
+      boxShadow: '0 2px 14px rgba(74,124,92,0.08)',
+      border: '1px solid rgba(74,124,92,0.11)',
       ...style,
     }}>
       {children}
@@ -252,7 +252,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         width: '100%', padding: '17px', borderRadius: 20, border: 'none',
         background: `linear-gradient(135deg,${PINK},${PINK2})`,
         color: WHITE, fontWeight: 800, fontSize: 16,
-        cursor: 'pointer', boxShadow: '0 8px 22px rgba(255,126,138,0.38)',
+        cursor: 'pointer', boxShadow: '0 8px 22px rgba(61,107,78,0.30)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
       }}
       onPointerDown={(e) => (e.currentTarget.style.opacity = '0.88')}
@@ -270,7 +270,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
       >
         {/* handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px', flexShrink: 0 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,126,138,0.18)' }} />
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(74,124,92,0.18)' }} />
         </div>
 
         {/* ── Scrollable area ── */}
@@ -293,26 +293,6 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                 />
               </div>
 
-              {isPhotoPrivate && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    padding: '11px 13px',
-                    borderRadius: 16,
-                    background: '#FFF5F8',
-                    border: '1px solid rgba(201,84,122,0.16)',
-                    color: '#9C1C43',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    lineHeight: 1.45,
-                  }}
-                >
-                  <div>사진 1장만 공개됐어요</div>
-                  <div style={{ color: 'rgba(156,28,67,0.62)', fontWeight: 600 }}>
-                    호스트가 수락하면 더 많은 사진을 볼 수 있어요
-                  </div>
-                </div>
-              )}
               {/* reservation mode badge */}
               <div
                 style={{
@@ -378,7 +358,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
         </div>
 
         {/* ── Tab bar ── */}
-        <div style={{ display: 'flex', margin: '14px 14px 0', background: WHITE, borderRadius: 14, padding: 4, border: '1px solid rgba(255,126,138,0.1)', gap: 4 }}>
+        <div style={{ display: 'flex', margin: '14px 14px 0', background: WHITE, borderRadius: 14, padding: 4, border: '1px solid rgba(74,124,92,0.10)', gap: 4 }}>
           {(['모임 정보', '사람 정보'] as const).map((label, idx) => (
             <button
               key={idx}
@@ -387,7 +367,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                 flex: 1, padding: '9px 0', borderRadius: 11, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, transition: 'all 0.18s',
                 background: tab === idx ? `linear-gradient(135deg,${PINK},${PINK2})` : 'transparent',
                 color: tab === idx ? WHITE : MUTED,
-                boxShadow: tab === idx ? '0 4px 12px rgba(255,126,138,0.3)' : 'none',
+                boxShadow: tab === idx ? '0 4px 12px rgba(74,124,92,0.30)' : 'none',
               }}
             >
               {label}
@@ -400,6 +380,17 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
           {/* ───── Tab 0: 모임 정보 ───── */}
           {tab === 0 && (
             <>
+              {isPhotoPrivate && (
+                <Card style={{ marginBottom: 10, background: '#F0F4ED', border: '1px solid rgba(74,124,92,0.18)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A7C5C', fontSize: 13, fontWeight: 800 }}>
+                    <span>사진 1장만 공개됐어요</span>
+                  </div>
+                  <p style={{ margin: '6px 0 0', color: '#6B7F72', fontSize: 12, lineHeight: 1.5, fontWeight: 600 }}>
+                    호스트가 수락하면 더 많은 사진을 볼 수 있어요
+                  </p>
+                </Card>
+              )}
+
               {/* 1순위: 호스트 메시지 */}
               {(court.court_intro || court.description) && (
                 <Card style={{ marginBottom: 10 }}>
@@ -445,14 +436,14 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                   )}
                 </div>
                 {(cost(court) || court.experience_wanted) && (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,126,138,0.1)' }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(74,124,92,0.10)' }}>
                     {cost(court) && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: ROSE, border: '1px solid rgba(255,126,138,0.22)', color: PINK, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: ROSE, border: '1px solid rgba(74,124,92,0.22)', color: PINK, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
                         💳 {cost(court)}
                       </span>
                     )}
                     {court.experience_wanted && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FFF5F7', border: '1px solid rgba(255,126,138,0.22)', color: PINK, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#EEF5EF', border: '1px solid rgba(74,124,92,0.22)', color: PINK, borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700 }}>
                         선호 구력: {court.experience_wanted}
                       </span>
                     )}
@@ -481,7 +472,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                         </div>
                       ); })()}
                       {tf > 0 && (() => { const rf = Math.max(0, tf - cf); return (
-                        <div style={{ flex: 1, background: rf <= 0 ? 'rgba(239,68,68,0.04)' : 'rgba(255,126,138,0.06)', border: `1px solid ${rf <= 0 ? 'rgba(239,68,68,0.18)' : 'rgba(255,126,138,0.18)'}`, borderRadius: 14, padding: '12px 14px' }}>
+                        <div style={{ flex: 1, background: rf <= 0 ? 'rgba(239,68,68,0.04)' : 'rgba(74,124,92,0.06)', border: `1px solid ${rf <= 0 ? 'rgba(239,68,68,0.18)' : 'rgba(74,124,92,0.18)'}`, borderRadius: 14, padding: '12px 14px' }}>
                           <div style={{ fontSize: 11, color: PINK, fontWeight: 600, marginBottom: 4 }}>여성</div>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
                             <span style={{ fontWeight: 800, fontSize: 22, color: PINK }}>{cf}</span>
@@ -506,7 +497,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
               {p && (
                 <Card style={{ marginBottom: 10 }}>
                   <SectionHead label="호스트" />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: ROSE, borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(255,126,138,0.11)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: ROSE, borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(74,124,92,0.11)' }}>
                     <Avatar src={p.photo_urls?.[0] ?? p.photo_url} name={p.name} size={52} ring={`2.5px solid ${PINK}`} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
@@ -525,7 +516,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                   <SectionHead label="프로필 정보" />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {infoGrid.map((item) => (
-                      <div key={item.label} style={{ background: ROSE, borderRadius: 14, padding: '12px 8px', textAlign: 'center', border: '1px solid rgba(255,126,138,0.09)' }}>
+                      <div key={item.label} style={{ background: ROSE, borderRadius: 14, padding: '12px 8px', textAlign: 'center', border: '1px solid rgba(74,124,92,0.09)' }}>
                         <div style={{ fontSize: 10, color: MUTED, fontWeight: 500, marginBottom: 5, letterSpacing: '0.03em' }}>{item.label}</div>
                         <div style={{ fontSize: 15, fontWeight: 800, color: DARK, letterSpacing: '-0.02em' }}>{item.value}</div>
                       </div>
@@ -690,8 +681,8 @@ const closeLightbox = () => {
         onClick={openDetail}
         style={{
           background: WHITE, borderRadius: 24, overflow: 'hidden', cursor: 'pointer',
-          boxShadow: '0 4px 22px rgba(255,126,138,0.11), 0 1px 4px rgba(0,0,0,0.04)',
-          border: '1px solid rgba(255,126,138,0.1)',
+          boxShadow: '0 4px 22px rgba(74,124,92,0.11), 0 1px 4px rgba(0,0,0,0.04)',
+          border: '1px solid rgba(74,124,92,0.10)',
         }}
       >
         {/* owner actions */}
@@ -716,10 +707,10 @@ const closeLightbox = () => {
         <div style={{ padding: isOwner ? '12px 14px 0' : '16px 14px 0' }}>
           <div
             style={{
-              border: '1px solid rgba(255,126,138,0.12)',
+              border: '1px solid rgba(74,124,92,0.12)',
               borderRadius: 20,
               padding: '14px 14px 12px',
-              background: 'linear-gradient(135deg, #FFFFFF 0%, #FFF9FA 100%)',
+              background: 'linear-gradient(135deg, #FFFFFF 0%, #F5F8F2 100%)',
               position: 'relative',
             }}
           >
@@ -792,7 +783,7 @@ const closeLightbox = () => {
                           </span>
                         )}
                         {tf > 0 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', background: `rgba(255,126,138,0.08)`, border: `1px solid rgba(255,126,138,0.16)`, borderRadius: 999, padding: '3px 8px', fontSize: 10, color: PINK, fontWeight: 800 }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', background: `rgba(74,124,92,0.08)`, border: `1px solid rgba(74,124,92,0.16)`, borderRadius: 999, padding: '3px 8px', fontSize: 10, color: PINK, fontWeight: 800 }}>
                             여 {rmF <= 0 ? '마감' : `${rmF}명`}
                           </span>
                         )}
@@ -812,7 +803,7 @@ const closeLightbox = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minWidth: 0 }}>
               {closed && (
-                <span style={{ background: ROSE, border: '1px solid rgba(255,126,138,0.2)', borderRadius: 999, padding: '4px 10px', fontSize: 11, color: PINK, fontWeight: 800 }}>
+                <span style={{ background: ROSE, border: '1px solid rgba(74,124,92,0.2)', borderRadius: 999, padding: '4px 10px', fontSize: 11, color: PINK, fontWeight: 800 }}>
                   모집 마감
                 </span>
               )}
@@ -881,7 +872,7 @@ const closeLightbox = () => {
             <button
               onClick={(e) => { e.stopPropagation(); openDetail(); }}
               style={{
-                flex: 1, padding: '11px 0', borderRadius: 14, border: `1.5px solid rgba(255,126,138,0.22)`,
+                flex: 1, padding: '11px 0', borderRadius: 14, border: `1.5px solid rgba(74,124,92,0.22)`,
                 background: ROSE, color: PINK, fontWeight: 700, fontSize: 13, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
               }}
@@ -903,7 +894,7 @@ const closeLightbox = () => {
                     flex: 1.6, padding: '11px 0', borderRadius: 14, border: 'none',
                     background: `linear-gradient(135deg,${PINK},${PINK2})`,
                     color: WHITE, fontWeight: 800, fontSize: 13, cursor: 'pointer',
-                    boxShadow: '0 5px 16px rgba(255,126,138,0.33)',
+                    boxShadow: '0 5px 16px rgba(74,124,92,0.30)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   }}
                   onPointerDown={(e) => (e.currentTarget.style.opacity = '0.88')}

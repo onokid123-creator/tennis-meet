@@ -615,7 +615,7 @@ const isSubscribed = profile?.is_subscribed ?? false;
    {profileTab === 'dating' && (
   <>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-gray-800">🥂 코트 위 설레는 만남 프로필</h2>
+            <h2 className="text-base font-bold text-gray-800">🎾 테니스 메이트 프로필</h2>
             {!isEditing && (
               <button
                 onClick={() => {

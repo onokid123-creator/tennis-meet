@@ -24,6 +24,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>프로필 사진 촬영을 위해 카메라 접근 권한이 필요합니다.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>프로필 사진 저장을 위해 사진 보관함 저장 권한이 필요합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>프로필 사진 등록을 위해 사진 보관함 접근 권한이 필요합니다.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
@@ -50,16 +56,6 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
-<true/>
-
-<key>NSCameraUsageDescription</key>
-<string>프로필 사진 촬영을 위해 카메라 접근 권한이 필요합니다.</string>
-
-<key>NSPhotoLibraryUsageDescription</key>
-<string>프로필 사진 등록을 위해 사진 보관함 접근 권한이 필요합니다.</string>
-
-<key>NSPhotoLibraryAddUsageDescription</key>
-<string>프로필 사진 저장을 위해 사진 보관함 저장 권한이 필요합니다.</string>
-
+	<true/>
 </dict>
 </plist>

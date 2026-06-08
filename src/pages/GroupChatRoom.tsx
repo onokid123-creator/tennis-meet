@@ -196,11 +196,19 @@ export default function GroupChatRoom() {
 
       const { data: myPartData } = await supabase
         .from('court_group_chat_participants')
-        .select('created_at')
+        .select('created_at,status')
         .eq('group_chat_id', groupChatId)
         .eq('user_id', currentUser.id)
         .maybeSingle();
-      const joinedAt = (myPartData as { created_at?: string | null } | null)?.created_at ?? null;
+
+      const myPart = myPartData as { created_at?: string | null; status?: string | null } | null;
+
+      if (!myPart || myPart.status === 'left' || myPart.status === 'rejected') {
+        navigate('/chats', { replace: true });
+        return;
+      }
+
+      const joinedAt = myPart.created_at ?? null;
 
       let query = supabase
         .from('court_group_chat_messages')
@@ -244,14 +252,23 @@ export default function GroupChatRoom() {
       .from('court_group_chat_participants')
       .select(`*, profile:user_id (*)`)
       .eq('group_chat_id', groupChatId)
-      .neq('status', 'rejected');
+      .neq('status', 'rejected')
+      .neq('status', 'left');
 
     const rows = (data || []) as ParticipantWithRead[];
-    setParticipants(rows);
+    const activeRows = rows.filter((p) => p.status !== 'left' && p.status !== 'rejected');
+
+    const myRow = rows.find((p) => p.user_id === user?.id);
+    if (!myRow || myRow.status === 'left' || myRow.status === 'rejected' || activeRows.length < 2) {
+      navigate('/chats', { replace: true });
+      return;
+    }
+
+    setParticipants(activeRows);
     const reads: Record<string, string | null> = {};
-    rows.forEach((p) => { reads[p.user_id] = (p as never as { last_read_at?: string | null }).last_read_at ?? null; });
+    activeRows.forEach((p) => { reads[p.user_id] = (p as never as { last_read_at?: string | null }).last_read_at ?? null; });
     setParticipantLastReads((prev) => ({ ...prev, ...reads }));
-  }, [groupChatId]);
+  }, [groupChatId, navigate, user?.id]);
 
   const fetchConfirmedParticipants = useCallback(async () => {
     const { data: gcData } = await supabase

@@ -17,7 +17,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const redirectTo = `${window.location.origin}/reset-password`;
+      const redirectTo = 'https://tennis-meet-app-nv53.bolt.host/reset-password';
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo,
       });

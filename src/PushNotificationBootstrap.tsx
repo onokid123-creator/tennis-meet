@@ -24,6 +24,7 @@ export default function PushNotificationBootstrap() {
     }
 
     pushInitialized = true;
+    console.log('[PUSH] bootstrap start');
 
     const saveFcmToken = async (userId: string, tokenValue: string) => {
       if (!tokenValue) return;
@@ -74,16 +75,20 @@ export default function PushNotificationBootstrap() {
         await PushNotifications.register();
         console.log('[PUSH] native push registered');
 
+        // iOS can set the APNS device token slightly after register().
+        // Wait briefly before requesting the FCM token, then retry enough times.
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
         let tokenValue: string | null = null;
 
-        for (let i = 0; i < 3; i += 1) {
+        for (let i = 0; i < 8; i += 1) {
           try {
             const fcmToken = await FCM.getToken();
             tokenValue = fcmToken?.token || null;
             if (tokenValue) break;
           } catch (e) {
             console.warn('[PUSH] FCM getToken retry', i + 1, e);
-            await new Promise((resolve) => setTimeout(resolve, 700));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
 

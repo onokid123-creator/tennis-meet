@@ -224,7 +224,7 @@ export default function DatingProfileSetup() {
         <BrandLogo size="sm" light={true} />
       </div>
       <h2 className="text-base font-light text-white/70 mb-1 text-center tracking-wider mt-2">
-        🥂 코트위 설레는 만남 프로필
+        🎾 테니스 메이트 프로필
       </h2>
 
       <div className="flex items-center gap-2 mt-3 mb-6">
@@ -242,8 +242,12 @@ export default function DatingProfileSetup() {
 
   <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-4">
     <p className="text-white/80 text-sm leading-relaxed">
-      설레는만남은 서로의 신뢰를 위해
-      <span className="text-[#C9A84C] font-semibold"> 얼굴이 나온 사진 등록</span>이 필요해요.
+      테니스 메이트는 서로의 신뢰를 위해<br />
+      <span className="text-[#C9A84C] font-semibold">얼굴이 나온 사진 등록</span>이 필요해요.
+    </p>
+
+    <p className="text-[#C9A84C] text-xs font-semibold mt-2">
+      코트 등록 시 사진 비공개 선택 가능
     </p>
 
     <p className="text-white/40 text-xs mt-2">

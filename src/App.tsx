@@ -23,6 +23,7 @@ import Login from './pages/Login';
 
 const SignUp = lazy(() => import('./pages/SignUp'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const PurposeSelection = lazy(() => import('./pages/PurposeSelection'));
 const ProfileSetup = lazy(() => import('./pages/ProfileSetup'));
 const Home = lazy(() => import('./pages/Home'));
@@ -225,6 +226,7 @@ function AppRoutes() {
           }
         />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/purpose-selection"
           element={

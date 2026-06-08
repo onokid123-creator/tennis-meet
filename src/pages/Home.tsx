@@ -37,22 +37,22 @@ function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () =>
       <div
         className="sheet-container shadow-2xl"
         style={{
-          background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F0 100%)',
+          background: 'linear-gradient(135deg, #F0F4ED 0%, #F7FAF4 100%)',
           maxHeight: `${maxH}px`,
           marginBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sheet-body px-6 pt-6 pb-2">
-          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'rgba(183,110,121,0.3)' }} />
-          <p className="text-lg font-bold mb-1" style={{ color: '#2D1820' }}>설레는 만남은 추가 정보가 필요해요!</p>
-          <p className="text-xs mb-6" style={{ color: 'rgba(45,24,32,0.5)' }}>MBTI · 키 · 사진 3장을 등록하면 설레는 만남을 즐길 수 있어요</p>
+          <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: 'rgba(74,124,92,0.3)' }} />
+          <p className="text-lg font-bold mb-1" style={{ color: '#234536' }}>설레는 만남은 추가 정보가 필요해요!</p>
+          <p className="text-xs mb-6" style={{ color: 'rgba(35,69,54,0.55)' }}>MBTI · 키 · 사진 3장을 등록하면 설레는 만남을 즐길 수 있어요</p>
         </div>
         <div className="px-6 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 80px)' }}>
           <button
             onClick={onRegister}
             className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white"
-            style={{ background: 'linear-gradient(135deg, #B76E79 0%, #C9A84C 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #3D6B4E 0%, #5A8A6E 100%)' }}
           >
             프로필 등록하기
           </button>
@@ -518,14 +518,14 @@ if (!categoryTab) {
     : purposeMatchedCourts;
 
   const headerBg = isDating
-    ? 'linear-gradient(180deg, #F43F5E 0%, #FECDD3 100%)'
+    ? 'linear-gradient(180deg, #3D6B4E 0%, #5A8A6E 100%)'
     : '#1B4332';
 
   const pageBg = isDating
-    ? '#FFF1F2'
+    ? '#F0F4ED'
     : '#F0FDF4';
 
-  const activeTabColor = isDating ? '#FB7185' : '#4ADE80';
+  const activeTabColor = isDating ? '#5A8A6E' : '#4ADE80';
   const accentGold = '#C9A84C';
 
   return (
@@ -538,7 +538,7 @@ if (!categoryTab) {
   style={{
     background: headerBg,
     boxShadow: isDating
-      ? '0 4px 24px rgba(251,113,133,0.3)'
+      ? '0 4px 24px rgba(74,124,92,0.3)'
       : '0 4px 24px rgba(26,74,58,0.3)'
   }}
 >
@@ -591,8 +591,8 @@ if (!categoryTab) {
             onClick={() => handleCategoryTab('tennis')}
             className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
             style={categoryTab === 'tennis'
-              ? { background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)' }
-              : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
+              ? { background: 'rgba(255,255,255,0.22)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.34)', backdropFilter: 'blur(8px)' }
+              : { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.72)', border: '1.5px solid rgba(255,255,255,0.18)' }
             }
           >
             🎾 오직 테니스
@@ -601,19 +601,19 @@ if (!categoryTab) {
             onClick={() => handleCategoryTab('dating')}
             className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
             style={categoryTab === 'dating'
-              ? { background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)', backdropFilter: 'blur(8px)' }
-              : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
+              ? { background: '#F7FAF4', color: '#2F5D46', border: '1.5px solid rgba(255,255,255,0.75)', backdropFilter: 'blur(8px)', boxShadow: '0 6px 16px rgba(35,69,54,0.10)' }
+              : { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.72)', border: '1.5px solid rgba(255,255,255,0.18)' }
             }
           >
             🎾 테니스 메이트
           </button>
         </div>
 
-        <div className="flex" style={{ borderTop: isDating ? '1px solid rgba(251,113,133,0.2)' : '1px solid rgba(201,168,76,0.2)' }}>
+        <div className="flex" style={{ background: isDating ? 'rgba(240,244,237,0.78)' : 'transparent', borderTop: isDating ? '1px solid rgba(74,124,92,0.2)' : '1px solid rgba(201,168,76,0.2)' }}>
           <button
             onClick={() => setActiveTab('others')}
             className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
-            style={{ color: activeTab === 'others' ? '#fff' : 'rgba(255,255,255,0.45)' }}
+            style={{ color: activeTab === 'others' ? (isDating ? '#234536' : '#fff') : (isDating ? 'rgba(35,69,54,0.45)' : 'rgba(255,255,255,0.45)') }}
           >
             {categoryTab === 'tennis' ? '파트너 찾기' : '인연 찾기'}
             {activeTab === 'others' && (
@@ -626,7 +626,7 @@ if (!categoryTab) {
           <button
             onClick={() => setActiveTab('mine')}
             className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
-            style={{ color: activeTab === 'mine' ? '#fff' : 'rgba(255,255,255,0.45)' }}
+            style={{ color: activeTab === 'mine' ? (isDating ? '#234536' : '#fff') : (isDating ? 'rgba(35,69,54,0.45)' : 'rgba(255,255,255,0.45)') }}
           >
             내 코트
             {activeTab === 'mine' && (
@@ -644,9 +644,9 @@ if (!categoryTab) {
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div
               className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
-              style={{ borderColor: isDating ? 'rgba(251,113,133,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }}
+              style={{ borderColor: isDating ? 'rgba(74,124,92,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }}
             />
-            <p className="text-sm" style={{ color: isDating ? 'rgba(251,113,133,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
+            <p className="text-sm" style={{ color: isDating ? 'rgba(74,124,92,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
           </div>
         ) : (
           <>
@@ -664,19 +664,19 @@ if (!categoryTab) {
                       style={{
                         background: selected
                           ? isDating
-                            ? '#FB7185'
+                            ? '#5A8A6E'
                             : '#2D6A4F'
                           : isDating
-                            ? 'rgba(251,113,133,0.1)'
+                            ? 'rgba(74,124,92,0.1)'
                             : 'rgba(45,106,79,0.1)',
                         color: selected
                           ? '#fff'
                           : isDating
-                            ? '#BE4B63'
+                            ? '#4A7C5C'
                             : '#2D6A4F',
                         border: selected
                           ? '1px solid transparent'
-                          : `1px solid ${isDating ? 'rgba(251,113,133,0.22)' : 'rgba(45,106,79,0.18)'}`,
+                          : `1px solid ${isDating ? 'rgba(74,124,92,0.22)' : 'rgba(45,106,79,0.18)'}`,
                       }}
                     >
                       {filter.label}
@@ -692,9 +692,9 @@ if (!categoryTab) {
             {isDating ? (
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(251,113,133,0.1)', border: '1.5px solid rgba(251,113,133,0.25)' }}
+                style={{ background: 'rgba(74,124,92,0.1)', border: '1.5px solid rgba(74,124,92,0.25)' }}
               >
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FB7185" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#5A8A6E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
                 </svg>
               </div>
@@ -711,10 +711,10 @@ if (!categoryTab) {
               </div>
             )}
             <div className="text-center">
-              <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#FB7185' : '#2D6A4F' }}>
+              <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#5A8A6E' : '#2D6A4F' }}>
                 {isDating ? activeTab === 'others' ? '아직 인연이 없어요' : '아직 등록한 코트가 없어요' : activeTab === 'others' ? '아직 파트너가 없어요' : '아직 등록한 코트가 없어요'}
               </p>
-              <p className="text-xs" style={{ color: isDating ? 'rgba(251,113,133,0.7)' : 'rgba(45,106,79,0.55)' }}>
+              <p className="text-xs" style={{ color: isDating ? 'rgba(74,124,92,0.7)' : 'rgba(45,106,79,0.55)' }}>
                 {isDating ? '첫 번째 설레는 만남을 열어보세요!' : '첫 코트를 등록해보세요!'}
               </p>
             </div>
@@ -762,14 +762,14 @@ if (!categoryTab) {
     <div
       className="w-full max-w-md rounded-t-3xl shadow-2xl flex flex-col"
       style={{
-        background: 'linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 100%)',
+        background: 'linear-gradient(135deg, #F0F4ED 0%, #E3EBDD 100%)',
         maxHeight: '85dvh'
       }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* 상단 */}
       <div className="px-6 pt-6 pb-2 text-center">
-        <div className="w-10 h-1 rounded-full mx-auto mb-5 bg-pink-200" />
+        <div className="w-10 h-1 rounded-full mx-auto mb-5 bg-green-200" />
         <p className="text-lg font-bold mb-2 text-[#4A1D1F]">
           🎾 더 많은 매칭을 원하세요?
         </p>
@@ -785,8 +785,8 @@ if (!categoryTab) {
           className="rounded-2xl p-4"
           style={{
             background: '#fff',
-            border: '1px solid rgba(244,63,94,0.2)',
-            boxShadow: '0 6px 20px rgba(244,63,94,0.15)'
+            border: '1px solid rgba(74,124,92,0.2)',
+            boxShadow: '0 6px 20px rgba(74,124,92,0.15)'
           }}
         >
           <p className="font-bold text-sm mb-2 text-[#4A1D1F]">💎 월 구독</p>
@@ -801,7 +801,7 @@ if (!categoryTab) {
   onClick={() => handlePurchase('dating_monthly_premium')}
   className="w-full py-3 rounded-xl text-white font-semibold"
   style={{
-    background: 'linear-gradient(135deg, #F43F5E 0%, #FB7185 100%)'
+    background: 'linear-gradient(135deg, #4A7C5C 0%, #5A8A6E 100%)'
   }}
 >
   지금 구독 시작
@@ -948,7 +948,7 @@ if (!categoryTab) {
 
       {applyTargetCourt && (() => {
         const isDatingApply = applyTargetCourt.purpose === 'dating';
-        const sheetBg = isDatingApply ? 'linear-gradient(160deg, #FB7185 0%, #FECDD3 100%)' : '#1B4332';
+        const sheetBg = isDatingApply ? 'linear-gradient(160deg, #5A8A6E 0%, #DDEADD 100%)' : '#1B4332';
         return (
           <div
             className="fixed inset-0 z-[9999] flex items-end justify-center"
@@ -993,7 +993,7 @@ if (!categoryTab) {
                   onClick={handleApplySubmit}
                   disabled={applyLoading}
                   className="w-full py-4 rounded-2xl font-bold text-sm transition active:scale-95 disabled:opacity-60"
-                  style={{ background: isDatingApply ? '#F43F5E' : accentGold, color: '#fff', boxShadow: isDatingApply ? '0 4px 12px rgba(244,63,94,0.35)' : '0 4px 12px rgba(201,168,76,0.35)' }}
+                  style={{ background: isDatingApply ? '#4A7C5C' : accentGold, color: '#fff', boxShadow: isDatingApply ? '0 4px 12px rgba(74,124,92,0.35)' : '0 4px 12px rgba(201,168,76,0.35)' }}
                 >
                   {applyLoading ? '신청 중...' : '신청하기'}
                 </button>
@@ -1013,7 +1013,7 @@ if (!categoryTab) {
             className="w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl px-7 py-8 flex flex-col items-center gap-4"
             style={
               applySuccessPurpose === 'dating'
-                ? { background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }
+                ? { background: 'linear-gradient(135deg, #F0F4ED 0%, #E3EBDD 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }
                 : { background: 'linear-gradient(135deg, #F0FAF4 0%, #E8F5EC 100%)', border: '1.5px solid rgba(27,67,50,0.2)' }
             }
             onClick={(e) => e.stopPropagation()}

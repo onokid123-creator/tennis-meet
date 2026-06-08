@@ -765,6 +765,57 @@ const isTennis = purpose === 'tennis';
               </div>
             </div>
 
+
+
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="flex flex-col gap-4">
+            <h2 className="text-xl font-bold text-gray-900">{stepTitles[3]}</h2>
+
+            {!isTennis && (
+              <p className="text-sm font-medium text-center py-2" style={{ color: '#C9A84C' }}>
+                🍽️ 테니스 끝난 후 식사 한번 해봐요 😊
+              </p>
+            )}
+
+            {!isPlanningMode && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">코트 번호 <span className="text-gray-400 font-normal text-xs">(선택)</span></p>
+                <input
+                  type="text"
+                  value={courtNumber}
+                  onChange={(e) => setCourtNumber(e.target.value)}
+                  placeholder="예) 3번 코트"
+                  maxLength={20}
+                  className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gray-400 placeholder-gray-400"
+                />
+                <p className="text-xs text-gray-400 mt-1.5">참가자들이 현장에서 찾기 쉽도록 입력해주세요</p>
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <textarea
+                value={description}
+                onChange={(e) => {
+                  if (e.target.value.length <= maxDescLen) setDescription(e.target.value);
+                }}
+                placeholder={
+                  isTennis
+                    ? '예) 즐겁게 같이 치실 분 환영해요! 실력 무관 🎾'
+                    : '예) 테니스 좋아하는 활발한 성격이에요 😊 같이 치고 맛있는 거 먹어요!'
+                }
+                rows={4}
+                className="w-full text-sm text-gray-800 resize-none focus:outline-none placeholder-gray-400 leading-relaxed"
+              />
+              <p className="text-xs text-gray-400 text-right mt-2">
+                {description.length}/{maxDescLen}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
+            {!isTennis && (
             <div>
               <p className="text-sm font-semibold text-gray-700 mb-3">사진 공개 범위</p>
               <div className="grid grid-cols-2 gap-3">
@@ -836,55 +887,12 @@ const isTennis = purpose === 'tennis';
                 </div>
               )}
             </div>
-
-          </div>
-        )}
-
-        {step === 4 && (
-          <div className="flex flex-col gap-4">
-            <h2 className="text-xl font-bold text-gray-900">{stepTitles[3]}</h2>
-
-            {!isTennis && (
-              <p className="text-sm font-medium text-center py-2" style={{ color: '#C9A84C' }}>
-                🍽️ 테니스 끝난 후 식사 한번 해봐요 😊
-              </p>
             )}
 
-            {!isPlanningMode && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">코트 번호 <span className="text-gray-400 font-normal text-xs">(선택)</span></p>
-                <input
-                  type="text"
-                  value={courtNumber}
-                  onChange={(e) => setCourtNumber(e.target.value)}
-                  placeholder="예) 3번 코트"
-                  maxLength={20}
-                  className="w-full text-sm text-gray-800 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gray-400 placeholder-gray-400"
-                />
-                <p className="text-xs text-gray-400 mt-1.5">참가자들이 현장에서 찾기 쉽도록 입력해주세요</p>
-              </div>
-            )}
+              {!isTennis && (
+                <div className="border-t border-gray-100 mt-4 pt-4" />
+              )}
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <textarea
-                value={description}
-                onChange={(e) => {
-                  if (e.target.value.length <= maxDescLen) setDescription(e.target.value);
-                }}
-                placeholder={
-                  isTennis
-                    ? '예) 즐겁게 같이 치실 분 환영해요! 실력 무관 🎾'
-                    : '예) 테니스 좋아하는 활발한 성격이에요 😊 같이 치고 맛있는 거 먹어요!'
-                }
-                rows={4}
-                className="w-full text-sm text-gray-800 resize-none focus:outline-none placeholder-gray-400 leading-relaxed"
-              />
-              <p className="text-xs text-gray-400 text-right mt-2">
-                {description.length}/{maxDescLen}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">등록 요약</p>
               <div className="flex gap-2 text-sm">
                 <span className="text-gray-500 w-16 flex-shrink-0">장소</span>
