@@ -2117,6 +2117,14 @@ console.log('[PUSH] send-push result:', JSON.stringify({
 
       await releaseConfirmedCourtSlot(targetId);
 
+      if (courtId) {
+        await supabase
+          .from('courts')
+          .update({ status: 'open' })
+          .eq('id', courtId)
+          .eq('status', 'closed');
+      }
+
       const { error: delError } = await supabase
         .from('chat_participants')
         .update({
@@ -3641,7 +3649,7 @@ paddingBottom: '14px',
       value={newMessage}
       onChange={handleInputChange}
       onFocus={scrollToBottomAfterKeyboard}
-      placeholder={isDating ? '설레는 마음을 전해보세요...' : '메시지를 입력하세요...'}
+      placeholder="테니스 메시지를 입력하세요..."
       className="flex-1 min-w-0 px-4 h-11 rounded-full focus:outline-none transition"
       style={{
         fontSize: '16px',

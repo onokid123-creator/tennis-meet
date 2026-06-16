@@ -553,7 +553,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
           ) : (
             <PinkBtn onClick={() => { onClose(); onApply!(); }}>
               <Heart style={{ width: 17, height: 17, fill: WHITE, strokeWidth: 0 }} />
-             코트에서 만날까요?
+             참여 신청하기
             </PinkBtn>
           )}
         </div>
@@ -901,7 +901,7 @@ const closeLightbox = () => {
                   onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
                 >
                   <Heart style={{ width: 14, height: 14, fill: WHITE, strokeWidth: 0 }} />
-                  코트에서 만날까요?
+                  참여 신청하기
                 </button>
               )
             )}

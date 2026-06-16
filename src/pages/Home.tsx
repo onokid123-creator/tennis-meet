@@ -963,14 +963,12 @@ if (!categoryTab) {
               <div className="px-5 pt-5 flex-1 overflow-y-auto">
                 <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: isDatingApply ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)' }} />
                 <p className="font-bold text-lg text-center mb-4 text-white">
-                  {isDatingApply ? '🥂 설레는 첫 인사를 보내보세요' : '🎾 테니스 신청 메시지'}
+                  🎾 테니스 신청 메시지
                 </p>
                 <textarea
                   value={applyMessage}
                   onChange={(e) => setApplyMessage(e.target.value)}
-                  placeholder={isDatingApply
-                    ? '예) 안녕하세요 😊 코트에서 만나고 싶어요!'
-                    : '예) 안녕하세요! 같이 테니스 치고 싶어요 💪'}
+                  placeholder="예) 안녕하세요! 같이 테니스 치고 싶어요 🎾" 
                   rows={4}
                   className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none transition"
                   style={{

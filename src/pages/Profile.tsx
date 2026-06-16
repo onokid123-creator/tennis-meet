@@ -127,6 +127,10 @@ const [profileTab, setProfileTab] =
   const [replaceFileMap, setReplaceFileMap] = useState<Record<number, File>>({});
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const [isNameEditing, setIsNameEditing] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isTennisEditing, setIsTennisEditing] = useState(false);
@@ -143,6 +147,13 @@ const [profileTab, setProfileTab] =
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 const [showPaywallPopup, setShowPaywallPopup] = useState(false);
 const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_intro' | 'ticket_pack' | 'out_of_tickets' | null>(null); 
+
+  useEffect(() => {
+    if (!isNameEditing) {
+      setNameDraft(profile?.name || '');
+      setNameError('');
+    }
+  }, [profile?.name, isNameEditing]);
   useEffect(() => {
     if (!authLoading) {
       setProfileLoaded(true);
@@ -327,6 +338,60 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
     setEditingPhotos(newExistingPreviews);
     setReplaceFileMap(newExistingFileMap);
     setFormData((prev) => ({ ...prev, newPhotos: newAddedFiles, newPreviews: newAddedPreviews }));
+  };
+
+  const startNameEdit = () => {
+    setNameDraft(profile?.name || '');
+    setNameError('');
+    setIsNameEditing(true);
+  };
+
+  const cancelNameEdit = () => {
+    setNameDraft(profile?.name || '');
+    setNameError('');
+    setIsNameEditing(false);
+  };
+
+  const saveNameOnly = async () => {
+    if (!profile?.user_id) return;
+
+    const nextName = nameDraft.trim();
+
+    if (!nextName) {
+      setNameError('닉네임을 입력해주세요.');
+      return;
+    }
+
+    if (nextName.length > 12) {
+      setNameError('닉네임은 12자 이하로 입력해주세요.');
+      return;
+    }
+
+    if (nextName === profile.name) {
+      setIsNameEditing(false);
+      return;
+    }
+
+    setNameSaving(true);
+    setNameError('');
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name: nextName })
+        .eq('user_id', profile.user_id);
+
+      if (error) throw error;
+
+      updateProfile({ name: nextName });
+      setFormData((prev) => ({ ...prev, name: nextName }));
+      setIsNameEditing(false);
+    } catch (e) {
+      console.error('[PROFILE] name update failed:', e);
+      setNameError('닉네임 수정에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setNameSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -765,8 +830,45 @@ const isSubscribed = profile?.is_subscribed ?? false;
                   maxLength={12}
                   className="w-32 px-3 py-2 border border-gray-300 rounded-xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
                 />
+              ) : isNameEditing ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    type="text"
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value.slice(0, 12))}
+                    placeholder="닉네임"
+                    maxLength={12}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={saveNameOnly}
+                    disabled={nameSaving}
+                    className="px-3 py-1.5 rounded-full text-xs font-bold text-white bg-[#1B4332] disabled:opacity-50"
+                  >
+                    {nameSaving ? '저장 중' : '저장'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelNameEdit}
+                    disabled={nameSaving}
+                    className="px-3 py-1.5 rounded-full text-xs font-bold text-gray-500 bg-gray-100 disabled:opacity-50"
+                  >
+                    취소
+                  </button>
+                  {nameError && <div className="w-full text-xs text-red-500 mt-1">{nameError}</div>}
+                </div>
               ) : (
-                <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
+                  <button
+                    type="button"
+                    onClick={startNameEdit}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-bold text-[#1B4332] bg-[#EEF5EF] border border-[#D7E6DA]"
+                  >
+                    수정
+                  </button>
+                </div>
               )}
               {profile?.age && (
                 <span className="text-gray-500 font-medium">{profile.age}세</span>
@@ -1158,7 +1260,46 @@ const isSubscribed = profile?.is_subscribed ?? false;
               <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
                 {/* 이름 / 나이 / 성별 */}
                 <div className="flex items-baseline gap-2 mb-4 pb-4 border-b border-gray-100">
-                  <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
+                  {isNameEditing ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input
+                        type="text"
+                        value={nameDraft}
+                        onChange={(e) => setNameDraft(e.target.value.slice(0, 12))}
+                        placeholder="닉네임"
+                        maxLength={12}
+                        className="w-32 px-3 py-2 border border-gray-300 rounded-xl text-xl font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={saveNameOnly}
+                        disabled={nameSaving}
+                        className="px-3 py-1.5 rounded-full text-xs font-bold text-white bg-[#1B4332] disabled:opacity-50"
+                      >
+                        {nameSaving ? '저장 중' : '저장'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelNameEdit}
+                        disabled={nameSaving}
+                        className="px-3 py-1.5 rounded-full text-xs font-bold text-gray-500 bg-gray-100 disabled:opacity-50"
+                      >
+                        취소
+                      </button>
+                      {nameError && <div className="w-full text-xs text-red-500 mt-1">{nameError}</div>}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
+                      <button
+                        type="button"
+                        onClick={startNameEdit}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-bold text-[#1B4332] bg-[#EEF5EF] border border-[#D7E6DA]"
+                      >
+                        수정
+                      </button>
+                    </div>
+                  )}
                   {profile?.age && (
                     <span className="text-gray-500 font-medium">{profile.age}세</span>
                   )}
