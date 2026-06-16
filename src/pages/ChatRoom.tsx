@@ -54,7 +54,7 @@ function DefaultProfileAvatar({
         height={size * 0.46}
         viewBox="0 0 24 24"
         fill="none"
-        stroke={isBlocked ? '#9CA3AF' : isDating ? '#C9547A' : '#2D6A4F'}
+        stroke={isBlocked ? '#9CA3AF' : '#2D6A4F'}
         strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -2846,9 +2846,7 @@ if (receiverProfile?.fcm_token) {
     return `${others.slice(0, 3).join(', ')} 외 ${others.length - 3}명`;
   })();
 
-  const avatarBg = isDating
-    ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)'
-    : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)';
+  const avatarBg = 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)';
 
   const OpponentAvatar = ({ size = 'sm', clickable = false }: { size?: 'sm' | 'md'; clickable?: boolean }) => {
     const dim = size === 'md' ? 'w-10 h-10' : 'w-8 h-8';
@@ -2868,7 +2866,7 @@ if (receiverProfile?.fcm_token) {
     return (
       <div
         className={`${dim} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 overflow-hidden ${clickable ? 'cursor-pointer active:opacity-80' : ''}`}
-        style={{ background: avatarBg, boxShadow: `0 0 0 2px ${isDating ? 'rgba(201,168,76,0.3)' : 'rgba(45,106,79,0.2)'}` }}
+        style={{ background: avatarBg, boxShadow: '0 0 0 2px rgba(45,106,79,0.2)' }}
         onClick={clickable && otherUser ? () => setShowProfilePopup(true) : undefined}
       >
         {(() => {
@@ -2905,29 +2903,17 @@ if (receiverProfile?.fcm_token) {
     );
   };
 
-  const bgStyle = isDating
-    ? { background: 'linear-gradient(160deg, #FEF2F4 0%, #FFF5F0 50%, #FFF8F2 100%)' }
-    : { background: '#F3FAF5' };
+  const bgStyle = { background: '#F3FAF5' };
 
-  const myBubbleStyle = isDating
-    ? { background: 'linear-gradient(135deg, #C97A95 0%, #E2A8B8 100%)', color: '#fff' }
-    : { background: 'linear-gradient(135deg, #2F5D50 0%, #4C7A6B 100%)', color: '#fff' };
+  const myBubbleStyle = { background: 'linear-gradient(135deg, #2F5D50 0%, #4C7A6B 100%)', color: '#fff' };
 
-  const otherBubbleStyle = isDating
-    ? { background: '#FFF8FA', color: '#2D1820', border: '1px solid rgba(201,122,149,0.13)', boxShadow: '0 1px 3px rgba(183,110,121,0.06)' }
-    : { background: '#FFFFFF', color: '#1a1a1a', border: '1px solid rgba(47,93,80,0.09)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' };
+  const otherBubbleStyle = { background: '#FFFFFF', color: '#1a1a1a', border: '1px solid rgba(47,93,80,0.09)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' };
 
-  const inputAreaStyle = isDating
-    ? { background: '#FFF5F7', borderTop: '1px solid rgba(201,100,120,0.1)' }
-    : { background: '#FAFCFA', borderTop: '1px solid rgba(47,93,80,0.1)' };
+  const inputAreaStyle = { background: '#FAFCFA', borderTop: '1px solid rgba(47,93,80,0.1)' };
 
-  const sendBtnStyle = isDating
-    ? { background: 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' }
-    : { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' };
+  const sendBtnStyle = { background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' };
 
-  const systemMsgStyle = isDating
-    ? { background: 'rgba(255,210,225,0.4)', color: '#A0405E', border: '1px solid rgba(201,100,120,0.14)' }
-    : { background: 'rgba(190,230,210,0.45)', color: '#2A5C40', border: '1px solid rgba(47,93,80,0.16)' };
+  const systemMsgStyle = { background: 'rgba(190,230,210,0.45)', color: '#2A5C40', border: '1px solid rgba(47,93,80,0.16)' };
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -2977,7 +2963,7 @@ if (receiverProfile?.fcm_token) {
           style={{
             background: isDating ? 'rgba(45,24,32,0.92)' : 'rgba(15,33,24,0.92)',
             backdropFilter: 'blur(12px)',
-            border: `1px solid ${isDating ? 'rgba(201,84,122,0.35)' : 'rgba(201,168,76,0.3)'}`,
+            border: '1px solid rgba(201,168,76,0.3)',
             maxWidth: 'calc(100vw - 2rem)',
             animation: 'slideDown 0.25s ease',
           }}
@@ -3053,7 +3039,7 @@ paddingBottom: '14px',
                       top: i === 2 ? 16 : 0,
                       left: i === 0 ? 0 : i === 1 ? 12 : 6,
                       zIndex: 3 - i,
-                      background: avBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #B76E79 100%)' : 'linear-gradient(135deg, #004d20 0%, #006400 100%)'),
+                      background: avBlocked ? '#E5E7EB' : ('linear-gradient(135deg, #004d20 0%, #006400 100%)'),
                       borderColor: isDating ? '#FFF5F8' : '#F0F8F4',
                       fontSize: 8,
                     }}
@@ -3173,7 +3159,7 @@ paddingBottom: '14px',
     background: isDating
       ? 'rgba(255,245,250,0.98)'
       : 'rgba(240,247,242,0.98)',
-    borderBottom: isDating ? '1px solid rgba(201,84,122,0.15)' : '1px solid rgba(45,106,79,0.15)',
+    borderBottom: '1px solid rgba(45,106,79,0.15)',
   }}
 >
           <div className="flex gap-2 items-center">
@@ -3198,7 +3184,7 @@ paddingBottom: '14px',
               style={{
                 background: isDating ? 'rgba(255,220,230,0.9)' : 'rgba(220,240,228,0.9)',
                 color: isDating ? '#9B2040' : '#1B4332',
-                border: isDating ? '1px solid rgba(201,84,122,0.2)' : '1px solid rgba(45,106,79,0.2)',
+                border: '1px solid rgba(45,106,79,0.2)',
               }}
             >
               {isDating ? '매칭 취소하기' : '라인업 취소하기'}
@@ -3215,7 +3201,7 @@ paddingBottom: '14px',
             background: isDating
               ? 'linear-gradient(135deg, rgba(255,245,250,0.98) 0%, rgba(255,250,255,0.98) 100%)'
               : 'linear-gradient(135deg, rgba(235,245,240,0.98) 0%, rgba(240,248,244,0.98) 100%)',
-            borderBottom: isDating ? '1px solid rgba(201,84,122,0.14)' : '1px solid rgba(45,106,79,0.14)',
+            borderBottom: '1px solid rgba(45,106,79,0.14)',
           }}
         >
           <div className="px-3 pt-2.5 pb-0.5">
@@ -3234,7 +3220,7 @@ paddingBottom: '14px',
               <div key={av.user_id} className="flex items-center gap-2.5">
                 <div
                   className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-xs"
-                  style={{ background: avDropBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
+                  style={{ background: avDropBlocked ? '#E5E7EB' : ('linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
                 >
                   {avDropBlocked ? (
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
@@ -3257,7 +3243,7 @@ paddingBottom: '14px',
                     {av.is_confirmed && (
                       <span
                         className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
-                        style={{ background: isDating ? 'rgba(201,84,122,0.12)' : 'rgba(45,106,79,0.12)', color: isDating ? '#C9547A' : '#2D6A4F' }}
+                        style={{ background: 'rgba(45,106,79,0.12)', color: '#2D6A4F' }}
                       >
                         확정 {isDating ? '💕' : '🎾'}
                       </span>
@@ -3274,7 +3260,7 @@ paddingBottom: '14px',
                 ) : av.is_confirmed ? (
                   <span
                     className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
-                    style={{ background: isDating ? 'rgba(201,84,122,0.12)' : 'rgba(45,106,79,0.12)', color: isDating ? '#C9547A' : '#2D6A4F' }}
+                    style={{ background: 'rgba(45,106,79,0.12)', color: '#2D6A4F' }}
                   >
                     확정 {isDating ? '💕' : '🎾'}
                   </span>
@@ -3334,7 +3320,7 @@ paddingBottom: '14px',
           <div className="flex items-center justify-center py-16">
             <div
               className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin"
-              style={{ borderColor: isDating ? 'rgba(201,84,122,0.4)' : 'rgba(27,67,50,0.4)', borderTopColor: 'transparent' }}
+              style={{ borderColor: 'rgba(27,67,50,0.4)', borderTopColor: 'transparent' }}
             />
           </div>
         ) : (
@@ -3505,7 +3491,7 @@ paddingBottom: '14px',
                   {showDate && (
                     <div className="flex items-center gap-3 py-4">
                       <div className="flex-1 h-px" style={{ background: isDating ? 'rgba(183,110,121,0.15)' : 'rgba(45,106,79,0.15)' }} />
-                      <span className="text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap" style={{ background: isDating ? 'rgba(255,220,230,0.55)' : 'rgba(200,230,215,0.6)', color: isDating ? '#9B4060' : '#2D6A4F', border: isDating ? '1px solid rgba(201,100,120,0.18)' : '1px solid rgba(45,106,79,0.2)' }}>
+                      <span className="text-xs px-3 py-1 rounded-full font-medium whitespace-nowrap" style={{ background: 'rgba(200,230,215,0.6)', color: '#2D6A4F', border: '1px solid rgba(45,106,79,0.2)' }}>
                         {formatDate(msg.created_at)}
                       </span>
                       <div className="flex-1 h-px" style={{ background: isDating ? 'rgba(183,110,121,0.15)' : 'rgba(45,106,79,0.15)' }} />
@@ -3529,10 +3515,10 @@ paddingBottom: '14px',
                           </button>
                         )}
                         {!isFailed && isGroupChat && groupUnread > 0 && (
-                          <span className="text-[11px] font-bold leading-none" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>{groupUnread}</span>
+                          <span className="text-[11px] font-bold leading-none" style={{ color: '#2D6A4F' }}>{groupUnread}</span>
                         )}
                         {!isFailed && !isGroupChat && showBadge && (
-                          <span className="text-[11px] font-bold leading-none" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>1</span>
+                          <span className="text-[11px] font-bold leading-none" style={{ color: '#2D6A4F' }}>1</span>
                         )}
                         <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(100,40,70,0.5)' : 'rgba(27,67,50,0.5)' }}>
                           {formatTime(msg.created_at)}
@@ -3551,7 +3537,7 @@ paddingBottom: '14px',
                         {showAvatar ? (
                           <div
                             className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold overflow-hidden cursor-pointer active:opacity-80"
-                            style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: `0 1px 4px rgba(0,0,0,0.15)` }}
+                            style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: `0 1px 4px rgba(0,0,0,0.15)` }}
                             onClick={senderProf ? () => {
                               setOtherUser(senderProf);
                               setShowProfilePopup(true);
@@ -3575,7 +3561,7 @@ paddingBottom: '14px',
 
                       <div className="flex flex-col items-start max-w-[68%]">
                         {isFirstInGroup && showSenderName && (
-                          <span className="text-[12px] font-semibold mb-1" style={{ color: isDating ? '#8B2252' : '#1B4332' }}>
+                          <span className="text-[12px] font-semibold mb-1" style={{ color: '#1B4332' }}>
                             {senderName}
                           </span>
                         )}
@@ -3588,7 +3574,7 @@ paddingBottom: '14px',
                           </div>
                           <div className="flex flex-col items-start flex-shrink-0 self-end pb-0.5 gap-0.5">
                             {isGroupChat && groupUnread > 0 && (
-                              <span className="text-[11px] font-bold leading-none" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>{groupUnread}</span>
+                              <span className="text-[11px] font-bold leading-none" style={{ color: '#2D6A4F' }}>{groupUnread}</span>
                             )}
                             <span className="text-[10px] whitespace-nowrap" style={{ color: isDating ? 'rgba(100,40,70,0.5)' : 'rgba(27,67,50,0.5)' }}>
                               {formatTime(msg.created_at)}
@@ -3609,7 +3595,7 @@ paddingBottom: '14px',
                   <div className="w-9 flex-shrink-0 mt-0.5" style={{ minWidth: 36 }}>
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold overflow-hidden"
-                      style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}
+                      style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}
                     >
                       {tuPhoto ? (
                         <img src={tuPhoto} alt={tu.name} className="w-full h-full object-cover" />
@@ -3619,11 +3605,11 @@ paddingBottom: '14px',
                     </div>
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-[12px] font-semibold mb-1" style={{ color: isDating ? '#8B2252' : '#1B4332' }}>{tu.name}</span>
+                    <span className="text-[12px] font-semibold mb-1" style={{ color: '#1B4332' }}>{tu.name}</span>
                     <div className="rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5" style={otherBubbleStyle}>
-                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
-                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
-                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: isDating ? '#C9547A' : '#2D6A4F' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:0ms]" style={{ background: '#2D6A4F' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:150ms]" style={{ background: '#2D6A4F' }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce [animation-delay:300ms]" style={{ background: '#2D6A4F' }} />
                     </div>
                   </div>
                 </div>
@@ -3654,7 +3640,7 @@ paddingBottom: '14px',
       style={{
         fontSize: '16px',
         background: isDating ? 'rgba(255,228,235,0.35)' : '#fff',
-        border: isDating ? '1px solid rgba(201,100,120,0.18)' : '1px solid rgba(47,93,80,0.14)',
+        border: '1px solid rgba(47,93,80,0.14)',
         color: isDating ? '#2D1820' : '#0F2118',
       }}
     />
@@ -3680,7 +3666,7 @@ paddingBottom: '14px',
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
             style={{
-              background: isDating ? '#FFF8F2' : '#F4F8F5',
+              background: '#F4F8F5',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
               zIndex: 9999,
               pointerEvents: 'auto',
@@ -3690,7 +3676,7 @@ paddingBottom: '14px',
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }} />
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: 'rgba(27,67,50,0.3)' }} />
             <p className="font-bold text-gray-900 text-base mb-1">나가기 요청</p>
             <p className="text-xs text-gray-400 mb-4">나가기 사유를 입력해주세요. 호스트가 승인하면 나가집니다.</p>
             <textarea
@@ -3717,7 +3703,7 @@ paddingBottom: '14px',
                 onClick={handleLeaveRequestSubmit}
                 disabled={leaveRequestSubmitting}
                 className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition active:scale-95 disabled:opacity-60"
-                style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', position: 'relative', pointerEvents: 'auto', touchAction: 'manipulation' }}
+                style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', position: 'relative', pointerEvents: 'auto', touchAction: 'manipulation' }}
               >
                 {leaveRequestSubmitting ? '전송 중...' : '요청 보내기'}
               </button>
@@ -3735,7 +3721,7 @@ paddingBottom: '14px',
           <div
             className="w-full max-w-md rounded-t-3xl px-6 pt-6 pb-10 shadow-xl relative"
             style={{
-              background: isDating ? '#FFF8F2' : '#F4F8F5',
+              background: '#F4F8F5',
               zIndex: 9999,
               pointerEvents: 'auto',
               touchAction: 'manipulation',
@@ -3746,7 +3732,7 @@ paddingBottom: '14px',
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mb-5"
-              style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }}
+              style={{ background: 'rgba(27,67,50,0.3)' }}
             />
             <p className="font-bold text-gray-900 text-base text-center mb-1">
               {isGroupChat ? '이 분들을 추천 목록에서 숨길까요?' : '이 분을 추천 목록에서 숨길까요?'}
@@ -3803,7 +3789,7 @@ paddingBottom: '14px',
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
             style={{
-              background: isDating ? '#FFF8F2' : '#F4F8F5',
+              background: '#F4F8F5',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
               zIndex: 9999,
               pointerEvents: 'auto',
@@ -3815,7 +3801,7 @@ paddingBottom: '14px',
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mb-4"
-              style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }}
+              style={{ background: 'rgba(27,67,50,0.3)' }}
             />
             <p className="font-bold text-gray-900 text-base text-center mb-1">
               {isDating ? '매칭 확정할 참여자를 선택하세요' : '라인업 확정할 참여자를 선택하세요'}
@@ -3882,10 +3868,10 @@ paddingBottom: '14px',
                     className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl cursor-pointer active:opacity-80"
                     style={{
                       background: av.is_confirmed
-                        ? (isDating ? 'rgba(201,84,122,0.08)' : 'rgba(45,106,79,0.08)')
+                        ? ('rgba(45,106,79,0.08)')
                         : avIsBlocked ? 'rgba(0,0,0,0.04)' : '#fff',
                       border: av.is_confirmed
-                        ? `1.5px solid ${isDating ? 'rgba(201,84,122,0.35)' : 'rgba(45,106,79,0.35)'}`
+                        ? `1.5px solid rgba(45,106,79,0.35)`
                         : avIsBlocked ? '1.5px solid rgba(0,0,0,0.1)' : '1.5px solid rgba(0,0,0,0.07)',
                       position: 'relative',
                       zIndex: 10000,
@@ -3897,7 +3883,7 @@ paddingBottom: '14px',
                   >
                     <div
                       className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
-                      style={{ background: avIsBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
+                      style={{ background: avIsBlocked ? '#E5E7EB' : ('linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
                     >
                       {avIsBlocked ? (
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
@@ -3919,7 +3905,7 @@ paddingBottom: '14px',
                     ) : av.is_confirmed ? (
                       <span
                         className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                        style={{ background: isDating ? 'rgba(201,84,122,0.15)' : 'rgba(45,106,79,0.15)', color: isDating ? '#C9547A' : '#2D6A4F', pointerEvents: 'none' }}
+                        style={{ background: 'rgba(45,106,79,0.15)', color: '#2D6A4F', pointerEvents: 'none' }}
                       >
                         확정
                       </span>
@@ -3955,10 +3941,10 @@ paddingBottom: '14px',
                     className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl cursor-pointer active:opacity-80"
                     style={{
                       background: alreadyConfirmed
-                        ? (isDating ? 'rgba(201,84,122,0.08)' : 'rgba(45,106,79,0.08)')
+                        ? ('rgba(45,106,79,0.08)')
                         : avIsBlocked ? 'rgba(0,0,0,0.04)' : '#fff',
                       border: alreadyConfirmed
-                        ? `1.5px solid ${isDating ? 'rgba(201,84,122,0.35)' : 'rgba(45,106,79,0.35)'}`
+                        ? `1.5px solid rgba(45,106,79,0.35)`
                         : avIsBlocked ? '1.5px solid rgba(0,0,0,0.1)' : '1.5px solid rgba(0,0,0,0.07)',
                       position: 'relative',
                       zIndex: 10000,
@@ -3969,7 +3955,7 @@ paddingBottom: '14px',
                   >
                     <div
                       className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
-                      style={{ background: avIsBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
+                      style={{ background: avIsBlocked ? '#E5E7EB' : ('linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
                     >
                       {avIsBlocked ? (
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
@@ -3991,7 +3977,7 @@ paddingBottom: '14px',
                     ) : alreadyConfirmed ? (
                       <span
                         className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                        style={{ background: isDating ? 'rgba(201,84,122,0.15)' : 'rgba(45,106,79,0.15)', color: isDating ? '#C9547A' : '#2D6A4F', pointerEvents: 'none' }}
+                        style={{ background: 'rgba(45,106,79,0.15)', color: '#2D6A4F', pointerEvents: 'none' }}
                       >
                         확정
                       </span>
@@ -4033,7 +4019,7 @@ paddingBottom: '14px',
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl relative"
             style={{
-              background: isDating ? '#FFF8F2' : '#F4F8F5',
+              background: '#F4F8F5',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
               zIndex: 9999,
               pointerEvents: 'auto',
@@ -4045,7 +4031,7 @@ paddingBottom: '14px',
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mb-4"
-              style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }}
+              style={{ background: 'rgba(27,67,50,0.3)' }}
             />
             <p className="font-bold text-gray-900 text-base text-center mb-1">
               {isDating ? '매칭 취소할 참여자를 선택하세요' : '라인업 취소할 참여자를 선택하세요'}
@@ -4093,7 +4079,7 @@ paddingBottom: '14px',
                     >
                       <div
                         className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
-                        style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+                        style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
                       >
                         {avPhoto
                           ? <img src={avPhoto} alt={av.name} className="w-full h-full object-cover" />
@@ -4139,14 +4125,14 @@ paddingBottom: '14px',
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-xl"
             style={{
-              background: isDating ? '#FFF8F2' : '#1B4332',
+              background: '#1B4332',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mb-5"
-              style={{ background: isDating ? 'rgba(201,84,122,0.3)' : 'rgba(255,255,255,0.25)' }}
+              style={{ background: 'rgba(255,255,255,0.25)' }}
             />
             <button
               onClick={() => { setShowDotMenu(false); handleBlockUser(dotMenuTarget.user_id, dotMenuTarget.name); }}
@@ -4315,9 +4301,9 @@ paddingBottom: '14px',
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mt-4 mb-4"
-              style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }}
+              style={{ background: 'rgba(27,67,50,0.3)' }}
             />
-            <p className="font-bold text-sm text-center mb-3 px-5" style={{ color: isDating ? '#2D1820' : '#1B4332' }}>
+            <p className="font-bold text-sm text-center mb-3 px-5" style={{ color: '#1B4332' }}>
               대화상대
             </p>
             <div className="flex flex-col gap-1 px-4 pb-2 max-h-72 overflow-y-auto">
@@ -4329,7 +4315,7 @@ paddingBottom: '14px',
                   <button
                     key={av.user_id}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition active:opacity-70 focus:outline-none"
-                    style={{ background: isDating ? 'rgba(201,84,122,0.05)' : 'rgba(45,106,79,0.05)' }}
+                    style={{ background: 'rgba(45,106,79,0.05)' }}
                     onClick={() => {
                       if (isBlocked) {
                         setShowConversationSheet(false);
@@ -4361,7 +4347,7 @@ paddingBottom: '14px',
                   >
                     <div
                       className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center text-white font-bold text-sm"
-                      style={{ background: isBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
+                      style={{ background: isBlocked ? '#E5E7EB' : ('linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
                     >
                       {isBlocked ? (
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
@@ -4375,7 +4361,7 @@ paddingBottom: '14px',
                     </div>
                     <span
                       className="flex-1 text-sm font-semibold truncate"
-                      style={{ color: isBlocked ? '#9CA3AF' : (isDating ? '#2D1820' : '#1B4332') }}
+                      style={{ color: isBlocked ? '#9CA3AF' : ('#1B4332') }}
                     >
                       {displayName}
                     </span>
@@ -4410,15 +4396,15 @@ paddingBottom: '14px',
             style={{
               background: isDating ? 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)' : '#fff',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
-              boxShadow: isDating ? '0 -8px 32px rgba(201,84,122,0.1)' : '0 -8px 32px rgba(27,67,50,0.08)',
+              boxShadow: '0 -8px 32px rgba(27,67,50,0.08)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               className="w-10 h-1 rounded-full mx-auto mb-4"
-              style={{ background: isDating ? 'rgba(201,84,122,0.35)' : 'rgba(27,67,50,0.3)' }}
+              style={{ background: 'rgba(27,67,50,0.3)' }}
             />
-            <p className="font-bold text-base text-center mb-4" style={{ color: isDating ? '#2D1820' : '#1B4332' }}>참가자 목록</p>
+            <p className="font-bold text-base text-center mb-4" style={{ color: '#1B4332' }}>참가자 목록</p>
             <div className="flex flex-col gap-2 mb-4 max-h-80 overflow-y-auto">
               {groupAvatars.filter((av) => av.user_id !== user?.id).map((av) => {
                 const isBlocked = blockedUserIds.includes(av.user_id);
@@ -4429,8 +4415,8 @@ paddingBottom: '14px',
                     key={av.user_id}
                     className="rounded-2xl px-3.5 py-2.5 flex items-center gap-3"
                     style={{
-                      background: isDating ? 'rgba(201,84,122,0.05)' : 'rgba(45,106,79,0.05)',
-                      border: isDating ? '1px solid rgba(201,84,122,0.1)' : '1px solid rgba(45,106,79,0.1)',
+                      background: 'rgba(45,106,79,0.05)',
+                      border: '1px solid rgba(45,106,79,0.1)',
                     }}
                   >
                     <button
@@ -4443,7 +4429,7 @@ paddingBottom: '14px',
                     >
                       <div
                         className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                        style={{ background: isBlocked ? '#E5E7EB' : (isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
+                        style={{ background: isBlocked ? '#E5E7EB' : ('linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
                       >
                         {isBlocked ? (
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
@@ -4456,7 +4442,7 @@ paddingBottom: '14px',
                         )}
                       </div>
                     </button>
-                    <p className="flex-1 font-semibold text-sm truncate" style={{ color: isBlocked ? '#9CA3AF' : (isDating ? '#2D1820' : '#1B4332') }}>{displayName}</p>
+                    <p className="flex-1 font-semibold text-sm truncate" style={{ color: isBlocked ? '#9CA3AF' : ('#1B4332') }}>{displayName}</p>
                     {isHost ? (
                       <button
                         onClick={() => { setShowGroupParticipants(false); handleKickUser(av.user_id, displayName); }}
@@ -4482,7 +4468,7 @@ paddingBottom: '14px',
             <button
               onClick={() => setShowGroupParticipants(false)}
               className="w-full py-3.5 rounded-2xl font-semibold text-sm transition active:scale-95"
-              style={{ background: isDating ? 'rgba(201,84,122,0.08)' : 'rgba(27,67,50,0.08)', color: isDating ? '#2D1820' : '#1B4332' }}
+              style={{ background: 'rgba(27,67,50,0.08)', color: '#1B4332' }}
             >
               닫기
             </button>
