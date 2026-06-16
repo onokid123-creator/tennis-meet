@@ -3146,9 +3146,7 @@ paddingBottom: '14px',
   className="px-3 py-3 flex-shrink-0 relative"
   style={{
    
-    background: isDating
-      ? 'rgba(255,245,250,0.98)'
-      : 'rgba(240,247,242,0.98)',
+    background: 'rgba(240,247,242,0.98)',
     borderBottom: '1px solid rgba(45,106,79,0.15)',
   }}
 >
@@ -3157,12 +3155,8 @@ paddingBottom: '14px',
               onClick={handleMatchConfirm}
               className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white"
               style={{
-                background: isDating
-                  ? 'linear-gradient(135deg, #C9A84C 0%, #E07AA0 100%)'
-                  : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
-                boxShadow: isDating
-                  ? '0 2px 14px rgba(201,168,76,0.45)'
-                  : '0 2px 14px rgba(27,67,50,0.35)',
+                background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+                boxShadow: '0 2px 14px rgba(27,67,50,0.35)',
                 letterSpacing: '0.02em',
               }}
             >
@@ -3172,8 +3166,8 @@ paddingBottom: '14px',
               onClick={handleMatchCancel}
               className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
               style={{
-                background: isDating ? 'rgba(255,220,230,0.9)' : 'rgba(220,240,228,0.9)',
-                color: isDating ? '#9B2040' : '#1B4332',
+                background: 'rgba(220,240,228,0.9)',
+                color: '#1B4332',
                 border: '1px solid rgba(45,106,79,0.2)',
               }}
             >
@@ -3334,16 +3328,16 @@ paddingBottom: '14px',
                 const isMyRequest = requesterId === user?.id;
                 return (
                   <div key={msg.id} className="flex justify-center py-2">
-                    <div className="max-w-[85%] rounded-2xl overflow-hidden" style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <div className="max-w-[85%] rounded-2xl overflow-hidden" style={{ background: 'rgba(190,230,210,0.30)', border: '1px solid rgba(45,106,79,0.22)' }}>
                       <div className="px-4 py-3 text-center">
-                        <p className="text-xs font-semibold text-red-500 mb-1">나가기 요청</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: '#2D6A4F' }}>나가기 요청</p>
                         <p className="text-xs text-gray-600 leading-relaxed">{msg.content}</p>
                         {isHost && reason && (
                           <p className="text-xs text-gray-500 mt-1 leading-relaxed">사유: {reason}</p>
                         )}
                       </div>
                       {isHost && reqStatus === 'pending' && (
-                        <div className="flex border-t border-red-100">
+                        <div className="flex" style={{ borderTop: '1px solid rgba(45,106,79,0.18)' }}>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -3351,8 +3345,9 @@ paddingBottom: '14px',
                               e.stopPropagation();
                               handleLeaveRequestAccept(msg.id, requesterId, reason);
                             }}
-                            className="flex-1 py-2.5 text-xs font-semibold text-white bg-red-500 active:bg-red-700"
+                            className="flex-1 py-2.5 text-xs font-semibold text-white active:opacity-90"
                             style={{
+                              background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
                               WebkitUserSelect: 'none',
                               userSelect: 'none',
                               WebkitTouchCallout: 'none',
@@ -3373,13 +3368,13 @@ paddingBottom: '14px',
                         </div>
                       )}
                       {isMyRequest && reqStatus === 'accepted' && (
-                        <div className="px-4 py-2 text-xs text-center text-gray-400 border-t border-red-100">수락됨</div>
+                        <div className="px-4 py-2 text-xs text-center" style={{ color: 'rgba(27,67,50,0.55)', borderTop: '1px solid rgba(45,106,79,0.18)' }}>수락됨</div>
                       )}
                       {!isMyRequest && !isHost && reqStatus === 'pending' && (
-                        <div className="px-4 py-2 text-xs text-center text-gray-400 border-t border-red-100">호스트가 처리 중</div>
+                        <div className="px-4 py-2 text-xs text-center" style={{ color: 'rgba(27,67,50,0.55)', borderTop: '1px solid rgba(45,106,79,0.18)' }}>호스트가 처리 중</div>
                       )}
                       {reqStatus === 'accepted' && !isMyRequest && (
-                        <div className="px-4 py-2 text-xs text-center text-gray-400 border-t border-red-100">수락됨</div>
+                        <div className="px-4 py-2 text-xs text-center" style={{ color: 'rgba(27,67,50,0.55)', borderTop: '1px solid rgba(45,106,79,0.18)' }}>수락됨</div>
                       )}
                     </div>
                   </div>
@@ -3629,9 +3624,9 @@ paddingBottom: '14px',
       className="flex-1 min-w-0 px-4 h-11 rounded-full focus:outline-none transition"
       style={{
         fontSize: '16px',
-        background: isDating ? 'rgba(255,228,235,0.35)' : '#fff',
+        background: '#fff',
         border: '1px solid rgba(47,93,80,0.14)',
-        color: isDating ? '#2D1820' : '#0F2118',
+        color: '#0F2118',
       }}
     />
     <button
