@@ -47,7 +47,7 @@ function DefaultAvatar({
         height={size * 0.46}
         viewBox="0 0 24 24"
         fill="none"
-        stroke={isBlocked ? '#9CA3AF' : isDating ? '#C9547A' : '#2D6A4F'}
+        stroke={isBlocked ? '#9CA3AF' : isDating ? '#2D6A4F' : '#2D6A4F'}
         strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -688,17 +688,15 @@ if (tab === 'tennis') {
       <header
         className="px-5 pt-5 pb-0 sticky top-0 z-10"
         style={{
-          background: isDatingTab ? 'rgba(255,248,244,0.95)' : 'rgba(240,244,241,0.95)',
+          background: 'rgba(240,244,241,0.95)',
           backdropFilter: 'blur(16px)',
-          borderBottom: isDatingTab
-            ? '1px solid rgba(201,100,120,0.12)'
-            : '1px solid rgba(45,106,79,0.12)',
+          borderBottom: '1px solid rgba(45,106,79,0.12)',
         }}
       >
         <h1
           className="text-2xl mb-4"
           style={{
-            color: isDatingTab ? '#2D1820' : '#0F2118',
+            color: '#0F2118',
             fontFamily: 'Georgia, "Times New Roman", serif',
             fontWeight: 400,
             letterSpacing: '0.01em',
@@ -713,7 +711,7 @@ if (tab === 'tennis') {
             { key: 'dating' as const, label: '테니스 메이트', icon: '🎾', unread: totalDatingUnread },
           ]).map((tab) => {
             const isActive = activeTab === tab.key;
-            const accent = tab.key === 'dating' ? '#C9547A' : '#2D6A4F';
+            const accent = '#2D6A4F';
             return (
               <button
                 key={tab.key}
@@ -731,7 +729,7 @@ if (tab === 'tennis') {
                 {tab.unread > 0 && (
                   <span
                     className="min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-bold text-white flex items-center justify-center leading-none"
-                    style={{ background: tab.key === 'dating' ? '#C9547A' : '#E05555' }}
+                    style={{ background: '#2D6A4F' }}
                   >
                     {tab.unread > 9 ? '9+' : tab.unread}
                   </span>
@@ -748,11 +746,11 @@ if (tab === 'tennis') {
             <div
               className="w-7 h-7 border-2 border-t-transparent rounded-full animate-spin"
               style={{
-                borderColor: isDatingTab ? 'rgba(201,84,122,0.4)' : 'rgba(45,106,79,0.4)',
+                borderColor: 'rgba(45,106,79,0.4)',
                 borderTopColor: 'transparent',
               }}
             />
-            <p className="text-xs" style={{ color: isDatingTab ? 'rgba(139,48,96,0.5)' : 'rgba(27,67,50,0.5)' }}>
+            <p className="text-xs" style={{ color: 'rgba(27,67,50,0.5)' }}>
               채팅방 불러오는 중...
             </p>
           </div>
@@ -843,7 +841,7 @@ if (tab === 'tennis') {
 
       <h2
         className="text-lg font-bold mb-2"
-        style={{ color: '#2D1820' }}
+        style={{ color: '#0F2118' }}
       >
         설레는 만남 프로필 등록
       </h2>
@@ -865,7 +863,7 @@ if (tab === 'tennis') {
         className="w-full h-12 rounded-2xl text-white font-semibold"
         style={{
           background:
-            'linear-gradient(135deg, #C9547A 0%, #E8A598 100%)',
+            'linear-gradient(135deg, #2D6A4F 0%, #E8A598 100%)',
         }}
       >
         프로필 등록하기
@@ -945,7 +943,7 @@ function DatingEmptyState() {
         className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-5 relative"
         style={{
           background:
-            'linear-gradient(135deg, rgba(201,84,122,0.08) 0%, rgba(201,168,76,0.08) 100%)',
+            'linear-gradient(135deg, rgba(45,106,79,0.08) 0%, rgba(201,168,76,0.08) 100%)',
         }}
       >
         <span style={{ fontSize: '2.6rem' }}>🥂</span>
@@ -953,7 +951,7 @@ function DatingEmptyState() {
       <p className="font-semibold text-sm mb-1.5" style={{ color: '#8B3060' }}>
         진행 중인 설레는 만남이 없어요
       </p>
-      <p className="text-xs leading-relaxed" style={{ color: 'rgba(139,48,96,0.5)' }}>
+      <p className="text-xs leading-relaxed" style={{ color: 'rgba(27,67,50,0.5)' }}>
         홈에서 마음에 드는 분께
         <br />
         신청해보세요!
@@ -1264,23 +1262,23 @@ function DatingGroupChatRow({ gc, blockedIds = [], onPress }: { gc: CourtGroupCh
       onClick={onPress}
       className="w-full flex items-center gap-3 p-4 rounded-3xl transition active:scale-[0.98] text-left relative overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)',
-        border: '1px solid rgba(201,84,122,0.18)',
-        boxShadow: '0 2px 12px rgba(201,84,122,0.09)',
+        background: 'linear-gradient(135deg, #F7FAF8 0%, #E8F5EC 100%)',
+        border: '1px solid rgba(45,106,79,0.16)',
+        boxShadow: '0 2px 12px rgba(45,106,79,0.08)',
       }}
     >
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse at 85% 40%, rgba(255,190,210,0.14) 0%, transparent 60%)',
+            'radial-gradient(ellipse at 85% 40%, rgba(45,106,79,0.10) 0%, transparent 60%)',
         }}
       />
 
       <div className="relative flex-shrink-0">
         <div
           className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center text-white font-bold text-xl"
-          style={{ background: isHostBlocked ? '#E5E7EB' : 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' }}
+          style={{ background: isHostBlocked ? '#E5E7EB' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
         >
           {isHostBlocked ? (
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
@@ -1308,37 +1306,37 @@ function DatingGroupChatRow({ gc, blockedIds = [], onPress }: { gc: CourtGroupCh
           <div className="flex items-center gap-1.5 min-w-0">
             <span
               className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-semibold'}`}
-              style={{ color: '#2D1820' }}
+              style={{ color: '#0F2118' }}
             >
               {displayTitle}
             </span>
             <span
               className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium"
-              style={{ background: 'rgba(201,84,122,0.1)', color: '#C9547A' }}
+              style={{ background: 'rgba(45,106,79,0.12)', color: '#2D6A4F' }}
             >
               그룹
             </span>
           </div>
-          <span className="text-[11px] flex-shrink-0 ml-2" style={{ color: 'rgba(139,48,96,0.4)' }}>
+          <span className="text-[11px] flex-shrink-0 ml-2" style={{ color: 'rgba(27,67,50,0.45)' }}>
             {formatTime(gc.last_message?.created_at)}
           </span>
         </div>
         {host?.name && courtName && (
-          <p className="text-xs mb-0.5 truncate" style={{ color: 'rgba(139,48,96,0.45)' }}>
+          <p className="text-xs mb-0.5 truncate" style={{ color: 'rgba(27,67,50,0.45)' }}>
             {maskedHostName}
           </p>
         )}
         <div className="flex items-center justify-between">
           <p
             className={`text-sm truncate ${hasUnread ? 'font-semibold' : ''}`}
-            style={{ color: hasUnread ? '#2D1820' : 'rgba(139,48,96,0.5)' }}
+            style={{ color: hasUnread ? '#0F2118' : 'rgba(27,67,50,0.5)' }}
           >
             {gc.last_message?.content ?? '메시지가 없습니다.'}
           </p>
           {hasUnread && (
             <span
               className="ml-2 flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold text-white flex items-center justify-center"
-              style={{ background: '#C9547A' }}
+              style={{ background: '#2D6A4F' }}
             >
               {gc.unread_count}
             </span>
@@ -1383,15 +1381,15 @@ function DatingChatRow({
       onClick={onPress}
       className="w-full flex items-center gap-3 p-4 rounded-3xl transition active:scale-[0.98] text-left relative overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)',
-        border: '1px solid rgba(201,84,122,0.18)',
-        boxShadow: '0 2px 12px rgba(201,84,122,0.09)',
+        background: 'linear-gradient(135deg, #F7FAF8 0%, #E8F5EC 100%)',
+        border: '1px solid rgba(45,106,79,0.16)',
+        boxShadow: '0 2px 12px rgba(45,106,79,0.08)',
       }}
     >
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at 85% 40%, rgba(255,190,210,0.14) 0%, transparent 60%)',
+          background: 'radial-gradient(ellipse at 85% 40%, rgba(45,106,79,0.10) 0%, transparent 60%)',
         }}
       />
 
@@ -1399,14 +1397,14 @@ function DatingChatRow({
         {isGroup && groupParticipantPhotos && groupParticipantPhotos.length > 0 ? (
           <GroupAvatarGrid
             participants={groupParticipantPhotos.map((p) => blockedIds.includes(p.user_id) ? { ...p, photo_url: undefined, _blocked: true } : p)}
-            accentBg="linear-gradient(135deg, #8B2252 0%, #C9547A 100%)"
-            borderColor="rgba(201,84,122,0.15)"
+            accentBg="linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)"
+            borderColor="rgba(45,106,79,0.15)"
             blockedIds={blockedIds}
           />
         ) : (
         <div
           className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center text-white font-bold text-xl"
-          style={{ background: isOtherBlocked ? '#E5E7EB' : (!otherUser && !isGroup ? '#D1D5DB' : 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)') }}
+          style={{ background: isOtherBlocked ? '#E5E7EB' : (!otherUser && !isGroup ? '#D1D5DB' : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)') }}
         >
           {isOtherBlocked ? (
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="#9CA3AF" strokeWidth={2}>
@@ -1439,44 +1437,44 @@ function DatingChatRow({
           <div className="flex items-center gap-1.5 min-w-0">
             <span
               className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-semibold'}`}
-              style={{ color: '#2D1820' }}
+              style={{ color: '#0F2118' }}
             >
               {displayName}{courtName ? <span style={{ color: '#C9A84C', fontWeight: 400 }}> · {courtName}</span> : null}
             </span>
             {!isGroup && !isOtherBlocked && otherUser?.age && (
-              <span className="text-xs flex-shrink-0 font-medium" style={{ color: 'rgba(139,48,96,0.55)' }}>
+              <span className="text-xs flex-shrink-0 font-medium" style={{ color: 'rgba(27,67,50,0.55)' }}>
                 {otherUser.age}세
               </span>
             )}
             {isGroup && (
               <span
                 className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0 font-medium"
-                style={{ background: 'rgba(201,84,122,0.1)', color: '#C9547A' }}
+                style={{ background: 'rgba(45,106,79,0.12)', color: '#2D6A4F' }}
               >
                 그룹
               </span>
             )}
           </div>
-          <span className="text-[11px] flex-shrink-0 ml-2" style={{ color: 'rgba(139,48,96,0.4)' }}>
+          <span className="text-[11px] flex-shrink-0 ml-2" style={{ color: 'rgba(27,67,50,0.45)' }}>
             {formatTime(chat.last_message?.created_at)}
           </span>
         </div>
         {!isGroup && !isOtherBlocked && otherUser?.experience && (
-          <p className="text-xs mb-0.5 font-medium" style={{ color: 'rgba(139,48,96,0.48)' }}>
+          <p className="text-xs mb-0.5 font-medium" style={{ color: 'rgba(27,67,50,0.48)' }}>
             🎾 구력 {otherUser.experience}
           </p>
         )}
         <div className="flex items-center justify-between">
           <p
             className={`text-sm truncate ${hasUnread ? 'font-semibold' : ''}`}
-            style={{ color: hasUnread ? '#2D1820' : 'rgba(139,48,96,0.5)' }}
+            style={{ color: hasUnread ? '#0F2118' : 'rgba(27,67,50,0.5)' }}
           >
             {chat.last_message?.content ?? '메시지가 없습니다.'}
           </p>
           {hasUnread && (
             <span
               className="ml-2 flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold text-white flex items-center justify-center"
-              style={{ background: '#C9547A' }}
+              style={{ background: '#2D6A4F' }}
             >
               {chat.unread_count}
             </span>

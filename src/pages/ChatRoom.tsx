@@ -39,14 +39,10 @@ function DefaultProfileAvatar({
         borderRadius: radius,
         background: isBlocked
           ? '#F3F4F6'
-          : isDating
-            ? 'linear-gradient(135deg, #FFF7F9 0%, #FCE7EC 100%)'
-            : 'linear-gradient(135deg, #F7FAF8 0%, #E8F5EC 100%)',
+          : 'linear-gradient(135deg, #F7FAF8 0%, #E8F5EC 100%)',
         border: isBlocked
           ? '1px solid #E5E7EB'
-          : isDating
-            ? '1px solid rgba(201,84,122,0.18)'
-            : '1px solid rgba(45,106,79,0.16)',
+          : '1px solid rgba(45,106,79,0.16)',
       }}
     >
       <svg
@@ -3003,15 +2999,9 @@ if (receiverProfile?.fcm_token) {
       <header
         className="px-3 flex items-start gap-2.5 flex-shrink-0"
         style={{
-          background: isDating
-            ? 'linear-gradient(135deg, #C06070 0%, #D9809A 100%)'
-            : 'linear-gradient(135deg, #264D3A 0%, #376952 100%)',
-          borderBottom: isDating
-            ? '1px solid rgba(180,70,100,0.25)'
-            : '1px solid rgba(38,77,58,0.3)',
-          boxShadow: isDating
-            ? '0 2px 14px rgba(180,80,110,0.2)'
-            : '0 2px 14px rgba(38,77,58,0.22)',
+          background: 'linear-gradient(135deg, #264D3A 0%, #376952 100%)',
+          borderBottom: '1px solid rgba(38,77,58,0.3)',
+          boxShadow: '0 2px 14px rgba(38,77,58,0.22)',
 paddingTop: 'max(env(safe-area-inset-top), 14px)',
 paddingBottom: '14px',
 
@@ -3040,7 +3030,7 @@ paddingBottom: '14px',
                       left: i === 0 ? 0 : i === 1 ? 12 : 6,
                       zIndex: 3 - i,
                       background: avBlocked ? '#E5E7EB' : ('linear-gradient(135deg, #004d20 0%, #006400 100%)'),
-                      borderColor: isDating ? '#FFF5F8' : '#F0F8F4',
+                      borderColor: '#F0F8F4',
                       fontSize: 8,
                     }}
                   >
@@ -3176,7 +3166,7 @@ paddingBottom: '14px',
                 letterSpacing: '0.02em',
               }}
             >
-             {isDating ? '💕 매칭 확정하기' : '🎾 라인업 확정하기'}
+             🎾 라인업 확정하기
             </button>
             <button
               onClick={handleMatchCancel}
@@ -3187,7 +3177,7 @@ paddingBottom: '14px',
                 border: '1px solid rgba(45,106,79,0.2)',
               }}
             >
-              {isDating ? '매칭 취소하기' : '라인업 취소하기'}
+              라인업 취소하기
             </button>
           </div>
         </div>
@@ -3281,22 +3271,22 @@ paddingBottom: '14px',
         <div
           key={proposal.id}
           className="mx-3 my-2 rounded-2xl px-4 py-3.5 flex items-center gap-3 flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE8F0 100%)', border: '1.5px solid rgba(224,92,138,0.28)', boxShadow: '0 2px 10px rgba(224,92,138,0.1)' }}
+          style={{ background: 'linear-gradient(135deg, #F3FAF5 0%, #E8F5EC 100%)', border: '1.5px solid rgba(45,106,79,0.25)', boxShadow: '0 2px 10px rgba(45,106,79,0.1)' }}
         >
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
           >
             <UtensilsCrossed className="w-3.5 h-3.5 text-white" />
           </div>
           <p className="flex-1 text-xs font-semibold leading-snug" style={{ color: '#7C2D5E' }}>
-            <span style={{ color: '#C9547A' }}>{proposal.sender_name ?? '호스트'}</span>님이<br />경기 후 식사를 제안했어요 :)
+            <span style={{ color: '#2D6A4F' }}>{proposal.sender_name ?? '호스트'}</span>님이<br />경기 후 식사를 제안했어요 :)
           </p>
           <div className="flex gap-1.5 flex-shrink-0">
             <button
               onClick={() => handleMealProposalAccept(proposal.id)}
               className="px-3 py-1.5 rounded-xl text-xs font-bold text-white transition active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 2px 6px rgba(224,92,138,0.35)' }}
+              style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 2px 6px rgba(45,106,79,0.35)' }}
             >
               수락
             </button>
@@ -3747,7 +3737,7 @@ paddingBottom: '14px',
                 className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white transition active:scale-95"
                 style={{
                   background: isDating
-                    ? 'linear-gradient(135deg, #C9A84C 0%, #C9547A 100%)'
+                    ? 'linear-gradient(135deg, #C9A84C 0%, #2D6A4F 100%)'
                     : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
                   position: 'relative',
                   pointerEvents: 'auto',
@@ -3816,10 +3806,10 @@ paddingBottom: '14px',
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl mb-4 transition active:scale-95"
                 style={{
                   background: includeMealProposal
-                    ? 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)'
+                    ? 'linear-gradient(135deg, #F3FAF5 0%, #DDEADD 100%)'
                     : 'rgba(0,0,0,0.04)',
                   border: includeMealProposal
-                    ? '1.5px solid rgba(224,92,138,0.35)'
+                    ? '1.5px solid rgba(45,106,79,0.35)'
                     : '1.5px solid rgba(0,0,0,0.07)',
                 }}
               >
@@ -3827,7 +3817,7 @@ paddingBottom: '14px',
                   className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
                   style={{
                     background: includeMealProposal
-                      ? 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)'
+                      ? 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)'
                       : '#fff',
                     border: includeMealProposal ? 'none' : '1.5px solid rgba(0,0,0,0.2)',
                   }}
@@ -3838,7 +3828,7 @@ paddingBottom: '14px',
                     </svg>
                   )}
                 </div>
-                <UtensilsCrossed className="w-4 h-4 flex-shrink-0" style={{ color: includeMealProposal ? '#C9547A' : '#9CA3AF' }} />
+                <UtensilsCrossed className="w-4 h-4 flex-shrink-0" style={{ color: includeMealProposal ? '#2D6A4F' : '#9CA3AF' }} />
                 <span className="text-sm font-semibold flex-1 text-left" style={{ color: includeMealProposal ? '#7C2D5E' : '#6B7280' }}>
                   경기 후 식사도 함께 제안하기
                 </span>
@@ -4294,7 +4284,7 @@ paddingBottom: '14px',
           <div
             className="w-full max-w-md rounded-t-3xl shadow-2xl"
             style={{
-              background: isDating ? 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)' : '#fff',
+              background: '#fff',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
             }}
             onClick={(e) => e.stopPropagation()}
@@ -4394,7 +4384,7 @@ paddingBottom: '14px',
           <div
             className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
             style={{
-              background: isDating ? 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)' : '#fff',
+              background: '#fff',
               paddingBottom: 'max(env(safe-area-inset-bottom), 24px)',
               boxShadow: '0 -8px 32px rgba(27,67,50,0.08)',
             }}
@@ -4484,23 +4474,23 @@ paddingBottom: '14px',
         >
           <div
             className="w-full max-w-xs rounded-3xl shadow-2xl px-7 py-8 flex flex-col items-center gap-4"
-            style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }}
+            style={{ background: 'linear-gradient(135deg, #F3FAF5 0%, #DDEADD 100%)', border: '1.5px solid rgba(45,106,79,0.25)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)', boxShadow: '0 4px 20px rgba(244,114,182,0.4)' }}
+              style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 4px 20px rgba(45,106,79,0.4)' }}
             >
               <UtensilsCrossed className="w-7 h-7 text-white" />
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold mb-2" style={{ color: '#C9547A' }}>식사 제안이 전해졌어요 :)</p>
+              <p className="text-lg font-bold mb-2" style={{ color: '#2D6A4F' }}>식사 제안이 전해졌어요 :)</p>
               <p className="text-sm" style={{ color: 'rgba(124,45,94,0.65)' }}>상대방의 답장을 기다려요!</p>
             </div>
             <button
               onClick={() => setShowMealSentPopup(false)}
               className="w-full py-3 rounded-2xl text-sm font-bold text-white transition active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 4px 16px rgba(224,92,138,0.4)' }}
+              style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 4px 16px rgba(45,106,79,0.4)' }}
             >
               알겠어요!
             </button>
@@ -4516,24 +4506,24 @@ paddingBottom: '14px',
         >
           <div
             className="w-full max-w-xs rounded-3xl shadow-2xl px-7 py-8 flex flex-col items-center gap-4"
-            style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }}
+            style={{ background: 'linear-gradient(135deg, #F3FAF5 0%, #DDEADD 100%)', border: '1.5px solid rgba(45,106,79,0.25)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)', boxShadow: '0 4px 20px rgba(244,114,182,0.4)' }}
+              style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 4px 20px rgba(45,106,79,0.4)' }}
             >
               <UtensilsCrossed className="w-7 h-7 text-white" />
             </div>
             <div className="text-center">
               <p className="text-lg font-bold mb-1" style={{ color: '#7C2D5E' }}>경기 후 약속,</p>
-              <p className="text-lg font-bold mb-2" style={{ color: '#C9547A' }}>미리 잡아봐요 :)</p>
+              <p className="text-lg font-bold mb-2" style={{ color: '#2D6A4F' }}>미리 잡아봐요 :)</p>
               <p className="text-sm" style={{ color: 'rgba(124,45,94,0.65)' }}>수락이 전달됐어요. 경기 후 함께해요!</p>
             </div>
             <button
               onClick={() => setShowMealAcceptPopup(false)}
               className="w-full py-3 rounded-2xl text-sm font-bold text-white transition active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 4px 16px rgba(224,92,138,0.4)' }}
+              style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)', boxShadow: '0 4px 16px rgba(45,106,79,0.4)' }}
             >
               좋아요!
             </button>
@@ -4550,7 +4540,7 @@ paddingBottom: '14px',
           <div
             className="w-full max-w-sm rounded-t-3xl shadow-2xl flex flex-col"
             style={{
-              background: 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)',
+              background: '#fff',
               maxHeight: `${Math.floor(vpHeight * 0.80)}px`,
               paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
             }}
@@ -4597,7 +4587,7 @@ paddingBottom: '14px',
         >
           <div
             className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl px-6 py-7"
-            style={{ background: isDating ? 'linear-gradient(135deg, #FFFBF7 0%, #FFF5F8 100%)' : '#fff' }}
+            style={{ background: '#fff' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-center mb-4">
