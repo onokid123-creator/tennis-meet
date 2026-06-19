@@ -4,13 +4,15 @@ import DatingCourtCard from './DatingCourtCard';
 interface SwipeCourtDeckProps {
   courts: Court[];
   onApply: (court: Court) => void;
+  onInterest?: (court: Court) => void;
+  isInterested?: (court: Court) => boolean;
   onCardClick?: (court: Court) => void;
   isOwnerMode?: boolean;
   onEdit?: (court: Court) => void;
   onDelete?: (court: Court) => void;
 }
 
-export default function SwipeCourtDeck({ courts, onApply, isOwnerMode, onEdit, onDelete }: SwipeCourtDeckProps) {
+export default function SwipeCourtDeck({ courts, onApply, onInterest, isInterested, isOwnerMode, onEdit, onDelete }: SwipeCourtDeckProps) {
   if (courts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-5">
@@ -38,6 +40,8 @@ export default function SwipeCourtDeck({ courts, onApply, isOwnerMode, onEdit, o
           court={court}
           isOwner={isOwnerMode}
           onApply={!isOwnerMode ? () => onApply(court) : undefined}
+          onInterest={!isOwnerMode && onInterest ? () => onInterest(court) : undefined}
+          isInterested={!isOwnerMode && isInterested ? isInterested(court) : false}
           onEdit={onEdit ? () => onEdit(court) : undefined}
           onDelete={onDelete ? () => onDelete(court) : undefined}
         />

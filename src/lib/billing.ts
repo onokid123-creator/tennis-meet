@@ -5,9 +5,13 @@ declare const CdvPurchase: any;
 
 const IOS_TICKET_5_ID = 'tennis_meet_ticket';
 const IOS_TICKET_10_ID = 'tennis_meet_ticket_10';
+const IOS_INTEREST_TICKET_5_ID = 'tennis_meet_interest_ticket';
+const IOS_INTEREST_TICKET_10_ID = 'tennis_meet_interest_ticket_10';
 
 const ANDROID_TICKET_5_ID = 'dating_ticket_5';
 const ANDROID_TICKET_10_ID = 'dating_ticket_10';
+const ANDROID_INTEREST_TICKET_5_ID = 'dating_interest_ticket_5';
+const ANDROID_INTEREST_TICKET_10_ID = 'dating_interest_ticket_10';
 
 const MONTHLY_PREMIUM_ID = 'dating_monthly_premium';
 
@@ -42,6 +46,8 @@ function getPlatformProductIds() {
     return {
       ticket5: ANDROID_TICKET_5_ID,
       ticket10: ANDROID_TICKET_10_ID,
+      interestTicket5: ANDROID_INTEREST_TICKET_5_ID,
+      interestTicket10: ANDROID_INTEREST_TICKET_10_ID,
       monthlyPremium: MONTHLY_PREMIUM_ID,
     };
   }
@@ -49,6 +55,8 @@ function getPlatformProductIds() {
   return {
     ticket5: IOS_TICKET_5_ID,
     ticket10: IOS_TICKET_10_ID,
+    interestTicket5: IOS_INTEREST_TICKET_5_ID,
+    interestTicket10: IOS_INTEREST_TICKET_10_ID,
     monthlyPremium: MONTHLY_PREMIUM_ID,
   };
 }
@@ -60,11 +68,15 @@ function resolveProductId(productId: string) {
   if (platform === 'android') {
     if (productId === IOS_TICKET_5_ID) return ids.ticket5;
     if (productId === IOS_TICKET_10_ID) return ids.ticket10;
+    if (productId === IOS_INTEREST_TICKET_5_ID) return ids.interestTicket5;
+    if (productId === IOS_INTEREST_TICKET_10_ID) return ids.interestTicket10;
   }
 
   if (platform === 'ios') {
     if (productId === ANDROID_TICKET_5_ID) return ids.ticket5;
     if (productId === ANDROID_TICKET_10_ID) return ids.ticket10;
+    if (productId === ANDROID_INTEREST_TICKET_5_ID) return ids.interestTicket5;
+    if (productId === ANDROID_INTEREST_TICKET_10_ID) return ids.interestTicket10;
   }
 
   return productId;
@@ -76,6 +88,14 @@ function isTicket5(productId: string) {
 
 function isTicket10(productId: string) {
   return productId === IOS_TICKET_10_ID || productId === ANDROID_TICKET_10_ID;
+}
+
+function isInterestTicket5(productId: string) {
+  return productId === IOS_INTEREST_TICKET_5_ID || productId === ANDROID_INTEREST_TICKET_5_ID;
+}
+
+function isInterestTicket10(productId: string) {
+  return productId === IOS_INTEREST_TICKET_10_ID || productId === ANDROID_INTEREST_TICKET_10_ID;
 }
 
 async function waitForProduct(productId: string, platform: any, timeoutMs = 8000) {
@@ -135,6 +155,16 @@ export async function initBilling() {
       platform,
     },
     {
+      id: ids.interestTicket5,
+      type: ProductType.CONSUMABLE,
+      platform,
+    },
+    {
+      id: ids.interestTicket10,
+      type: ProductType.CONSUMABLE,
+      platform,
+    },
+    {
       id: ids.monthlyPremium,
       type: ProductType.PAID_SUBSCRIPTION,
       platform,
@@ -174,6 +204,25 @@ export async function initBilling() {
         .from('profiles')
         .update({
           ticket_count: currentTicketCount + addCount,
+        })
+        .eq('user_id', user.id);
+    }
+
+    if (isInterestTicket5(productId) || isInterestTicket10(productId)) {
+      const addCount = isInterestTicket5(productId) ? 5 : 10;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('interest_ticket_count')
+        .eq('user_id', user.id)
+        .single();
+
+      const currentTicketCount = profile?.interest_ticket_count ?? 0;
+
+      await supabase
+        .from('profiles')
+        .update({
+          interest_ticket_count: currentTicketCount + addCount,
         })
         .eq('user_id', user.id);
     }

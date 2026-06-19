@@ -8,7 +8,19 @@ import { X, ChevronLeft, ChevronRight, MapPin, Calendar, UtensilsCrossed } from 
 import { useVisualViewport } from '../hooks/useVisualViewport';
 
 type PurposeTab = 'tennis' | 'dating';
-type DirectionTab = 'received' | 'sent';
+type DirectionTab = 'received' | 'sent' | 'interest';
+type InterestDirectionTab = 'received' | 'sent';
+
+type CourtInterestItem = {
+  id: string;
+  court_id: string;
+  user_id: string;
+  host_id: string;
+  created_at: string;
+  user?: Profile | null;
+  owner?: Profile | null;
+  court?: any | null;
+};
 
 function DefaultProfileAvatar({
   type = 'tennis',
@@ -46,7 +58,7 @@ function DefaultProfileAvatar({
         height={size * 0.46}
         viewBox="0 0 24 24"
         fill="none"
-        stroke={isBlocked ? '#9CA3AF' : isDating ? '#C9547A' : '#2D6A4F'}
+        stroke={isBlocked ? '#9CA3AF' : isDating ? '#2D6A4F' : '#2D6A4F'}
         strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -365,9 +377,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
               className="w-8 h-8 rounded-full flex items-center justify-center"
               style={{ background: 'rgba(201,99,122,0.09)', border: '1px solid rgba(201,99,122,0.18)' }}
             >
-              <X className="w-4 h-4" style={{ color: '#C9637A' }} />
+              <X className="w-4 h-4" style={{ color: '#2D6A4F' }} />
             </button>
-            <span className="font-bold text-sm" style={{ color: '#C9637A', letterSpacing: '0.03em' }}>신청 프로필</span>
+            <span className="font-bold text-sm" style={{ color: '#2D6A4F', letterSpacing: '0.03em' }}>신청 프로필</span>
             <div className="w-8" />
           </div>
 
@@ -382,7 +394,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
       background: '#FFF8F6',
     }}
   >
-    <PhotoCarousel profile={applicant} dotColor="#C9637A" />
+    <PhotoCarousel profile={applicant} dotColor="#2D6A4F" />
 
     {photos.length > 0 && (
       <button
@@ -406,7 +418,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
             <div className="px-4 pb-3">
               <div
                 className="rounded-2xl px-4 py-4"
-                style={{ background: '#fff', border: '1.5px solid rgba(201,99,122,0.12)', boxShadow: '0 2px 8px rgba(201,99,122,0.06)' }}
+                style={{ background: '#fff', border: '1.5px solid rgba(27,67,50,0.12)', boxShadow: '0 2px 8px rgba(27,67,50,0.06)' }}
               >
                 <div className="flex items-baseline gap-2 mb-3">
                   <span className="font-bold" style={{ fontSize: '1.2rem', color: '#1a1a1a' }}>{applicant.name}</span>
@@ -421,9 +433,9 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {applicant.mbti && (
-                    <div className="rounded-xl py-2.5 text-center" style={{ background: 'rgba(201,99,122,0.06)', border: '1px solid rgba(201,99,122,0.14)' }}>
-                      <div className="text-xs font-medium mb-0.5" style={{ color: '#C9637A', opacity: 0.7 }}>MBTI</div>
-                      <div className="font-bold text-sm" style={{ color: '#C9637A' }}>{applicant.mbti}</div>
+                    <div className="rounded-xl py-2.5 text-center" style={{ background: 'rgba(27,67,50,0.06)', border: '1px solid rgba(201,99,122,0.14)' }}>
+                      <div className="text-xs font-medium mb-0.5" style={{ color: '#2D6A4F', opacity: 0.7 }}>MBTI</div>
+                      <div className="font-bold text-sm" style={{ color: '#2D6A4F' }}>{applicant.mbti}</div>
                     </div>
                   )}
                   {applicant.height && (
@@ -447,11 +459,11 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
   <div
     className="px-4 py-4 rounded-2xl"
     style={{
-      background: 'linear-gradient(135deg, rgba(201,99,122,0.08), rgba(255,255,255,0.9))',
+      background: 'linear-gradient(135deg, rgba(27,67,50,0.08), rgba(255,255,255,0.9))',
       border: '1px solid rgba(201,99,122,0.18)',
     }}
   >
-    <p className="text-xs font-bold mb-2" style={{ color: '#C9637A' }}>
+    <p className="text-xs font-bold mb-2" style={{ color: '#2D6A4F' }}>
       💌 신청 메세지
     </p>
     <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#3a2228' }}>
@@ -510,15 +522,15 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)',
                 background: 'rgba(255,248,246,0.98)',
                 backdropFilter: 'blur(12px)',
-                borderTop: '1px solid rgba(201,99,122,0.12)',
-                boxShadow: '0 -4px 20px rgba(201,99,122,0.08)',
+                borderTop: '1px solid rgba(27,67,50,0.12)',
+                boxShadow: '0 -4px 20px rgba(27,67,50,0.08)',
               }}
             >
               <button
                 onClick={() => onReject(app)}
                 disabled={processing}
                 className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
-                style={{ background: 'rgba(201,99,122,0.08)', color: '#A05570', border: '1.5px solid rgba(201,99,122,0.2)', minHeight: '52px' }}
+                style={{ background: 'rgba(27,67,50,0.08)', color: '#A05570', border: '1.5px solid rgba(27,67,50,0.2)', minHeight: '52px' }}
               >
                 {processing ? '...' : '거절하기'}
               </button>
@@ -526,7 +538,7 @@ function DatingApplicantModal({ app, onClose, onAccept, onReject, processing, er
                 onClick={() => onAccept(app)}
                 disabled={processing}
                 className="flex-1 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg,#C9637A,#D4849A)', color: '#fff', boxShadow: '0 4px 14px rgba(201,99,122,0.3)', minHeight: '52px', border: 'none' }}
+                style={{ background: 'linear-gradient(135deg,#2D6A4F,#D4849A)', color: '#fff', boxShadow: '0 4px 14px rgba(201,99,122,0.3)', minHeight: '52px', border: 'none' }}
               >
                 {processing ? '처리 중...' : '수락하기'}
               </button>
@@ -893,9 +905,14 @@ const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
   const [directionTab, setDirectionTab] = useState<DirectionTab>('received');
   const [receivedApps, setReceivedApps] = useState<Application[]>([]);
   const [sentApps, setSentApps] = useState<Application[]>([]);
+  const [interestApps, setInterestApps] = useState<CourtInterestItem[]>([]);
+  const [sentInterestApps, setSentInterestApps] = useState<CourtInterestItem[]>([]);
+  const [interestDirectionTab, setInterestDirectionTab] = useState<InterestDirectionTab>('received');
+  const [deletingInterestId, setDeletingInterestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [interestPhotoProfile, setInterestPhotoProfile] = useState<Profile | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Application | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -910,6 +927,13 @@ const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
   const [mealRejectSubmitting, setMealRejectSubmitting] = useState(false);
   const [showMealRejectPopup, setShowMealRejectPopup] = useState(false);
   const [showMealAcceptPopup, setShowMealAcceptPopup] = useState(false);
+  const [showPurchaseRequiredPopup, setShowPurchaseRequiredPopup] = useState(false);
+
+  useEffect(() => {
+    if (purposeTab !== 'dating' && directionTab === 'interest') {
+      setDirectionTab('received');
+    }
+  }, [purposeTab, directionTab]);
 const latestApplicationsRequestRef = useRef(0);
 const latestMealRequestRef = useRef(0);
 const applicationsCacheReadyRef = useRef(false);
@@ -1116,6 +1140,8 @@ latestApplicationsRequestRef.current = requestId;
 
 let nextReceivedApps: Application[] = [];
 let nextSentApps: Application[] = [];
+let nextInterestApps: CourtInterestItem[] = [];
+let nextSentInterestApps: CourtInterestItem[] = [];
     const silent = options?.silent ?? false;
     if (!silent) setLoading(true);
 
@@ -1130,7 +1156,7 @@ let nextSentApps: Application[] = [];
         setTimeout(() => reject(new Error('applications_timeout')), 6000)
       );
 
-      const [{ data: receivedRaw }, { data: sentRaw }] = await Promise.race([
+      const [{ data: receivedRaw }, { data: sentRaw }, { data: interestsRaw }, { data: sentInterestsRaw }] = await Promise.race([
         Promise.all([
           supabase
             .from('applications')
@@ -1144,16 +1170,30 @@ let nextSentApps: Application[] = [];
             .eq('applicant_id', currentUser.id)
             .eq('sender_deleted', false)
             .order('created_at', { ascending: false }),
+          supabase
+            .from('court_interests')
+            .select(`*, court:court_id (*)`)
+            .eq('host_id', currentUser.id)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('court_interests')
+            .select(`*, court:court_id (*)`)
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false }),
         ]),
         timeoutPromise,
       ]);
 
       const receivedList = receivedRaw || [];
       const sentList = sentRaw || [];
+      const interestList = interestsRaw || [];
+      const sentInterestList = sentInterestsRaw || [];
 
       const applicantIds = [...new Set(receivedList.map((a) => a.applicant_id).filter(Boolean))];
       const ownerIds = [...new Set(sentList.map((a) => a.host_id).filter(Boolean))];
-      const allProfileIds = [...new Set([...applicantIds, ...ownerIds])];
+      const interestUserIds = [...new Set(interestList.map((i) => i.user_id).filter(Boolean))];
+      const sentInterestOwnerIds = [...new Set(sentInterestList.map((i) => i.host_id).filter(Boolean))];
+      const allProfileIds = [...new Set([...applicantIds, ...ownerIds, ...interestUserIds, ...sentInterestOwnerIds])];
 
       let profileMap: Record<string, Profile> = {};
       if (allProfileIds.length > 0) {
@@ -1176,8 +1216,21 @@ let nextSentApps: Application[] = [];
         owner: profileMap[a.host_id] ?? null,
       }));
 
+      const interests = interestList.map((i) => ({
+        ...i,
+        user: profileMap[i.user_id] ?? null,
+      }));
+
+      const sentInterests = sentInterestList.map((i) => ({
+        ...i,
+        owner: profileMap[i.host_id] ?? null,
+        user: profileMap[i.host_id] ?? null,
+      }));
+
      nextReceivedApps = received;
 nextSentApps = sent;
+nextInterestApps = interests;
+nextSentInterestApps = sentInterests;
 
 if (latestApplicationsRequestRef.current !== requestId) {
   return;
@@ -1185,6 +1238,8 @@ if (latestApplicationsRequestRef.current !== requestId) {
 
 setReceivedApps(nextReceivedApps);
 setSentApps(nextSentApps);
+setInterestApps(nextInterestApps);
+setSentInterestApps(nextSentInterestApps);
     } catch (err) {
       console.error('신청 목록 가져오기 실패:', {
         name: err instanceof Error ? err.name : undefined,
@@ -1209,6 +1264,9 @@ setSentApps(nextSentApps);
     .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, () => {
       fetchApplications();
       fetchMealProposals();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'court_interests' }, () => {
+      fetchApplications();
     })
     .subscribe();
 
@@ -1269,55 +1327,100 @@ setSentApps(nextSentApps);
     const applicantId = app.applicant_id;
     const courtId = app.court_id;
 
-    // ── Step 1: 항상 새 채팅방 생성 ─────────────────────────
-    const { data: newChat, error: chatError } = await supabase
-      .from('chats')
-      .insert({
-        user1_id: hostId,
-        user2_id: applicantId,
-        purpose: app.purpose ?? 'tennis',
-        court_id: courtId,
-        is_group: false,
-        host_left: false,
-        confirmed_user_ids: [],
-      })
-      .select('id')
-      .maybeSingle();
-
-    if (chatError) {
-      console.error('[1v1] chats INSERT 실패:', chatError);
-      return { error: `채팅방 생성 실패: ${chatError.message}` };
-    }
-    if (!newChat) {
-      return { error: '채팅방 생성 실패: 반환 데이터 없음 (RLS 확인 필요)' };
-    }
-
-    const chatId = newChat.id;
-
-    // ── Step 3: 참여자 등록 (SECURITY DEFINER RPC — RLS 재귀 회피) ──
-    const { error: rpcErr } = await supabase.rpc('accept_1v1_chat', {
-      p_chat_id: chatId,
+    const { data: chatId, error: chatError } = await supabase.rpc('start_interest_1v1_chat', {
       p_host_id: hostId,
-      p_applicant_id: applicantId,
+      p_interest_user_id: applicantId,
+      p_court_id: courtId,
+      p_purpose: app.purpose ?? 'tennis',
     });
 
-    if (rpcErr) {
-      console.error('[1v1] 참여자 등록 실패:', rpcErr);
+    if (chatError || !chatId) {
+      console.error('[1v1] start_interest_1v1_chat 실패:', chatError);
+      return { error: `채팅방 생성 실패: ${chatError?.message ?? '반환 데이터 없음'}` };
     }
-
-    await supabase
-      .from('chats')
-      .update({ confirmed_user_ids: [] })
-      .eq('id', chatId);
-
-    await supabase
-      .from('chat_participants')
-      .update({ is_confirmed: false })
-      .eq('chat_id', chatId);
 
     // 수락 시점에는 채팅방만 생성한다.
     // 실제 모집마감/인원 확정은 채팅방에서 호스트가 매칭확정 버튼을 눌렀을 때 처리한다.
     return { chatId, isNew: true };
+  };
+
+  const handleStartInterestChat = async (item: CourtInterestItem) => {
+    if (processingId) return;
+
+    setProcessingId(item.id);
+    setAcceptError(null);
+
+    try {
+      if (!user?.id || !item.user_id || !item.court_id) {
+        alert('채팅을 시작할 수 없습니다. 필수 정보가 부족합니다.');
+        return;
+      }
+
+      const { data: hostProfile } = await supabase
+        .from('profiles')
+        .select('gender, is_subscribed, free_meeting_count, ticket_count')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const isMale = hostProfile?.gender === '남성' || hostProfile?.gender === 'male';
+      const isSubscribed = !!hostProfile?.is_subscribed;
+      const freeCount = hostProfile?.free_meeting_count ?? 0;
+      const ticketCount = hostProfile?.ticket_count ?? 0;
+
+      let shouldUseFreeMeeting = false;
+      let shouldUseTicket = false;
+
+      if (isMale && !isSubscribed) {
+        if (freeCount < 3) {
+          shouldUseFreeMeeting = true;
+        } else if (ticketCount > 0) {
+          shouldUseTicket = true;
+        } else {
+          setShowPurchaseRequiredPopup(true);
+          return;
+        }
+      }
+
+      const { data: chatId, error: chatError } = await supabase.rpc('start_interest_1v1_chat', {
+        p_host_id: user.id,
+        p_interest_user_id: item.user_id,
+        p_court_id: item.court_id,
+        p_purpose: item.court?.purpose ?? 'dating',
+      });
+
+      if (chatError || !chatId) {
+        console.error('[InterestChat] start_interest_1v1_chat failed:', chatError);
+        alert('채팅방 생성에 실패했습니다.');
+        return;
+      }
+
+      if (shouldUseFreeMeeting) {
+        await supabase
+          .from('profiles')
+          .update({ free_meeting_count: freeCount + 1 })
+          .eq('user_id', user.id);
+      } else if (shouldUseTicket) {
+        await supabase
+          .from('profiles')
+          .update({ ticket_count: Math.max(0, ticketCount - 1) })
+          .eq('user_id', user.id);
+      }
+
+      await supabase.from('messages').insert({
+        chat_id: chatId,
+        sender_id: null,
+        content: '관심 코트를 통해 채팅방이 열렸어요. 경기 전 가볍게 인사해보세요 🎾',
+        is_read: false,
+        type: 'system',
+      });
+
+      navigate(`/chat/${chatId}`, { replace: false });
+    } catch (err) {
+      console.error('[InterestChat] start failed:', err);
+      alert('채팅 시작 중 오류가 발생했습니다.');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const handleAccept = async (app: Application) => {
@@ -1764,6 +1867,172 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     );
   };
 
+  const handleDeleteSentInterest = async (item: CourtInterestItem) => {
+    if (!user || !item.id || deletingInterestId === item.id) return;
+
+    const ok = window.confirm('보낸 관심을 삭제하시겠어요?');
+    if (!ok) return;
+
+    setDeletingInterestId(item.id);
+
+    try {
+      const { error } = await supabase
+        .from('court_interests')
+        .delete()
+        .eq('id', item.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setSentInterestApps((prev) => prev.filter((app) => app.id !== item.id));
+    } catch (error) {
+      console.error('[Applications] delete sent interest failed:', error);
+      alert('관심 코트 삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setDeletingInterestId(null);
+    }
+  };
+
+  const renderInterestCard = (item: CourtInterestItem) => {
+    const member = item.user;
+    const court = item.court;
+    const isSentInterest = interestDirectionTab === 'sent';
+    const photos: string[] = member?.tennis_photo_urls?.length
+      ? member.tennis_photo_urls
+      : member?.tennis_photo_url
+      ? [member.tennis_photo_url]
+      : member?.photo_urls?.length
+      ? member.photo_urls
+      : member?.photo_url
+      ? [member.photo_url]
+      : [];
+
+    const interestedDate = item.created_at
+      ? new Date(item.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+      : '';
+
+    return (
+      <div
+        key={item.id}
+        className="rounded-3xl px-4 py-4"
+        style={{
+          background: '#FFFFFF',
+          border: '1px solid rgba(45,106,79,0.12)',
+          boxShadow: '0 8px 24px rgba(27,67,50,0.08)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => member && setInterestPhotoProfile(member)}
+            className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0"
+            style={{ background: '#F3F4F6', border: '1px solid rgba(45,106,79,0.14)', padding: 0 }}
+          >
+            {photos[0] ? (
+              <img
+                src={photos[0]}
+                alt={member?.name || 'profile'}
+                className="w-full h-full"
+                style={{ objectFit: 'cover', objectPosition: 'center top' }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <DefaultProfileAvatar type="tennis" size={52} />
+              </div>
+            )}
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-base font-bold truncate" style={{ color: '#10251B' }}>
+                {member?.name || '알 수 없음'}
+              </span>
+
+              {isSentInterest && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDeleteSentInterest(item);
+                  }}
+                  disabled={deletingInterestId === item.id}
+                  className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60 flex-shrink-0"
+                  style={{
+                    color: '#DC2626',
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.18)',
+                  }}
+                >
+                  {deletingInterestId === item.id ? '삭제 중' : '삭제'}
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs mb-1.5" style={{ color: 'rgba(16,37,27,0.55)' }}>
+              {member?.age && <span>{member.age}세</span>}
+              {member?.gender && <span>· {member.gender}</span>}
+              {member?.height && <span>· {member.height}cm</span>}
+            </div>
+
+            {(member?.tennis_career || member?.tennis_experience || member?.experience) && (
+              <div className="mb-1.5">
+                <span
+                  className="inline-flex items-center rounded-full px-2 py-1 text-xs font-bold"
+                  style={{ background: 'rgba(45,106,79,0.08)', color: '#2D6A4F' }}
+                >
+                  구력 {member?.tennis_career || member?.tennis_experience || member?.experience}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div
+          className="mt-3 rounded-2xl px-4 py-3"
+          style={{ background: '#F3F7F1', border: '1px solid rgba(45,106,79,0.08)' }}
+        >
+          <p className="text-sm font-bold mb-1" style={{ color: '#10251B' }}>
+            {isSentInterest ? '이 코트에 관심 표시했어요' : '회원님 코트에 관심 표시했어요!'}
+          </p>
+          <p className="text-xs truncate" style={{ color: 'rgba(45,106,79,0.6)' }}>
+            📍 {court?.court_name || '코트 정보 없음'}{interestedDate ? ` · ${interestedDate}` : ''}
+          </p>
+        </div>
+
+        <div
+          className="mt-3 rounded-2xl px-4 py-3"
+          style={{
+            background: '#FFF6DA',
+            borderLeft: '4px solid #C9A84C',
+            color: '#7A5A14',
+          }}
+        >
+          <p className="text-xs font-bold mb-1">💡 안내</p>
+          <p className="text-xs leading-relaxed">
+            대표 사진 1장만 공개돼요.<br />
+            채팅방 생성 시 더 많은 사진을 볼 수 있어요.
+          </p>
+        </div>
+
+        {!isSentInterest && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => {
+                handleStartInterestChat(item);
+              }}
+              disabled={processingId === item.id}
+              className="w-full py-3.5 rounded-xl text-sm font-bold active:opacity-80 disabled:opacity-60"
+              style={{ background: '#1B4332', color: '#fff' }}
+            >
+              {processingId === item.id ? '여는 중...' : '먼저 채팅 보내기'}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSentCard = (app: Application) => {
     const host = app.owner;
     const isTennisApp = app.purpose === 'tennis';
@@ -1784,17 +2053,17 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
         style={{
           borderRadius: '18px',
           background: hasAcceptedNotif
-            ? (isTennisApp ? 'linear-gradient(160deg, #F0FAF4 0%, #E8F5EC 100%)' : 'linear-gradient(160deg, #FFF5F8 0%, #FFF0F5 100%)')
+            ? (isTennisApp ? 'linear-gradient(160deg, #F0FAF4 0%, #E8F5EC 100%)' : 'linear-gradient(160deg, #F0FAF4 0%, #E8F5EC 100%)')
             : !isTennisApp ? 'linear-gradient(160deg, #FFF9F6 0%, #FFF5F0 100%)' : '#fff',
           border: hasRejectionReason
             ? '1.5px solid rgba(239,68,68,0.3)'
             : hasAcceptedNotif
-              ? (isTennisApp ? '1.5px solid rgba(27,67,50,0.25)' : '1.5px solid rgba(201,99,122,0.25)')
+              ? (isTennisApp ? '1.5px solid rgba(27,67,50,0.25)' : '1.5px solid rgba(27,67,50,0.25)')
               : !isTennisApp ? '1px solid rgba(183,110,121,0.15)' : '1px solid #EBEBEB',
           boxShadow: hasRejectionReason
             ? '0 2px 14px rgba(239,68,68,0.1)'
             : hasAcceptedNotif
-              ? (isTennisApp ? '0 2px 16px rgba(27,67,50,0.12)' : '0 2px 16px rgba(201,99,122,0.12)')
+              ? (isTennisApp ? '0 2px 16px rgba(27,67,50,0.12)' : '0 2px 16px rgba(27,67,50,0.12)')
               : !isTennisApp ? '0 2px 12px rgba(183,110,121,0.08)' : '0 2px 12px rgba(0,0,0,0.06)',
         }}
       >
@@ -1803,11 +2072,11 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           <div
             className="px-4 py-3"
             style={{
-              background: isTennisApp ? 'rgba(27,67,50,0.06)' : 'rgba(201,99,122,0.06)',
-              borderBottom: isTennisApp ? '1px solid rgba(27,67,50,0.12)' : '1px solid rgba(201,99,122,0.12)',
+              background: isTennisApp ? 'rgba(27,67,50,0.06)' : 'rgba(27,67,50,0.06)',
+              borderBottom: isTennisApp ? '1px solid rgba(27,67,50,0.12)' : '1px solid rgba(27,67,50,0.12)',
             }}
           >
-            <p className="text-xs font-medium mb-2.5" style={{ color: isTennisApp ? '#1B4332' : '#C9637A', lineHeight: 1.5 }}>
+            <p className="text-xs font-medium mb-2.5" style={{ color: isTennisApp ? '#1B4332' : '#2D6A4F', lineHeight: 1.5 }}>
               {acceptedNotifMsg}
             </p>
             <div className="flex items-center gap-2">
@@ -1815,7 +2084,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 onClick={() => handleGoToAcceptedChat(app)}
                 className="flex-1 py-1.5 rounded-full text-xs font-bold transition active:scale-95"
                 style={{
-                  background: isTennisApp ? '#1B4332' : '#C9637A',
+                  background: isTennisApp ? '#1B4332' : '#2D6A4F',
                   color: '#fff',
                 }}
               >
@@ -1929,13 +2198,9 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
   };
 
   const isDating = purposeTab === 'dating';
-  const activeColor = isDating ? '#C9637A' : '#1B4332';
-  const activeBg = isDating
-    ? 'linear-gradient(180deg, #F43F5E 0%, #FECDD3 100%)'
-    : 'linear-gradient(160deg, #0A1F14 0%, #1B4332 100%)';
-  const pageBg = isDating
-    ? 'linear-gradient(180deg, #FFF5F7 0%, #FFF0F3 100%)'
-    : 'linear-gradient(180deg, #F0F7F2 0%, #EBF4EE 100%)';
+  const activeColor = '#1B4332';
+  const activeBg = 'linear-gradient(160deg, #0A1F14 0%, #1B4332 100%)';
+  const pageBg = 'linear-gradient(180deg, #F0F7F2 0%, #EBF4EE 100%)';
 
   return (
     <div
@@ -1955,7 +2220,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
               style={purposeTab === tab
                 ? { background: 'rgba(255,255,255,0.22)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }
-                : { background: 'rgba(255,255,255,0.08)', color: isDating ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.5)', border: `1.5px solid ${isDating ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)'}` }
+                : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', border: '1.5px solid rgba(255,255,255,0.1)' }
               }
             >
               {tab === 'tennis' ? '🎾 테니스 신청' : '🎾 테니스 메이트'}
@@ -1963,43 +2228,34 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           ))}
         </div>
 
-        <div className="flex" style={{ borderTop: isDating ? '1px solid rgba(183,110,121,0.2)' : '1px solid rgba(201,168,76,0.2)' }}>
-          <button
-            onClick={() => setDirectionTab('received')}
-            className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative flex items-center justify-center gap-1.5"
-            style={{ color: directionTab === 'received' ? '#fff' : isDating ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.45)' }}
-          >
-            받은 신청
-            {pendingReceivedCount > 0 && (
-              <span
-                className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold"
-                style={{ background: '#C9A84C', color: '#fff' }}
-              >
-                {pendingReceivedCount}
-              </span>
-            )}
-            {directionTab === 'received' && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full" style={{ width: '40%', background: '#C9A84C' }} />
-            )}
-          </button>
-          <button
-            onClick={() => setDirectionTab('sent')}
-            className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative flex items-center justify-center gap-1.5"
-            style={{ color: directionTab === 'sent' ? '#fff' : isDating ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.45)' }}
-          >
-            보낸 신청
-            {pendingSentCount > 0 && (
-              <span
-                className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold"
-                style={{ background: '#E05C8A', color: '#fff' }}
-              >
-                {pendingSentCount}
-              </span>
-            )}
-            {directionTab === 'sent' && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full" style={{ width: '40%', background: '#C9A84C' }} />
-            )}
-          </button>
+        <div className="flex" style={{ borderTop: '1px solid rgba(201,168,76,0.2)' }}>
+          {[
+            { key: 'received' as DirectionTab, label: '받은 신청', count: pendingReceivedCount },
+            { key: 'sent' as DirectionTab, label: '보낸 신청', count: pendingSentCount },
+            ...(purposeTab === 'dating'
+              ? [{ key: 'interest' as DirectionTab, label: '관심 코트', count: interestApps.length + sentInterestApps.length }]
+              : []),
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setDirectionTab(tab.key)}
+              className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative flex items-center justify-center gap-1.5"
+              style={{ color: directionTab === tab.key ? '#fff' : 'rgba(255,255,255,0.45)' }}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span
+                  className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold"
+                  style={{ background: '#C9A84C', color: '#fff' }}
+                >
+                  {tab.count}
+                </span>
+              )}
+              {directionTab === tab.key && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full" style={{ width: '40%', background: '#C9A84C' }} />
+              )}
+            </button>
+          ))}
         </div>
       </header>
 
@@ -2009,18 +2265,18 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             <div
               key={proposal.id}
               className="rounded-2xl px-4 py-4 flex items-start gap-3"
-              style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE8F0 100%)', border: '1.5px solid rgba(224,92,138,0.28)', boxShadow: '0 2px 12px rgba(224,92,138,0.1)' }}
+              style={{ background: 'linear-gradient(135deg, #F0FAF4 0%, #E8F5EC 100%)', border: '1.5px solid rgba(45,106,79,0.22)', boxShadow: '0 2px 12px rgba(45,106,79,0.1)' }}
             >
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #74A88A 0%, #2D6A4F 100%)' }}
               >
                 <UtensilsCrossed className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between mb-2.5">
                   <p className="text-sm font-semibold leading-snug" style={{ color: '#7C2D5E' }}>
-                    <span style={{ color: '#C9547A' }}>{proposal.sender_name ?? '호스트'}</span>님이<br />경기 후 식사를 제안했어요 :)
+                    <span style={{ color: '#2D6A4F' }}>{proposal.sender_name ?? '호스트'}</span>님이<br />경기 후 식사를 제안했어요 :)
                   </p>
                   <button
                     onClick={() => handleDeletePendingMealProposal(proposal.id)}
@@ -2036,7 +2292,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                   <button
                     onClick={() => handleMealProposalAccept(proposal.id)}
                     className="flex-1 py-2 rounded-xl text-xs font-bold text-white transition active:scale-95"
-                    style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 2px 8px rgba(224,92,138,0.35)' }}
+                    style={{ background: 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)', boxShadow: '0 2px 8px rgba(45,106,79,0.28)' }}
                   >
                     수락하기
                   </button>
@@ -2062,13 +2318,13 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               className="rounded-2xl px-4 py-4 flex items-start gap-3"
               style={{
                 background: proposal.status === 'accepted'
-                  ? 'linear-gradient(135deg, #FFF0F5 0%, #FFE8F0 100%)'
+                  ? 'linear-gradient(135deg, #F0FAF4 0%, #E8F5EC 100%)'
                   : 'linear-gradient(135deg, #FFF5F5 0%, #FFF0F0 100%)',
                 border: proposal.status === 'accepted'
-                  ? '1.5px solid rgba(224,92,138,0.28)'
+                  ? '1.5px solid rgba(45,106,79,0.22)'
                   : '1.5px solid rgba(220,80,80,0.22)',
                 boxShadow: proposal.status === 'accepted'
-                  ? '0 2px 12px rgba(224,92,138,0.1)'
+                  ? '0 2px 12px rgba(45,106,79,0.1)'
                   : '0 2px 8px rgba(220,80,80,0.08)',
               }}
             >
@@ -2076,7 +2332,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
                 style={{
                   background: proposal.status === 'accepted'
-                    ? 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)'
+                    ? 'linear-gradient(135deg, #74A88A 0%, #2D6A4F 100%)'
                     : 'rgba(220,80,80,0.15)',
                 }}
               >
@@ -2086,7 +2342,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 <div className="flex items-start justify-between">
                   <p className="text-sm font-semibold leading-snug mb-1" style={{ color: proposal.status === 'accepted' ? '#7C2D5E' : '#7F1D1D' }}>
                     {proposal.status === 'accepted' ? (
-                      <><span style={{ color: '#C9547A' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />경기 후 식사 제안을 수락했어요 :)</>
+                      <><span style={{ color: '#2D6A4F' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />경기 후 식사 제안을 수락했어요 :)</>
                     ) : (
                       <><span style={{ color: '#DC5050' }}>{proposal.receiver_name ?? '참여자'}</span>님이<br />식사 제안을 거절했어요</>
                     )}
@@ -2113,18 +2369,18 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             <div
               key={proposal.id}
               className="rounded-2xl px-4 py-4 flex items-start gap-3"
-              style={{ background: 'linear-gradient(135deg, #FFF5FB 0%, #FFF0F8 100%)', border: '1.5px solid rgba(224,92,138,0.18)', boxShadow: '0 2px 8px rgba(224,92,138,0.07)' }}
+              style={{ background: 'linear-gradient(135deg, #F0FAF4 0%, #E8F5EC 100%)', border: '1.5px solid rgba(45,106,79,0.16)', boxShadow: '0 2px 8px rgba(45,106,79,0.07)' }}
             >
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                style={{ background: 'rgba(224,92,138,0.12)' }}
+                style={{ background: 'rgba(45,106,79,0.12)' }}
               >
-                <UtensilsCrossed className="w-4 h-4" style={{ color: '#E05C8A' }} />
+                <UtensilsCrossed className="w-4 h-4" style={{ color: '#2D6A4F' }} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between">
                   <p className="text-sm font-semibold leading-snug" style={{ color: '#7C2D5E' }}>
-                    <span style={{ color: '#C9547A' }}>{proposal.receiver_name ?? '참여자'}</span>님에게<br />경기 후 식사를 제안했어요
+                    <span style={{ color: '#2D6A4F' }}>{proposal.receiver_name ?? '참여자'}</span>님에게<br />경기 후 식사를 제안했어요
                   </p>
                   <button
                     onClick={() => handleDeletePendingMealProposal(proposal.id)}
@@ -2138,7 +2394,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 </div>
                 <span
                   className="inline-block mt-2 text-xs font-semibold px-2.5 py-1 rounded-full"
-                  style={{ background: 'rgba(224,92,138,0.1)', color: '#C9547A', border: '1px solid rgba(224,92,138,0.25)' }}
+                  style={{ background: 'rgba(45,106,79,0.1)', color: '#2D6A4F', border: '1px solid rgba(45,106,79,0.22)' }}
                 >
                   답장 기다리는 중...
                 </span>
@@ -2149,20 +2405,20 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       )}
 
       <div className="px-4 py-5">
-        {loading && filteredReceived.length === 0 && filteredSent.length === 0 && pendingMealProposals.length === 0 && resultMealProposals.length === 0 ? (
+        {loading && filteredReceived.length === 0 && filteredSent.length === 0 && interestApps.length === 0 && sentInterestApps.length === 0 && pendingMealProposals.length === 0 && resultMealProposals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: isDating ? 'rgba(201,99,122,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }} />
-            <p className="text-sm" style={{ color: isDating ? 'rgba(201,99,122,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: isDating ? 'rgba(45,106,79,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }} />
+            <p className="text-sm" style={{ color: isDating ? 'rgba(45,106,79,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
           </div>
         ) : directionTab === 'received' ? (
           filteredReceived.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-5">
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ background: isDating ? 'rgba(201,99,122,0.08)' : 'rgba(27,67,50,0.08)', border: `1.5px solid ${isDating ? 'rgba(201,99,122,0.2)' : 'rgba(27,67,50,0.2)'}` }}
+                style={{ background: isDating ? 'rgba(27,67,50,0.08)' : 'rgba(27,67,50,0.08)', border: `1.5px solid ${isDating ? 'rgba(27,67,50,0.2)' : 'rgba(27,67,50,0.2)'}` }}
               >
                 {isDating ? (
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C9637A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                   </svg>
                 ) : (
@@ -2174,10 +2430,10 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 )}
               </div>
               <div className="text-center">
-                <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#C9637A' : '#2D6A4F' }}>
+                <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#2D6A4F' : '#2D6A4F' }}>
                   {isDating ? '받은 만남 신청이 없어요' : '받은 테니스 신청이 없어요'}
                 </p>
-                <p className="text-xs" style={{ color: isDating ? 'rgba(201,99,122,0.55)' : 'rgba(45,106,79,0.55)' }}>
+                <p className="text-xs" style={{ color: isDating ? 'rgba(45,106,79,0.55)' : 'rgba(45,106,79,0.55)' }}>
                   {isDating ? '코트 등록 후 인연을 기다려보세요!' : '코트 등록 후 파트너를 기다려보세요!'}
                 </p>
               </div>
@@ -2187,14 +2443,61 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               {filteredReceived.map((app) => renderReceivedCard(app))}
             </div>
           )
+        ) : purposeTab === 'dating' && directionTab === 'interest' ? (
+          <div className="space-y-3">
+            <div
+              className="grid grid-cols-2 gap-1 rounded-full p-1"
+              style={{ background: '#fff', border: '1px solid rgba(45,106,79,0.12)' }}
+            >
+              {[
+                { key: 'received' as InterestDirectionTab, label: '받은 관심', count: interestApps.length },
+                { key: 'sent' as InterestDirectionTab, label: '보낸 관심', count: sentInterestApps.length },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setInterestDirectionTab(tab.key)}
+                  className="rounded-full py-2 text-xs font-bold transition-all"
+                  style={{
+                    background: interestDirectionTab === tab.key ? '#1B4332' : 'transparent',
+                    color: interestDirectionTab === tab.key ? '#fff' : '#2D6A4F',
+                  }}
+                >
+                  {tab.label}{tab.count > 0 ? ` ${tab.count}` : ''}
+                </button>
+              ))}
+            </div>
+
+            {(interestDirectionTab === 'received' ? interestApps : sentInterestApps).length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-5">
+                <div
+                  className="w-20 h-20 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(45,106,79,0.08)', border: '1.5px solid rgba(45,106,79,0.2)' }}
+                >
+                  <span className="text-3xl">🎾</span>
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold text-sm mb-1" style={{ color: '#2D6A4F' }}>
+                    {interestDirectionTab === 'received' ? '받은 관심이 없어요' : '보낸 관심이 없어요'}
+                  </p>
+                  <p className="text-xs" style={{ color: 'rgba(45,106,79,0.55)' }}>
+                    {interestDirectionTab === 'received' ? '회원이 관심 코트를 누르면 여기에 표시됩니다.' : '내가 관심 표시한 코트가 여기에 표시됩니다.'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(interestDirectionTab === 'received' ? interestApps : sentInterestApps).map((item) => renderInterestCard(item))}
+              </div>
+            )}
+          </div>
         ) : filteredSent.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-5">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ background: isDating ? 'rgba(201,99,122,0.08)' : 'rgba(27,67,50,0.08)', border: `1.5px solid ${isDating ? 'rgba(201,99,122,0.2)' : 'rgba(27,67,50,0.2)'}` }}
+              style={{ background: isDating ? 'rgba(27,67,50,0.08)' : 'rgba(27,67,50,0.08)', border: `1.5px solid ${isDating ? 'rgba(27,67,50,0.2)' : 'rgba(27,67,50,0.2)'}` }}
             >
               {isDating ? (
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C9637A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13"/>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                 </svg>
@@ -2206,10 +2509,10 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               )}
             </div>
             <div className="text-center">
-              <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#C9637A' : '#2D6A4F' }}>
+              <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#2D6A4F' : '#2D6A4F' }}>
                 {isDating ? '보낸 만남 신청이 없어요' : '보낸 테니스 신청이 없어요'}
               </p>
-              <p className="text-xs" style={{ color: isDating ? 'rgba(201,99,122,0.55)' : 'rgba(45,106,79,0.55)' }}>
+              <p className="text-xs" style={{ color: isDating ? 'rgba(45,106,79,0.55)' : 'rgba(45,106,79,0.55)' }}>
                 {isDating ? '마음에 드는 분께 먼저 말을 걸어보세요!' : '파트너를 찾아 신청해보세요!'}
               </p>
             </div>
@@ -2220,6 +2523,44 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           </div>
         )}
       </div>
+{showPurchaseRequiredPopup && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-5">
+    <div className="w-full max-w-sm rounded-3xl bg-white p-6">
+      <div className="text-3xl mb-3">🎟️</div>
+
+      <h2 className="text-lg font-bold mb-2" style={{ color: '#0F2118' }}>
+        이용권이 필요해요
+      </h2>
+
+      <p className="text-sm leading-relaxed mb-5" style={{ color: 'rgba(15,33,24,0.68)' }}>
+        무료 채팅 횟수를 모두 사용했거나<br />
+        보유한 이용권이 부족합니다.
+      </p>
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setShowPurchaseRequiredPopup(false)}
+          className="h-12 rounded-2xl font-semibold"
+          style={{ background: '#F3F4F6', color: '#374151' }}
+        >
+          확인
+        </button>
+
+        <button
+          onClick={() => {
+            setShowPurchaseRequiredPopup(false);
+            navigate('/profile?paywall=ticket');
+          }}
+          className="h-12 rounded-2xl text-white font-semibold"
+          style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+        >
+          이용권 구매
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 {showDatingProfilePopup && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-5">
     <div className="w-full max-w-sm rounded-3xl bg-white p-6">
@@ -2249,7 +2590,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
         className="w-full h-12 rounded-2xl text-white font-semibold"
         style={{
           background:
-            'linear-gradient(135deg, #C9547A 0%, #E8A598 100%)',
+            'linear-gradient(135deg, #2D6A4F 0%, #E8A598 100%)',
         }}
       >
         프로필 등록하기
@@ -2297,6 +2638,20 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
 )}
       <BottomNav active="applications" />
 
+      {interestPhotoProfile && (
+        <div className="fixed inset-0 z-50 bg-black">
+          <button
+            type="button"
+            onClick={() => setInterestPhotoProfile(null)}
+            className="absolute top-12 right-5 z-20 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.45)' }}
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+          <ApplicantPhotoCarousel profile={interestPhotoProfile} />
+        </div>
+      )}
+
       {selectedApp && selectedApp.applicant && (
         selectedApp.purpose === 'dating' ? (
           <DatingApplicantModal
@@ -2329,19 +2684,19 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
         const handleColor = isDatingReject ? 'rgba(201,99,122,0.25)' : 'rgba(26,92,53,0.2)';
         const titleColor = isDatingReject ? '#8B3A50' : '#1B4332';
         const descColor = isDatingReject ? 'rgba(139,58,80,0.55)' : 'rgba(27,67,50,0.5)';
-        const borderActive = isDatingReject ? '#C9637A' : '#2D6A4F';
-        const borderIdle = isDatingReject ? 'rgba(201,99,122,0.2)' : 'rgba(26,92,53,0.18)';
-        const shadowActive = isDatingReject ? 'rgba(201,99,122,0.12)' : 'rgba(26,92,53,0.1)';
+        const borderActive = isDatingReject ? '#2D6A4F' : '#2D6A4F';
+        const borderIdle = isDatingReject ? 'rgba(27,67,50,0.2)' : 'rgba(26,92,53,0.18)';
+        const shadowActive = isDatingReject ? 'rgba(27,67,50,0.12)' : 'rgba(26,92,53,0.1)';
         const hintColor = isDatingReject ? 'rgba(139,58,80,0.38)' : 'rgba(27,67,50,0.38)';
-        const cancelBg = isDatingReject ? 'rgba(201,99,122,0.06)' : 'rgba(26,92,53,0.06)';
+        const cancelBg = isDatingReject ? 'rgba(27,67,50,0.06)' : 'rgba(26,92,53,0.06)';
         const cancelColor = isDatingReject ? '#9E5068' : '#2D6A4F';
         const cancelBorder = isDatingReject ? 'rgba(201,99,122,0.18)' : 'rgba(26,92,53,0.16)';
         const btnGradient = isDatingReject
-          ? 'linear-gradient(135deg, #C9637A 0%, #D4849A 100%)'
+          ? 'linear-gradient(135deg, #2D6A4F 0%, #D4849A 100%)'
           : 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)';
         const btnShadow = isDatingReject ? 'rgba(201,99,122,0.35)' : 'rgba(26,92,53,0.3)';
         const footerBg = isDatingReject ? 'rgba(255,250,252,0.97)' : 'rgba(248,253,250,0.97)';
-        const footerBorder = isDatingReject ? 'rgba(201,99,122,0.12)' : 'rgba(26,92,53,0.12)';
+        const footerBorder = isDatingReject ? 'rgba(27,67,50,0.12)' : 'rgba(26,92,53,0.12)';
 
         return (
           <div
@@ -2559,24 +2914,24 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
         >
           <div
             className="w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl px-7 py-8 flex flex-col items-center gap-4"
-            style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(224,92,138,0.25)' }}
+            style={{ background: 'linear-gradient(135deg, #FFF0F5 0%, #FFE4EF 100%)', border: '1.5px solid rgba(45,106,79,0.22)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #F9A8C9 0%, #F472B6 100%)', boxShadow: '0 4px 20px rgba(244,114,182,0.4)' }}
+              style={{ background: 'linear-gradient(135deg, #74A88A 0%, #2D6A4F 100%)', boxShadow: '0 4px 20px rgba(244,114,182,0.4)' }}
             >
               <UtensilsCrossed className="w-7 h-7 text-white" />
             </div>
             <div className="text-center">
               <p className="text-lg font-bold mb-1" style={{ color: '#7C2D5E' }}>경기 후 약속,</p>
-              <p className="text-lg font-bold mb-2" style={{ color: '#C9547A' }}>미리 잡아봐요 :)</p>
+              <p className="text-lg font-bold mb-2" style={{ color: '#2D6A4F' }}>미리 잡아봐요 :)</p>
               <p className="text-sm" style={{ color: 'rgba(124,45,94,0.65)' }}>수락이 전달됐어요. 경기 후 함께해요!</p>
             </div>
             <button
               onClick={() => setShowMealAcceptPopup(false)}
               className="w-full py-3 rounded-2xl text-sm font-bold text-white transition active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #E05C8A 0%, #C9547A 100%)', boxShadow: '0 4px 16px rgba(224,92,138,0.4)' }}
+              style={{ background: 'linear-gradient(135deg, #2D6A4F 0%, #1B4332 100%)', boxShadow: '0 4px 16px rgba(224,92,138,0.4)' }}
             >
               좋아요!
             </button>

@@ -11,6 +11,9 @@ import TennisCourtCard from '../components/TennisCourtCard';
 import BrandLogo from '../components/BrandLogo';
 import SwipeCourtDeck from '../components/SwipeCourtDeck';
 import { useVisualViewport } from '../hooks/useVisualViewport';
+import PaywallLimitPopup from '../components/paywall/PaywallLimitPopup';
+import TicketPackPopup from '../components/paywall/TicketPackPopup';
+import SubscriptionPopup from '../components/paywall/SubscriptionPopup';
 
 type Tab = 'others' | 'mine';
 type CategoryTab = 'tennis' | 'dating';
@@ -87,8 +90,10 @@ const vpHeight = useVisualViewport();
   const [selectedAgeFilters, setSelectedAgeFilters] = useState<AgeFilter[]>(['all']);
   const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
 const [showPaywallPopup, setShowPaywallPopup] = useState(false);
-const [paywallStep, setPaywallStep] = useState<'first_limit' | 'ticket_pack' | 'out_of_tickets' | null>(null);
+const [paywallStep, setPaywallStep] = useState<'first_limit' | 'ticket_pack' | 'subscription_intro' | 'out_of_tickets' | null>(null);
+const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court');
   const [applyTargetCourt, setApplyTargetCourt] = useState<Court | null>(null);
+  const [interestedCourtIds, setInterestedCourtIds] = useState<Set<string>>(new Set());
   const [applyMessage, setApplyMessage] = useState('');
   const [applyLoading, setApplyLoading] = useState(false);
   const [applySuccessPurpose, setApplySuccessPurpose] = useState<'tennis' | 'dating' | null>(null);
@@ -323,9 +328,111 @@ useEffect(() => {
     localStorage.setItem('home_category_tab', tab);
   };
 
+  useEffect(() => {
+    if (!user) {
+      setInterestedCourtIds(new Set());
+      return;
+    }
+
+    const loadInterestedCourts = async () => {
+      const { data, error } = await supabase
+        .from('court_interests')
+        .select('court_id')
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('[InterestCourt] load failed:', error);
+        return;
+      }
+
+      setInterestedCourtIds(new Set((data || []).map((row) => row.court_id)));
+    };
+
+    loadInterestedCourts();
+  }, [user]);
+
   const openApplyPopup = (court: Court) => {
     setApplyTargetCourt(court);
     setApplyMessage('');
+  };
+
+  const handleInterestCourt = async (court: Court) => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    if (court.user_id === user.id) {
+      alert('내가 등록한 코트에는 관심 표시를 할 수 없습니다.');
+      return;
+    }
+
+    if (interestedCourtIds.has(court.id)) {
+      alert('이미 관심코트 등록되었어요');
+      return;
+    }
+
+    const { data: latestProfile } = await supabase
+      .from('profiles')
+      .select('free_interest_count, interest_ticket_count, is_subscribed')
+      .eq('user_id', user.id)
+      .single();
+
+    const isSubscribed = !!latestProfile?.is_subscribed;
+    const freeInterestCount = latestProfile?.free_interest_count ?? 0;
+    const interestTicketCount = latestProfile?.interest_ticket_count ?? 0;
+
+    let useFreeInterest = false;
+    let useInterestTicket = false;
+
+    if (!isSubscribed) {
+      if (freeInterestCount < 3) {
+        useFreeInterest = true;
+      } else if (interestTicketCount > 0) {
+        useInterestTicket = true;
+      } else {
+        setPaywallKind('interest');
+        setShowPaywallPopup(true);
+        setPaywallStep('first_limit');
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from('court_interests')
+      .insert({
+        court_id: court.id,
+        user_id: user.id,
+        host_id: court.user_id,
+      });
+
+    if (error) {
+      if (error.code === '23505') {
+        setInterestedCourtIds((prev) => new Set(prev).add(court.id));
+        alert('이미 관심코트 등록되었어요');
+      } else {
+        console.error('[InterestCourt] insert failed:', error);
+        alert('관심 코트 등록에 실패했습니다. 다시 시도해주세요.');
+      }
+      return;
+    }
+
+    if (!isSubscribed) {
+      if (useFreeInterest) {
+        await supabase
+          .from('profiles')
+          .update({ free_interest_count: freeInterestCount + 1 })
+          .eq('user_id', user.id);
+      } else if (useInterestTicket) {
+        await supabase
+          .from('profiles')
+          .update({ interest_ticket_count: Math.max(0, interestTicketCount - 1) })
+          .eq('user_id', user.id);
+      }
+    }
+
+    setInterestedCourtIds((prev) => new Set(prev).add(court.id));
+    alert('관심코트 등록되었어요');
   };
 
   const handleApplySubmit = async () => {
@@ -386,6 +493,7 @@ useEffect(() => {
           useTicket = true;
         } else {
           setApplyTargetCourt(null);
+          setPaywallKind('court');
           setShowPaywallPopup(true);
           setPaywallStep('first_limit');
           return;
@@ -518,14 +626,14 @@ if (!categoryTab) {
     : purposeMatchedCourts;
 
   const headerBg = isDating
-    ? 'linear-gradient(180deg, #3D6B4E 0%, #5A8A6E 100%)'
+    ? 'linear-gradient(180deg, #1F3D2A 0%, #3D6B4E 100%)'
     : '#1B4332';
 
   const pageBg = isDating
-    ? '#F0F4ED'
+    ? '#FAFAFA'
     : '#F0FDF4';
 
-  const activeTabColor = isDating ? '#5A8A6E' : '#4ADE80';
+  const activeTabColor = isDating ? '#1F3D2A' : '#4ADE80';
   const accentGold = '#C9A84C';
 
   return (
@@ -538,7 +646,7 @@ if (!categoryTab) {
   style={{
     background: headerBg,
     boxShadow: isDating
-      ? '0 4px 24px rgba(74,124,92,0.3)'
+      ? '0 4px 24px rgba(31,61,42,0.28)'
       : '0 4px 24px rgba(26,74,58,0.3)'
   }}
 >
@@ -559,6 +667,13 @@ if (!categoryTab) {
             </div>
           ) : (
             <>
+
+      <style>{`
+        textarea::placeholder {
+          color: #6B7280 !important;
+          opacity: 1 !important;
+        }
+      `}</style>
               <div className="flex items-center justify-between">
                 <BrandLogo size="sm" light={true} />
               </div>
@@ -601,7 +716,7 @@ if (!categoryTab) {
             onClick={() => handleCategoryTab('dating')}
             className="flex-1 py-2.5 rounded-2xl text-sm font-bold transition-all duration-200"
             style={categoryTab === 'dating'
-              ? { background: '#F7FAF4', color: '#2F5D46', border: '1.5px solid rgba(255,255,255,0.75)', backdropFilter: 'blur(8px)', boxShadow: '0 6px 16px rgba(35,69,54,0.10)' }
+              ? { background: '#FAFAFA', color: '#1F3D2A', border: '1.5px solid rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', boxShadow: '0 6px 16px rgba(15,33,24,0.12)' }
               : { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.72)', border: '1.5px solid rgba(255,255,255,0.18)' }
             }
           >
@@ -609,7 +724,7 @@ if (!categoryTab) {
           </button>
         </div>
 
-        <div className="flex" style={{ background: isDating ? 'rgba(240,244,237,0.78)' : 'transparent', borderTop: isDating ? '1px solid rgba(74,124,92,0.2)' : '1px solid rgba(201,168,76,0.2)' }}>
+        <div className="flex" style={{ background: isDating ? '#FAFAFA' : 'transparent', borderTop: isDating ? '1px solid rgba(31,61,42,0.12)' : '1px solid rgba(201,168,76,0.2)' }}>
           <button
             onClick={() => setActiveTab('others')}
             className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative"
@@ -664,15 +779,15 @@ if (!categoryTab) {
                       style={{
                         background: selected
                           ? isDating
-                            ? '#5A8A6E'
+                            ? '#1F3D2A'
                             : '#2D6A4F'
                           : isDating
-                            ? 'rgba(74,124,92,0.1)'
+                            ? '#FFFFFF'
                             : 'rgba(45,106,79,0.1)',
                         color: selected
                           ? '#fff'
                           : isDating
-                            ? '#4A7C5C'
+                            ? '#1F3D2A'
                             : '#2D6A4F',
                         border: selected
                           ? '1px solid transparent'
@@ -723,6 +838,8 @@ if (!categoryTab) {
               <SwipeCourtDeck
                 courts={filteredCourts}
                 onApply={(court) => openApplyPopup(court)}
+                onInterest={(court) => handleInterestCourt(court)}
+                isInterested={(court) => interestedCourtIds.has(court.id)}
                 isOwnerMode={activeTab === 'mine'}
                 onEdit={(court) => handleEdit(court)}
                 onDelete={(court) => handleDelete(court.id)}
@@ -754,153 +871,30 @@ if (!categoryTab) {
         />
       )}
 {showPaywallPopup && paywallStep === 'first_limit' && (
-  <div
-    className="fixed inset-0 z-[9999] flex items-end justify-center"
-    style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
-    onClick={() => setShowPaywallPopup(false)}
-  >
-    <div
-      className="w-full max-w-md rounded-t-3xl shadow-2xl flex flex-col"
-      style={{
-        background: 'linear-gradient(135deg, #F0F4ED 0%, #E3EBDD 100%)',
-        maxHeight: '85dvh'
-      }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* 상단 */}
-      <div className="px-6 pt-6 pb-2 text-center">
-        <div className="w-10 h-1 rounded-full mx-auto mb-5 bg-green-200" />
-        <p className="text-lg font-bold mb-2 text-[#4A1D1F]">
-          🎾 더 많은 매칭을 원하세요?
-        </p>
-        <p className="text-sm text-[#7C2D2F]">
-          신청 횟수를 모두 사용했어요.<br />
-          구독하거나 신청권을 구매해 계속 만나보세요!
-        </p>
-      </div>
+        <PaywallLimitPopup
+          kind={paywallKind}
+          onBuyTicket={() => setPaywallStep('ticket_pack')}
+          onSubscribe={() => setPaywallStep('subscription_intro')}
+          onClose={() => setShowPaywallPopup(false)}
+        />
+      )}
 
-      {/* 구독 카드 */}
-      <div className="px-6 mt-4">
-        <div
-          className="rounded-2xl p-4"
-          style={{
-            background: '#fff',
-            border: '1px solid rgba(74,124,92,0.2)',
-            boxShadow: '0 6px 20px rgba(74,124,92,0.15)'
-          }}
-        >
-          <p className="font-bold text-sm mb-2 text-[#4A1D1F]">💎 월 구독</p>
-          <p className="text-base font-bold mb-2">₩14,900 / 월</p>
-          <p className="text-xs text-gray-500 mb-3">
-            • 무제한 코트 신청<br />
-            • 우선 매칭<br />
-            • 언제든 취소 가능
-          </p>
+      {showPaywallPopup && paywallStep === 'ticket_pack' && (
+        <TicketPackPopup
+          kind={paywallKind}
+          onPurchase={handlePurchase}
+          onBack={() => setPaywallStep('first_limit')}
+          onClose={() => setShowPaywallPopup(false)}
+        />
+      )}
 
-         <button
-  onClick={() => handlePurchase('dating_monthly_premium')}
-  className="w-full py-3 rounded-xl text-white font-semibold"
-  style={{
-    background: 'linear-gradient(135deg, #4A7C5C 0%, #5A8A6E 100%)'
-  }}
->
-  지금 구독 시작
-</button>
-        </div>
-      </div>
-
-      {/* 또는 */}
-      <div className="text-center text-xs text-gray-400 mt-4">또는</div>
-
-      {/* 신청권 */}
-      <div className="px-6 mt-3">
-        <button
-          onClick={() => setPaywallStep('ticket_pack')}
-          className="w-full py-3 rounded-xl font-semibold"
-          style={{
-            background: '#fff',
-            border: '1px solid rgba(0,0,0,0.1)'
-          }}
-        >
-          💳 신청권만 구매하기
-        </button>
-      </div>
-
-      {/* 나중에 */}
-      <div className="px-6 mt-3 mb-6">
-        <button
-          onClick={() => setShowPaywallPopup(false)}
-          className="w-full py-2 text-sm text-gray-400"
-        >
-          나중에
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-{showPaywallPopup && paywallStep === 'ticket_pack' && (
-  <div
-    className="fixed inset-0 z-[9999] flex items-end justify-center"
-    style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
-    onClick={() => setShowPaywallPopup(false)}
-  >
-    <div
-      className="w-full max-w-md rounded-t-3xl shadow-2xl flex flex-col"
-      style={{ background: '#fff', maxHeight: '85dvh' }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="px-6 pt-6 pb-2 text-center">
-        <div className="w-10 h-1 rounded-full mx-auto mb-5 bg-gray-200" />
-        <p className="text-lg font-bold mb-2">
-          🎾 신청권 팩
-        </p>
-        <p className="text-sm text-gray-500">
-          원하는 만큼 신청할 수 있어요.
-        </p>
-      </div>
-
-      <div className="px-6 mt-4">
-        <div className="rounded-2xl border p-4">
-          <p className="font-semibold mb-1">신청권 5개</p>
-          <p className="text-lg font-bold mb-1">₩4,900</p>
-          <p className="text-xs text-gray-400 mb-3">(1개당 ₩980)</p>
-
-         <button
-  onClick={() => handlePurchase('tennis_meet_ticket')}
-  className="w-full py-3 rounded-xl bg-black text-white"
->
-  지금 구매하기
-</button>
-        </div>
-      </div>
-
-      <div className="px-6 mt-4">
-        <div className="rounded-2xl border p-4">
-          <p className="font-semibold mb-1">신청권 10개 ⭐ 인기</p>
-          <p className="text-lg font-bold mb-1">₩8,900</p>
-          <p className="text-xs text-gray-400 mb-3">(11% 할인)</p>
-
-          <button
-  onClick={() => handlePurchase('tennis_meet_ticket_10')}
-  className="w-full py-3 rounded-xl bg-black text-white"
->
-  지금 구매하기
-</button>
-        </div>
-      </div>
-
-      <div className="px-6 mt-4 mb-6">
-        <button
-          onClick={() => setPaywallStep('first_limit')}
-          className="w-full py-2 text-sm text-gray-400"
-        >
-          뒤로 가기
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      {showPaywallPopup && paywallStep === 'subscription_intro' && (
+        <SubscriptionPopup
+          onPurchase={() => handlePurchase('dating_monthly_premium')}
+          onBack={() => setPaywallStep('first_limit')}
+          onClose={() => setShowPaywallPopup(false)}
+        />
+      )}
 
       {deleteConfirmId && (
         <div
@@ -968,7 +962,7 @@ if (!categoryTab) {
                 <textarea
                   value={applyMessage}
                   onChange={(e) => setApplyMessage(e.target.value)}
-                  placeholder="예) 안녕하세요! 같이 테니스 치고 싶어요 🎾" 
+                  placeholder="예) 안녕하세요! 같이 테니스 치고 싶어요 🎾"
                   rows={4}
                   className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none transition"
                   style={{

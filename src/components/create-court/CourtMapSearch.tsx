@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Search, MapPin } from 'lucide-react';
+import { CapacitorHttp } from '@capacitor/core';
 
 interface CourtLocation {
   name: string;
@@ -19,132 +20,269 @@ interface CourtMapSearchProps {
 
 declare global {
   interface Window {
-    google: typeof google;
+    naver?: any;
+    __naverMapPromise?: Promise<void>;
+    __initNaverCourtMap?: () => void;
+    navermap_authFailure?: () => void;
   }
 }
+
+const defaultCenter = { lat: 37.5665, lng: 126.978 };
+
+function buildNaverStaticMapUrl(lat: number, lng: number, showMarker: boolean) {
+  const params = new URLSearchParams({
+    w: '640',
+    h: '320',
+    center: `${lng},${lat}`,
+    level: '15',
+    scale: '2',
+    format: 'png',
+  });
+
+  if (showMarker) {
+    params.set('markers', `type:d|size:mid|pos:${lng} ${lat}`);
+  }
+
+  return `https://maps.apigw.ntruss.com/map-static/v2/raster-cors?${params.toString()}`;
+}
+
+function loadNaverMapsScript() {
+  return Promise.resolve();
+}
+
 
 export default function CourtMapSearch({
   selected,
   onSelect,
+  markerColor,
   title,
+  searchSuffix = '테니스장',
 }: CourtMapSearchProps) {
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState<CourtLocation[]>([]);
+  const [staticMapUrl, setStaticMapUrl] = useState('');
+
   const mapDivRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const serviceRef = useRef<google.maps.places.PlacesService | null>(null);
+  const mapRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const defaultCenter = { lat: 37.5665, lng: 126.978 };
-
-  useEffect(() => {
-    let cancelled = false;
-    let tries = 0;
-
-    const initMap = () => {
-      if (cancelled) return;
-      if (!mapDivRef.current) return;
-
-      if (!window.google?.maps?.Map || !window.google?.maps?.places?.PlacesService) {
-        tries += 1;
-        if (tries <= 30) {
-          setTimeout(initMap, 300);
-        } else {
-          console.error('[CourtMapSearch] Google Maps 로딩 실패');
-        }
-        return;
-      }
-
-      const map = new window.google.maps.Map(mapDivRef.current, {
-        center: defaultCenter,
-        zoom: 13,
-        disableDefaultUI: true,
-        zoomControl: true,
-        styles: [
-          { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-        ],
-      });
-
-      mapRef.current = map;
-      serviceRef.current = new window.google.maps.places.PlacesService(map);
-      console.log('[CourtMapSearch] Google Maps 초기화 완료');
-    };
-
-    initMap();
-
-    return () => {
-      cancelled = true;
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+  const keywordRef = useRef('');
+  const onSelectRef = useRef(onSelect);
 
   useEffect(() => {
-    if (!selected || !mapRef.current) return;
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
 
-    mapRef.current.panTo({ lat: selected.lat, lng: selected.lng });
-    mapRef.current.setZoom(15);
-    placeMarker(selected, mapRef.current);
-  }, [selected]);
+  const placeMarker = useCallback((court: CourtLocation, map = mapRef.current) => {
+    if (!window.naver?.maps || !map) return;
 
-  const placeMarker = (court: CourtLocation, map: google.maps.Map) => {
+    const naver = window.naver;
+    const position = new naver.maps.LatLng(court.lat, court.lng);
+
     if (markerRef.current) {
       markerRef.current.setMap(null);
     }
 
-    markerRef.current = new window.google.maps.Marker({
+    markerRef.current = new naver.maps.Marker({
       map,
-      position: { lat: court.lat, lng: court.lng },
+      position,
       icon: {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        scale: 10,
-        fillColor: '#1B4332',
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 2,
+        content: `
+          <div style="
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            background: ${markerColor || '#1B4332'};
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.22);
+          "></div>
+        `,
+        anchor: new naver.maps.Point(11, 11),
       },
     });
-  };
+  }, [markerColor]);
 
-  const searchPlaces = useCallback((kw: string) => {
-    if (!kw.trim()) return;
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+  }, []);
 
-    if (!serviceRef.current) {
-      console.warn('[CourtMapSearch] PlacesService 준비 전 → 검색 재시도');
-      setTimeout(() => searchPlaces(kw), 500);
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_NAVER_MAP_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_NAVER_MAP_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      setStaticMapUrl('');
       return;
     }
 
-    serviceRef.current.textSearch(
-      { query: `${kw} 테니스장`, region: 'kr' },
-      (res, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && res) {
-          const filtered = res.filter((r) =>
-            (r.name ?? '').includes('테니스') ||
-            (r.name ?? '').toLowerCase().includes('tennis') ||
-            (r.types ?? []).includes('stadium') ||
-            (r.types ?? []).includes('sports_complex')
-          );
+    const lat = selected?.lat ?? defaultCenter.lat;
+    const lng = selected?.lng ?? defaultCenter.lng;
+    const url = buildNaverStaticMapUrl(lat, lng, !!selected);
 
-          const mapped: CourtLocation[] = filtered.slice(0, 8).map((r) => ({
-            name: r.name ?? '',
-            address: r.formatted_address ?? r.vicinity ?? '',
-            lat: r.geometry?.location?.lat() ?? defaultCenter.lat,
-            lng: r.geometry?.location?.lng() ?? defaultCenter.lng,
-            placeId: r.place_id,
-          }));
+    let cancelled = false;
+    let objectUrl = '';
 
-          setResults(mapped);
-        } else {
-          console.warn('[CourtMapSearch] 검색 실패 status:', status);
-          setResults([]);
+    fetch(url, {
+      headers: {
+        'x-ncp-apigw-api-key-id': clientId,
+        'x-ncp-apigw-api-key': clientSecret,
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const text = await response.text().catch(() => '');
+          throw new Error(`Static Map failed ${response.status} ${text}`);
         }
+
+        return response.blob();
+      })
+      .then((blob) => {
+        if (cancelled) return;
+
+        objectUrl = URL.createObjectURL(blob);
+        setStaticMapUrl(objectUrl);
+      })
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('[CourtMapSearch] Static Map load failed:', message);
+        setStaticMapUrl('');
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [selected?.lat, selected?.lng, selected?.placeId]);
+
+  useEffect(() => {
+    if (!selected || !mapRef.current || !window.naver?.maps) return;
+
+    const naver = window.naver;
+    const position = new naver.maps.LatLng(selected.lat, selected.lng);
+
+    mapRef.current.setCenter(position);
+    mapRef.current.setZoom(15);
+    placeMarker(selected, mapRef.current);
+  }, [selected, placeMarker]);
+
+  const mapGeocodeResults = (kw: string, addresses: any[]): CourtLocation[] => {
+    return addresses.slice(0, 8).map((item, index) => {
+      const lat = Number(item.y ?? item.point?.y ?? defaultCenter.lat);
+      const lng = Number(item.x ?? item.point?.x ?? defaultCenter.lng);
+      const name = String(item.name || item.title || kw).trim();
+      const address = String(item.roadAddress || item.jibunAddress || item.address || '').trim();
+
+      return {
+        name,
+        address,
+        lat,
+        lng,
+        placeId: `naver-local-${lng}-${lat}-${index}`,
+      };
+    });
+  };
+
+  const runGeocode = useCallback(async (kw: string, queries: string[], index = 0) => {
+    const clientId = import.meta.env.VITE_NAVER_LOCAL_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_NAVER_LOCAL_CLIENT_SECRET;
+    const query = queries[index];
+
+    const cleanText = (value: unknown) => String(value ?? '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .trim();
+
+    const parseNaverCoord = (value: unknown) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return 0;
+      return Math.abs(n) > 1000 ? n / 10000000 : n;
+    };
+
+    if (!clientId || !clientSecret) {
+      console.error('[CourtMapSearch] Naver Local Search key missing');
+      setResults([]);
+      return;
+    }
+
+    try {
+      const response = await CapacitorHttp.get({
+        url: 'https://openapi.naver.com/v1/search/local.json',
+        headers: {
+          'X-Naver-Client-Id': clientId,
+          'X-Naver-Client-Secret': clientSecret,
+          Accept: 'application/json',
+        },
+        params: {
+          query,
+          display: '10',
+          start: '1',
+        },
+      });
+
+      const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+      const items = data?.items ?? [];
+
+      const addresses = items
+        .map((item: any) => {
+          const x = parseNaverCoord(item.mapx);
+          const y = parseNaverCoord(item.mapy);
+          const title = cleanText(item.title);
+          const roadAddress = cleanText(item.roadAddress || item.address || title);
+          const jibunAddress = cleanText(item.address || item.roadAddress || title);
+
+          if (!x || !y) return null;
+
+          return {
+            title,
+            name: title,
+            roadAddress,
+            jibunAddress,
+            englishAddress: '',
+            x: String(x),
+            y: String(y),
+          };
+        })
+        .filter(Boolean);
+
+      if (response.status >= 200 && response.status < 300 && addresses.length > 0) {
+        setResults(mapGeocodeResults(kw, addresses));
+        return;
       }
-    );
+
+      if (index + 1 < queries.length) {
+        await runGeocode(kw, queries, index + 1);
+        return;
+      }
+
+      console.warn('[CourtMapSearch] Naver Local Search no result:', query, response.status, data?.errorMessage ?? '');
+      setResults([]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[CourtMapSearch] Naver Local Search failed:', message);
+
+      if (index + 1 < queries.length) {
+        await runGeocode(kw, queries, index + 1);
+        return;
+      }
+
+      setResults([]);
+    }
   }, []);
+
+  const searchPlaces = useCallback((kw: string) => {
+    const clean = kw.trim();
+    if (!clean) return;
+
+    runGeocode(clean, [`${clean} ${searchSuffix}`, clean]);
+  }, [runGeocode, searchSuffix]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+
+    keywordRef.current = val;
     setKeyword(val);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -160,10 +298,14 @@ export default function CourtMapSearch({
   const handleSelect = (court: CourtLocation) => {
     onSelect(court);
     setKeyword(court.name);
+    keywordRef.current = court.name;
     setResults([]);
 
-    if (mapRef.current) {
-      mapRef.current.panTo({ lat: court.lat, lng: court.lng });
+    if (mapRef.current && window.naver?.maps) {
+      const naver = window.naver;
+      const position = new naver.maps.LatLng(court.lat, court.lng);
+
+      mapRef.current.setCenter(position);
       mapRef.current.setZoom(15);
       placeMarker(court, mapRef.current);
     }
@@ -186,9 +328,23 @@ export default function CourtMapSearch({
         />
       </div>
 
-      <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-        <div ref={mapDivRef} style={{ width: '100%', height: '220px' }} />
+      <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
+        {staticMapUrl ? (
+          <img
+            src={staticMapUrl}
+            alt={selected ? `${selected.name} 위치 지도` : '기본 지도'}
+            className="w-full h-[220px] object-cover"
+          />
+        ) : (
+          <div className="w-full h-[220px] flex items-center justify-center text-sm text-gray-400">
+            지도 설정을 확인해주세요.
+          </div>
+        )}
       </div>
+
+      <p className="text-[11px] text-gray-400 px-1">
+        검색 결과에서 코트를 선택하면 지도에 위치가 표시됩니다.
+      </p>
 
       {results.length > 0 && (
         <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -204,7 +360,7 @@ export default function CourtMapSearch({
               }`}
             >
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-lg">
-                🎾
+                ��
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{r.name}</p>

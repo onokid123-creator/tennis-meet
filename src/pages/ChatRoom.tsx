@@ -2925,8 +2925,14 @@ if (receiverProfile?.fcm_token) {
  <div
   className="fixed inset-0 flex flex-col"
   style={{
-    height: `${Math.floor(Math.max(0, vpHeight - 8))}px`,
-    bottom: 'var(--android-nav-bottom, 0px)',
+    // Android already resizes the WebView when the keyboard opens.
+    // Do not apply visualViewport height again on Android.
+    height: Capacitor.getPlatform() === 'android'
+      ? '100dvh'
+      : `${Math.floor(Math.max(0, vpHeight - 8))}px`,
+    bottom: Capacitor.getPlatform() === 'android'
+      ? 0
+      : 'var(--android-nav-bottom, 0px)',
     width: '100vw',
     overflow: 'hidden',
     ...bgStyle,

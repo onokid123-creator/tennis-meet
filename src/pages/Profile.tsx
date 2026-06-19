@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { purchaseProduct, openSubscriptionManager } from '../lib/billing';
 import { Upload, LogOut, X, ChevronLeft, ChevronRight, Plus, Camera, Star, MessageSquare } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import { useVisualViewport } from '../hooks/useVisualViewport';
-import PaywallPopup from '../components/PaywallPopup';
+import TicketPackPopup from '../components/paywall/TicketPackPopup';
+import SubscriptionPopup from '../components/paywall/SubscriptionPopup';
 
 function TennisDefaultProfileCard() {
   return (
@@ -66,6 +69,7 @@ type ProfileTab = 'dating' | 'tennis';
 
 export default function Profile() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, signOut, updateProfile, loading: authLoading } = useAuth();
   const vpHeight = useVisualViewport();
  const getInitialProfileTab = (): ProfileTab => {
@@ -146,7 +150,8 @@ const [profileTab, setProfileTab] =
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 const [showPaywallPopup, setShowPaywallPopup] = useState(false);
-const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_intro' | 'ticket_pack' | 'out_of_tickets' | null>(null); 
+const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_intro' | 'ticket_pack' | 'out_of_tickets' | null>(null);
+const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court'); 
 
   useEffect(() => {
     if (!isNameEditing) {
@@ -558,7 +563,7 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('free_meeting_count, ticket_count, is_subscribed')
+      .select('free_meeting_count, ticket_count, free_interest_count, interest_ticket_count, is_subscribed')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -567,9 +572,21 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
     updateProfile({
       free_meeting_count: data.free_meeting_count ?? 0,
       ticket_count: data.ticket_count ?? 0,
+      free_interest_count: data.free_interest_count ?? 0,
+      interest_ticket_count: data.interest_ticket_count ?? 0,
       is_subscribed: data.is_subscribed ?? false,
     });
   }, [user?.id, updateProfile]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('paywall') === 'ticket') {
+      setProfileTab('dating');
+      setShowPaywallPopup(true);
+      setPaywallStep('ticket_pack');
+      navigate('/profile', { replace: true });
+    }
+  }, [location.search, navigate]);
 
   useEffect(() => {
     refreshTicketState();
@@ -589,10 +606,61 @@ const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_int
     };
   }, [refreshTicketState]);
 
+const handleOpenSubscriptionManager = async () => {
+  const platform = Capacitor.getPlatform();
+
+  try {
+    await openSubscriptionManager();
+
+    // Some debug/sideload Android builds do not open the billing manager.
+    // Use a platform fallback so the button always has a visible action.
+    setTimeout(() => {
+      if (platform === 'android') {
+        window.open('https://play.google.com/store/account/subscriptions?package=com.tennismeet.app', '_blank');
+        return;
+      }
+
+      if (platform === 'ios') {
+        window.open('https://apps.apple.com/account/subscriptions', '_blank');
+        return;
+      }
+    }, 300);
+  } catch (error) {
+    console.error('[Profile] open subscription manager failed:', error);
+
+    if (platform === 'android') {
+      window.open('https://play.google.com/store/account/subscriptions?package=com.tennismeet.app', '_blank');
+      return;
+    }
+
+    if (platform === 'ios') {
+      window.open('https://apps.apple.com/account/subscriptions', '_blank');
+      return;
+    }
+
+    alert('구독 관리 화면을 열 수 없습니다.');
+  }
+};
+
+const handlePurchase = async (productId: string) => {
+  try {
+    await purchaseProduct(productId);
+  } catch (error: any) {
+    console.error('[Profile] purchase failed:', error);
+    alert(error?.message || '결제 요청에 실패했습니다.');
+  }
+};
+
 const usedFreeMeetings = profile?.free_meeting_count ?? 0;
 const freeRemainingTickets = Math.max(0, 3 - usedFreeMeetings);
 const paidTickets = profile?.ticket_count ?? 0;
 const remainingTickets = freeRemainingTickets + paidTickets;
+
+const usedFreeInterests = profile?.free_interest_count ?? 0;
+const freeRemainingInterestTickets = Math.max(0, 3 - usedFreeInterests);
+const paidInterestTickets = profile?.interest_ticket_count ?? 0;
+const remainingInterestTickets = freeRemainingInterestTickets + paidInterestTickets;
+
 const isSubscribed = profile?.is_subscribed ?? false;
   if (!profileLoaded) return <ProfileSkeleton />;
 
@@ -1066,47 +1134,81 @@ const isSubscribed = profile?.is_subscribed ?? false;
   <>
 {/* 🎟️ 내 이용권 */}
 <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
-  <h3 className="text-sm font-bold text-gray-800 mb-3">내 이용권</h3>
+  <h3 className="text-sm font-bold text-gray-800 mb-4">내 이용권</h3>
 
-  <div className="flex items-center justify-between mb-2">
-    <span className="text-sm text-gray-500">남은 신청권</span>
-    <span className="text-lg font-bold text-[#2D6A4F]">
-      {remainingTickets}개
-    </span>
+  <div
+    className="rounded-2xl px-4 py-4 mb-3 flex items-center justify-between"
+    style={{ background: '#EEF5EF' }}
+  >
+    <div>
+      <p className="text-sm font-bold mb-1" style={{ color: '#2D6A4F' }}>
+        🎾 코트 신청권
+      </p>
+      <p className="text-sm text-gray-500">남은 횟수</p>
+    </div>
+    <p className="text-3xl font-extrabold" style={{ color: '#1B4332' }}>
+      {isSubscribed ? '∞' : remainingTickets}
+      {!isSubscribed && <span className="text-base font-bold ml-0.5">개</span>}
+    </p>
   </div>
 
-  <div className="flex items-center justify-between mb-4">
-    <span className="text-sm text-gray-500">구독 상태</span>
-    <span
-      className={`text-sm font-semibold ${
-        isSubscribed ? 'text-[#C9A84C]' : 'text-gray-400'
-      }`}
-    >
+  <div
+    className="rounded-2xl px-4 py-4 mb-3 flex items-center justify-between"
+    style={{ background: '#FFF4D6' }}
+  >
+    <div>
+      <p className="text-sm font-bold mb-1" style={{ color: '#7A5A14' }}>
+        💛 관심 코트 신청권
+      </p>
+      <p className="text-sm text-gray-500">남은 횟수</p>
+    </div>
+    <p className="text-3xl font-extrabold" style={{ color: '#7A5A14' }}>
+      {isSubscribed ? '∞' : remainingInterestTickets}
+      {!isSubscribed && <span className="text-base font-bold ml-0.5">개</span>}
+    </p>
+  </div>
+
+  <div className="rounded-2xl border px-4 py-4 mb-4">
+    <p className="text-sm font-bold mb-1 text-gray-400">💎 구독 상태</p>
+    <p className="text-sm font-bold text-gray-900">
       {isSubscribed ? '구독 중' : '미구독'}
-    </span>
+    </p>
   </div>
 
-  <div className="grid grid-cols-2 gap-2">
+  <div className="grid grid-cols-3 gap-2">
     <button
-   onClick={() => {
-  setShowPaywallPopup(true);
-  setPaywallStep('ticket_pack');
-}}
-      className="w-full py-3 rounded-xl font-semibold text-sm text-white transition"
-      style={{ backgroundColor: '#2D6A4F' }}
+      onClick={() => {
+        setPaywallKind('court');
+        setShowPaywallPopup(true);
+        setPaywallStep('ticket_pack');
+      }}
+      className="w-full py-3 rounded-xl font-bold text-xs text-white transition active:opacity-80"
+      style={{ backgroundColor: '#1B4332' }}
     >
-      신청권 구매
+      코트 신청권<br />구매
     </button>
 
     <button
       onClick={() => {
-  setShowPaywallPopup(true);
-  setPaywallStep('subscription_intro');
-}}
-      className="w-full py-3 rounded-xl font-semibold text-sm transition border"
-      style={{ borderColor: '#C9A84C', color: '#C9A84C', backgroundColor: 'white' }}
+        setPaywallKind('interest');
+        setShowPaywallPopup(true);
+        setPaywallStep('ticket_pack');
+      }}
+      className="w-full py-3 rounded-xl font-bold text-xs text-white transition active:opacity-80"
+      style={{ backgroundColor: '#C9A84C' }}
     >
-      구독 시작
+      관심 신청권<br />구매
+    </button>
+
+    <button
+      onClick={() => {
+        setShowPaywallPopup(true);
+        setPaywallStep('subscription_intro');
+      }}
+      className="w-full py-3 rounded-xl font-bold text-xs transition border active:opacity-80"
+      style={{ borderColor: '#1B4332', color: '#1B4332', backgroundColor: 'white' }}
+    >
+      구독<br />시작
     </button>
   </div>
 </div>
@@ -1352,9 +1454,7 @@ const isSubscribed = profile?.is_subscribed ?? false;
 </button>
 
 <button
-  onClick={() => {
-    window.open('https://apps.apple.com/account/subscriptions', '_blank');
-  }}
+  onClick={handleOpenSubscriptionManager}
   className="w-full py-3 rounded-lg font-medium transition flex items-center justify-center gap-2 mb-2"
   style={{ backgroundColor: '#E5E7EB', color: '#374151' }}
   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#D1D5DB')}
@@ -1384,12 +1484,22 @@ const isSubscribed = profile?.is_subscribed ?? false;
       </div>
 
       <BottomNav active="profile" />
-<PaywallPopup
-  show={showPaywallPopup}
-  step={paywallStep}
-  onClose={() => setShowPaywallPopup(false)}
-  onChangeStep={setPaywallStep}
-/>
+{showPaywallPopup && paywallStep === 'ticket_pack' && (
+  <TicketPackPopup
+    kind={paywallKind}
+    onPurchase={handlePurchase}
+    onBack={() => setShowPaywallPopup(false)}
+    onClose={() => setShowPaywallPopup(false)}
+  />
+)}
+
+{showPaywallPopup && paywallStep === 'subscription_intro' && (
+  <SubscriptionPopup
+    onPurchase={() => handlePurchase('dating_monthly_premium')}
+    onBack={() => setShowPaywallPopup(false)}
+    onClose={() => setShowPaywallPopup(false)}
+  />
+)}
       {showDeleteConfirm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"

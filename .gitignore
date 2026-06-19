@@ -40,3 +40,11 @@ android/key.properties
 android/app/*.jks
 
 ios_backup_*/
+
+# Local env
+.env
+.env.local
+
+.env.local
+.env.local.save
+backups/

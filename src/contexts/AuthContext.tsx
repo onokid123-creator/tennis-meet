@@ -33,7 +33,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const PROFILE_FIELDS =
-  'user_id,id,name,age,gender,purpose,profile_completed,photo_url,photo_urls,experience,tennis_style,bio,mbti,height,tennis_photo_url,phone_number,ticket_count,is_subscribed,free_meeting_count,fcm_token';
+  'user_id,id,name,age,gender,purpose,profile_completed,photo_url,photo_urls,experience,tennis_style,bio,mbti,height,tennis_photo_url,phone_number,ticket_count,is_subscribed,free_meeting_count,free_interest_count,interest_ticket_count,fcm_token';
 
 // ── 프로필 캐시 (30초 TTL) ────────────────────────────
 const profileCache: { [userId: string]: { data: Profile; ts: number } } = {};

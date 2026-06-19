@@ -17,6 +17,11 @@ export interface Profile {
   tennis_style?: string;
   profile_completed: boolean;
   reservation_mode?: 'confirmed' | 'planning' | null;
+  free_meeting_count?: number;
+  ticket_count?: number;
+  free_interest_count?: number;
+  interest_ticket_count?: number;
+  is_subscribed?: boolean;
   created_at: string;
 }
 
