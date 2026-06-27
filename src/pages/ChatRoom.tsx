@@ -1327,7 +1327,7 @@ useEffect(() => {
   return () => clearTimeout(timer);
 }, [updateMyLastRead, messages.length]); 
   useEffect(() => { if (!loading && messages.length > 0) scrollToBottom('instant'); }, [loading]);
-  useEffect(() => { if (messages.length > 0) scrollToBottom('smooth'); }, [messages.length]);
+  useEffect(() => { if (messages.length > 0) scrollToBottom('auto'); }, [messages.length, scrollToBottom]);
 // vpHeight 변화에 반응하던 useEffect 제거됨
 // (키보드 열림 → vpHeight 변경 → 스크롤 → 또 vpHeight 변경 무한루프가 깜빡임 원인)
 // keyboardDidShow에서 한 번만 스크롤한다
