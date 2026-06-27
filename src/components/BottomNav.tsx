@@ -15,6 +15,7 @@ export default function BottomNav({ active }: BottomNavProps) {
   const [unreadChats, setUnreadChats] = useState(0);
   const [pendingApps, setPendingApps] = useState(0);
   const locationRef = useRef(location.pathname);
+  const fetchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     locationRef.current = location.pathname;
@@ -31,7 +32,8 @@ export default function BottomNav({ active }: BottomNavProps) {
     const { data: participantRows } = await supabase
       .from('chat_participants')
       .select('chat_id')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .eq('is_active', true);
 
     const chatIds = (participantRows ?? []).map((r) => r.chat_id);
 
@@ -56,28 +58,28 @@ export default function BottomNav({ active }: BottomNavProps) {
 
     const { count: appsCount } = await supabase
       .from('applications')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('owner_id', user.id)
       .eq('status', 'pending')
       .eq('receiver_deleted', false);
 
     const { count: mealReceivedCount } = await supabase
       .from('meal_proposals')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('receiver_id', user.id)
       .eq('status', 'pending')
       .eq('receiver_deleted', false);
 
     const { count: mealResultCount } = await supabase
       .from('meal_proposals')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('sender_id', user.id)
       .eq('sender_seen', false)
       .in('status', ['accepted', 'rejected']);
 
     const { count: acceptedNotifCount } = await supabase
       .from('applications')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('applicant_id', user.id)
       .eq('status', 'accepted')
       .eq('applicant_notified', false)
@@ -89,12 +91,35 @@ export default function BottomNav({ active }: BottomNavProps) {
 
   useEffect(() => {
     fetchUnreadCounts(activeChatId);
-    const interval = setInterval(() => fetchUnreadCounts(activeChatId), 3000);
-    return () => clearInterval(interval);
+
+    // Realtime이 기본이고, interval은 모바일 WebView에서 realtime이 잠시 죽는 경우를 위한 fallback.
+    const interval = setInterval(() => fetchUnreadCounts(activeChatId), 30000);
+
+    const handleVisible = () => {
+      if (document.visibilityState === 'visible') {
+        fetchUnreadCounts(activeChatId);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisible);
+    };
   }, [user, activeChatId, fetchUnreadCounts]);
 
   useEffect(() => {
     if (!user) return;
+
+    const scheduleFetchUnreadCounts = () => {
+      if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+      fetchDebounceRef.current = setTimeout(() => {
+        const currentActiveChatId = locationRef.current.match(/^\/chat\/(.+)$/)?.[1] ?? null;
+        fetchUnreadCounts(currentActiveChatId);
+      }, 600);
+    };
+
     const messagesChannel = supabase
       .channel(`bottomnav_messages_${user.id}`)
       .on(
@@ -109,7 +134,7 @@ export default function BottomNav({ active }: BottomNavProps) {
           if (msg.sender_id !== user.id) {
             const currentActiveChatId = locationRef.current.match(/^\/chat\/(.+)$/)?.[1] ?? null;
             if (msg.chat_id !== currentActiveChatId) {
-              fetchUnreadCounts(currentActiveChatId);
+              scheduleFetchUnreadCounts();
             }
           }
         }
@@ -122,8 +147,7 @@ export default function BottomNav({ active }: BottomNavProps) {
           table: 'messages',
         },
         () => {
-          const currentActiveChatId = locationRef.current.match(/^\/chat\/(.+)$/)?.[1] ?? null;
-          fetchUnreadCounts(currentActiveChatId);
+          scheduleFetchUnreadCounts();
         }
       )
       .subscribe();
@@ -138,8 +162,7 @@ export default function BottomNav({ active }: BottomNavProps) {
           table: 'applications',
         },
         () => {
-          const currentActiveChatId = locationRef.current.match(/^\/chat\/(.+)$/)?.[1] ?? null;
-          fetchUnreadCounts(currentActiveChatId);
+          scheduleFetchUnreadCounts();
         }
       )
       .subscribe();
@@ -154,13 +177,13 @@ export default function BottomNav({ active }: BottomNavProps) {
           table: 'meal_proposals',
         },
         () => {
-          const currentActiveChatId = locationRef.current.match(/^\/chat\/(.+)$/)?.[1] ?? null;
-          fetchUnreadCounts(currentActiveChatId);
+          scheduleFetchUnreadCounts();
         }
       )
       .subscribe();
 
     return () => {
+      if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(appsChannel);
       supabase.removeChannel(mealChannel);

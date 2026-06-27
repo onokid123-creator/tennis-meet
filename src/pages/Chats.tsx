@@ -419,30 +419,42 @@ if (groupParticipantRowsError) {
           .order('created_at', { ascending: false });
 
         if (groupChatsData && groupChatsData.length > 0) {
-          const groupChatsWithMessages = await Promise.all(
-            groupChatsData.map(async (gc) => {
-              const [lastMsgResult, unreadResult] = await Promise.all([
-                supabase
-                  .from('court_group_chat_messages')
-                  .select('id, content, created_at, sender_id, type')
-                  .eq('group_chat_id', gc.id)
-                  .order('created_at', { ascending: false })
-                  .limit(1)
-                  .maybeSingle(),
-                supabase
-                  .from('court_group_chat_messages')
-                  .select('id', { count: 'exact', head: true })
-                  .eq('group_chat_id', gc.id)
-                  .eq('is_read', false)
-                  .neq('sender_id', currentUser.id),
-              ]);
-              return {
-                ...gc,
-                last_message: lastMsgResult.data || undefined,
-                unread_count: unreadResult.count || 0,
-              };
-            })
-          );
+          const activeGroupChatIds = groupChatsData.map((gc) => gc.id);
+
+          const [groupMessagesRes, groupUnreadRes] = await Promise.all([
+            supabase
+              .from('court_group_chat_messages')
+              .select('id, group_chat_id, content, created_at, sender_id, type')
+              .in('group_chat_id', activeGroupChatIds)
+              .order('created_at', { ascending: false })
+              .limit(Math.max(100, activeGroupChatIds.length * 5)),
+
+            supabase
+              .from('court_group_chat_messages')
+              .select('id, group_chat_id')
+              .in('group_chat_id', activeGroupChatIds)
+              .eq('is_read', false)
+              .neq('sender_id', currentUser.id),
+          ]);
+
+          const groupLastMsgMap: Record<string, unknown> = {};
+          (groupMessagesRes.data ?? []).forEach((msg) => {
+            if (!groupLastMsgMap[msg.group_chat_id]) {
+              groupLastMsgMap[msg.group_chat_id] = msg;
+            }
+          });
+
+          const groupUnreadCountMap: Record<string, number> = {};
+          (groupUnreadRes.data ?? []).forEach((msg) => {
+            groupUnreadCountMap[msg.group_chat_id] = (groupUnreadCountMap[msg.group_chat_id] ?? 0) + 1;
+          });
+
+          const groupChatsWithMessages = groupChatsData.map((gc) => ({
+            ...gc,
+            last_message: groupLastMsgMap[gc.id] || undefined,
+            unread_count: groupUnreadCountMap[gc.id] ?? 0,
+          }));
+
           if (isLatest()) {
   setGroupChats(groupChatsWithMessages);
   sessionStorage.setItem(`cached_group_chats_${currentUser.id}`, JSON.stringify(groupChatsWithMessages));

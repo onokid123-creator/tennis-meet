@@ -794,7 +794,7 @@ const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const myJoinedAtRef = useRef<string | null>(null);
 const messagesCountRef = useRef(0);
@@ -1554,12 +1554,37 @@ const channelKey = `${chatId}_${user.id}_${resumeTick}`;
     await presenceChannelRef.current.track({ user_id: user.id, typing, online_at: new Date().toISOString() });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const resizeMessageInput = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = '44px';
+    el.style.height = `${Math.min(el.scrollHeight, 112)}px`;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(e.target.value);
+    resizeMessageInput(e.target);
     broadcastTyping(true);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => broadcastTyping(false), 1500);
   };
+
+  const handleMessageKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.nativeEvent.isComposing) return;
+    if (e.key !== 'Enter') return;
+
+    if (Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    if (e.shiftKey) {
+      return;
+    }
+
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    void sendMessage(newMessage);
+  };
+
 const sendMessage = async (content: string, type: string = 'user', extraPayload?: Record<string, unknown>) => {
   const trimmed = content.trim();
   const currentUser = await getCurrentUser();
@@ -1583,6 +1608,7 @@ const sendMessage = async (content: string, type: string = 'user', extraPayload?
 
     setMessages((prev) => [...prev, optimisticMsg]);
     setNewMessage('');
+    requestAnimationFrame(() => resizeMessageInput(inputRef.current));
 
     const row: Record<string, unknown> = { chat_id: chatId, sender_id: currentUser.id, content: trimmed, is_read: false, type };
     if (extraPayload) row.payload = extraPayload;
@@ -3619,20 +3645,25 @@ paddingBottom: '14px',
         paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
       }}
     >
-  <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">
-    <input
+  <form onSubmit={handleSubmit} className="flex items-end gap-2 w-full">
+    <textarea
       ref={inputRef}
-      type="text"
+      rows={1}
       value={newMessage}
       onChange={handleInputChange}
+      onKeyDown={handleMessageKeyDown}
       onFocus={scrollToBottomAfterKeyboard}
       placeholder="테니스 메시지를 입력하세요..."
-      className="flex-1 min-w-0 px-4 h-11 rounded-full focus:outline-none transition"
+      className="flex-1 min-w-0 px-4 py-2.5 rounded-2xl focus:outline-none transition resize-none"
       style={{
         fontSize: '16px',
+        lineHeight: '22px',
+        minHeight: '44px',
+        maxHeight: '112px',
         background: '#fff',
         border: '1px solid rgba(47,93,80,0.14)',
         color: '#0F2118',
+        overflowY: 'auto',
       }}
     />
     <button
