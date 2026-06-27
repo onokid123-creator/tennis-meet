@@ -536,15 +536,31 @@ const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court');
   };
 
   const handleDeleteAccount = async () => {
+    const confirmed = confirm(
+      '정말 계정을 삭제하시겠습니까?\n\n계정 삭제 후에는 복구할 수 없습니다.\n단, App Store 또는 Google Play 구독은 스토어에서 별도로 해지해야 합니다.'
+    );
+
+    if (!confirmed) return;
+
     try {
       const { error } = await supabase.rpc('delete_user_completely');
-      if (error) throw error;
-    } catch (e) {
-      console.error(e);
-    } finally {
+
+      if (error) {
+        throw error;
+      }
+
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch (signOutError) {
+        console.warn('Local sign out skipped after account deletion:', signOutError);
+      }
+
       localStorage.clear();
       sessionStorage.clear();
-      window.location.replace('/signup');
+      window.location.replace('/signup?deleted=1');
+    } catch (e) {
+      console.error('Delete account failed:', e);
+      alert('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
