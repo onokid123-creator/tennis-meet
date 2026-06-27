@@ -3502,8 +3502,8 @@ paddingBottom: '14px',
                 ? ((senderProf as Profile & { tennis_name?: string }).tennis_name && !isDating
                     ? (senderProf as Profile & { tennis_name?: string }).tennis_name!
                     : senderProf.name)
-                : null;
-              const showSenderName = isGroupChat && !isMe && senderName;
+                : '탈퇴한 사용자';
+              const showSenderName = isGroupChat && !isMe && msg.type !== 'system';
               const prevSenderId = prevMsg?.sender_id;
               const isFirstInGroup = isGroupChat && !isMe && prevSenderId !== msg.sender_id;
 

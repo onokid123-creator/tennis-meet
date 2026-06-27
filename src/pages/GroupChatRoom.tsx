@@ -1442,6 +1442,7 @@ export default function GroupChatRoom() {
 
               const isMe = message.sender_id === user!.id;
               const senderProfile = message.sender as Profile | undefined;
+              const senderName = senderProfile?.name ?? '탈퇴한 사용자';
               const isBlocked = !isMe && message.sender_id ? blockedUserIds.includes(message.sender_id) : false;
 
               if (isBlocked && message.sender_id) {
@@ -1531,9 +1532,9 @@ export default function GroupChatRoom() {
                         )}
                       </div>
                       <div className="flex flex-col items-start max-w-[68%]">
-                        {isFirstInGroup && senderProfile?.name && (
+                        {isFirstInGroup && message.type !== 'system' && (
                           <span className="text-xs font-semibold mb-1 ml-0.5" style={{ color: isDating ? '#B76E79' : '#006400' }}>
-                            {senderProfile.name}
+                            {senderName}
                           </span>
                         )}
                         <div className="flex items-end gap-1.5">
