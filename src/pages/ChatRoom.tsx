@@ -1554,6 +1554,13 @@ const channelKey = `${chatId}_${user.id}_${resumeTick}`;
     await presenceChannelRef.current.track({ user_id: user.id, typing, online_at: new Date().toISOString() });
   };
 
+  const resetMessageInputHeight = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = '44px';
+    el.scrollTop = 0;
+  };
+
   const resizeMessageInput = (el: HTMLTextAreaElement | null) => {
     if (!el) return;
     el.style.height = '44px';
@@ -1608,7 +1615,9 @@ const sendMessage = async (content: string, type: string = 'user', extraPayload?
 
     setMessages((prev) => [...prev, optimisticMsg]);
     setNewMessage('');
-    requestAnimationFrame(() => resizeMessageInput(inputRef.current));
+    resetMessageInputHeight();
+    requestAnimationFrame(resetMessageInputHeight);
+    window.setTimeout(resetMessageInputHeight, 50);
 
     const row: Record<string, unknown> = { chat_id: chatId, sender_id: currentUser.id, content: trimmed, is_read: false, type };
     if (extraPayload) row.payload = extraPayload;
