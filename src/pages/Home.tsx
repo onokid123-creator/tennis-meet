@@ -187,8 +187,6 @@ let query = supabase
 .order('created_at', { ascending: false });
       if (tab === 'mine') {
         query = query.eq('user_id', currentUser.id);
-      } else {
-        query = query.neq('status', 'closed');
       }
 
       const { data, error } = await query;
@@ -211,12 +209,13 @@ if (error) {
         result = result.map((c) => ({ ...c, profile: profileMap[c.user_id] ?? null }));
       }
 
-      if (tab === 'others' && purpose === 'tennis') {
+      if (tab === 'others') {
         const now = new Date();
         result = result.filter((c) => {
-          if (!c.date || !c.start_time) return true;
-          const startDateTime = new Date(`${c.date}T${c.start_time}`);
-          return now < startDateTime;
+          if (!c.date) return true;
+          const hideAfter = new Date(`${c.date}T00:00:00`);
+          hideAfter.setDate(hideAfter.getDate() + 1);
+          return now < hideAfter;
         });
       }
 

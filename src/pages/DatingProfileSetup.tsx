@@ -55,7 +55,13 @@ export default function DatingProfileSetup() {
   const [loading, setLoading] = useState(false);
 
   const photoCount = photos.filter((p) => p.preview).length;
-  const hasMinPhotos = photoCount >= 3;
+  const isFemale = formData.gender === '여성';
+  const isMale = formData.gender === '남성';
+  const hasRepresentativePhoto = !!photos[0]?.preview;
+  const hasMinPhotos = isFemale ? hasRepresentativePhoto : isMale ? photoCount >= 3 : photoCount >= 1;
+  const photoRequirementText = isFemale ? '대표 사진 1장 필수 · 나머지 선택' : isMale ? '사진 3장 필수 · 최대 5장' : '대표 사진 먼저 등록해주세요';
+  const photoBadgeText = isFemale ? `${photoCount}/5 · 대표 1장 필수` : isMale ? `${photoCount}/5 · 필수 3장` : `${photoCount}/5 · 대표 사진 필수`;
+  const photoErrorText = isFemale ? '대표 사진 1장을 등록해주세요' : isMale ? '사진을 3장 이상 등록해주세요' : '성별을 선택해주세요';
 
   const openFilePicker = (slotIdx: number) => {
     activeSlotRef.current = slotIdx;
@@ -141,10 +147,10 @@ export default function DatingProfileSetup() {
   const handleStep1Next = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!hasMinPhotos) { setError('사진을 3장 이상 등록해주세요'); return; }
     if (!formData.name.trim()) { setError('이름을 입력해주세요'); return; }
     if (!formData.age || Number(formData.age) < 15) { setError('나이를 올바르게 입력해주세요'); return; }
     if (!formData.gender) { setError('성별을 선택해주세요'); return; }
+    if (!hasMinPhotos) { setError(photoErrorText); return; }
     if (!formData.experience) { setError('구력을 선택해주세요'); return; }
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -209,11 +215,11 @@ export default function DatingProfileSetup() {
   const isStep2Valid = extraData.mbti !== '' && extraData.height.trim() !== '';
 
   return (
-    <div className="min-h-screen bg-[#1B4332] flex flex-col items-center px-5 py-10">
+    <div className="min-h-screen flex flex-col items-center px-5 py-10" style={{ background: 'linear-gradient(180deg, #FFF8F1 0%, #F7EFE4 52%, #EEF7F0 100%)' }}>
       <div className="w-full max-w-md">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-white/60 hover:text-white transition mb-6"
+          className="flex items-center gap-2 text-[#6B5A45] hover:text-[#2D6A4F] transition mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm">돌아가기</span>
@@ -221,27 +227,27 @@ export default function DatingProfileSetup() {
       </div>
 
       <div className="mb-1">
-        <BrandLogo size="sm" light={true} />
+        <BrandLogo size="sm" light={false} />
       </div>
-      <h2 className="text-base font-light text-white/70 mb-1 text-center tracking-wider mt-2">
+      <h2 className="text-base font-light text-[#6B5A45] mb-1 text-center tracking-wider mt-2">
         🎾 테니스 메이트 프로필
       </h2>
 
       <div className="flex items-center gap-2 mt-3 mb-6">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step === 1 ? 'bg-[#C9A84C] text-white' : 'bg-[#C9A84C]/30 text-[#C9A84C]'}`}>1</div>
-        <div className={`h-0.5 w-10 transition-all ${step === 2 ? 'bg-[#C9A84C]' : 'bg-white/20'}`} />
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step === 2 ? 'bg-[#C9A84C] text-white' : 'bg-white/20 text-white/40'}`}>2</div>
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step === 1 ? 'bg-[#C9A84C] text-white shadow-sm' : 'bg-white/70 text-[#C9A84C] border border-[#E7D9BE]'}`}>1</div>
+        <div className={`h-0.5 w-10 transition-all ${step === 2 ? 'bg-[#C9A84C]' : 'bg-[#E7D9BE]'}`} />
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step === 2 ? 'bg-[#C9A84C] text-white shadow-sm' : 'bg-white/70 text-[#B7A27A] border border-[#E7D9BE]'}`}>2</div>
       </div>
 
       {step === 1 && (
         <>
         <div className="mb-8 text-center space-y-3">
-  <p className="text-white/70 text-sm font-medium">
-    사진 3장 필수 · 최대 5장
+  <p className="text-[#6B5A45] text-sm font-medium">
+    {photoRequirementText}
   </p>
 
-  <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-4">
-    <p className="text-white/80 text-sm leading-relaxed">
+  <div className="bg-white/75 border border-[#EADDC8] rounded-2xl px-4 py-4 shadow-sm">
+    <p className="text-[#5F5345] text-sm leading-relaxed">
       테니스 메이트는 서로의 신뢰를 위해<br />
       <span className="text-[#C9A84C] font-semibold">얼굴이 나온 사진 등록</span>이 필요해요.
     </p>
@@ -250,7 +256,7 @@ export default function DatingProfileSetup() {
       코트 등록 시 사진 비공개 선택 가능
     </p>
 
-    <p className="text-white/40 text-xs mt-2">
+    <p className="text-[#8A7B68] text-xs mt-2">
       자연스럽고 안전한 만남 문화를 위해 운영되고 있어요
     </p>
   </div>
@@ -259,11 +265,11 @@ export default function DatingProfileSetup() {
           <form onSubmit={handleStep1Next} className="w-full max-w-md space-y-7">
             <div>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-white text-sm font-semibold">사진 등록</span>
+                <span className="text-[#3F3A31] text-sm font-semibold">사진 등록</span>
                 <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
-                  hasMinPhotos ? 'bg-green-500/20 text-green-300' : 'bg-[#C9A84C]/20 text-[#C9A84C]'
+                  hasMinPhotos ? 'bg-[#E7F4EA] text-[#2D6A4F]' : 'bg-[#FFF3D6] text-[#B88A22]'
                 }`}>
-                  {photoCount}/5 · 필수 3장
+                  {photoBadgeText}
                 </span>
               </div>
 
@@ -277,7 +283,7 @@ export default function DatingProfileSetup() {
 
               <div className="grid grid-cols-3 gap-2">
                 {photos.map((slot, idx) => {
-                  const isRequired = idx < 3;
+                  const isRequired = isFemale ? idx === 0 : isMale ? idx < 3 : idx === 0;
                   const isFirst = idx === 0;
                   const isDragging = dragOver === idx;
 
@@ -322,15 +328,15 @@ export default function DatingProfileSetup() {
                           onClick={() => openFilePicker(idx)}
                           className={`w-full h-full flex flex-col items-center justify-center gap-1.5 border-2 border-dashed rounded-2xl transition ${
                             isRequired
-                              ? 'border-[#C9A84C]/60 bg-[#C9A84C]/10 hover:bg-[#C9A84C]/20'
-                              : 'border-white/20 bg-white/5 hover:bg-white/10'
+                              ? 'border-[#C9A84C]/70 bg-white/75 hover:bg-[#FFF7E6]'
+                              : 'border-[#E5D8C2] bg-white/55 hover:bg-white/80'
                           }`}
                         >
                           {isFirst && (
-                            <Crown className={`w-4 h-4 ${isRequired ? 'text-[#C9A84C]' : 'text-white/30'}`} />
+                            <Crown className={`w-4 h-4 ${isRequired ? 'text-[#C9A84C]' : 'text-[#B7A27A]'}`} />
                           )}
-                          <Upload className={`w-5 h-5 ${isRequired ? 'text-[#C9A84C]' : 'text-white/40'}`} />
-                          <span className={`text-[10px] font-semibold ${isRequired ? 'text-[#C9A84C]' : 'text-white/40'}`}>
+                          <Upload className={`w-5 h-5 ${isRequired ? 'text-[#C9A84C]' : 'text-[#B7A27A]'}`} />
+                          <span className={`text-[10px] font-semibold ${isRequired ? 'text-[#C9A84C]' : 'text-[#8A7B68]'}`}>
                             {idx + 1}/5{isRequired ? ' *' : ''}
                           </span>
                         </button>
@@ -341,19 +347,19 @@ export default function DatingProfileSetup() {
               </div>
 
               {!hasMinPhotos && (
-                <p className="text-[#C9A84C] text-xs mt-2 text-center font-medium">
-                  사진을 3장 이상 등록해주세요
+                <p className="text-[#B88A22] text-xs mt-2 text-center font-medium">
+                  {photoErrorText}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-1">이름</label>
+              <label className="block text-sm font-medium text-[#3F3A31] mb-1">이름</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent"
+                className="w-full px-4 py-3 bg-white/85 border border-[#E5D8C2] rounded-xl text-[#2F2A24] placeholder-[#B7A27A] focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent shadow-sm"
                 style={{ fontSize: 16 }}
                 placeholder="이름을 입력해주세요"
                 required
@@ -361,12 +367,12 @@ export default function DatingProfileSetup() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-1">나이</label>
+              <label className="block text-sm font-medium text-[#3F3A31] mb-1">나이</label>
               <input
                 type="number"
                 value={formData.age}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent"
+                className="w-full px-4 py-3 bg-white/85 border border-[#E5D8C2] rounded-xl text-[#2F2A24] placeholder-[#B7A27A] focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent shadow-sm"
                 style={{ fontSize: 16 }}
                 placeholder="예) 28"
                 min={15}
@@ -376,7 +382,7 @@ export default function DatingProfileSetup() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-2">성별</label>
+              <label className="block text-sm font-medium text-[#3F3A31] mb-2">성별</label>
               <div className="flex gap-3">
                 {['남성', '여성'].map((g) => (
                   <button
@@ -385,8 +391,8 @@ export default function DatingProfileSetup() {
                     onClick={() => setFormData({ ...formData, gender: g })}
                     className={`flex-1 py-3 rounded-xl border-2 font-medium transition ${
                       formData.gender === g
-                        ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
-                        : 'border-white/20 bg-white/10 text-white'
+                        ? 'border-[#C9A84C] bg-[#C9A84C] text-white shadow-sm'
+                        : 'border-[#E5D8C2] bg-white/70 text-[#5F5345] hover:bg-white'
                     }`}
                   >
                     {g}
@@ -396,7 +402,7 @@ export default function DatingProfileSetup() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-2">구력</label>
+              <label className="block text-sm font-medium text-[#3F3A31] mb-2">구력</label>
               <div className="grid grid-cols-3 gap-2.5">
                 {experienceOptions.map((exp) => (
                   <button
@@ -405,8 +411,8 @@ export default function DatingProfileSetup() {
                     onClick={() => setFormData({ ...formData, experience: exp })}
                     className={`py-3 rounded-xl border-2 transition text-sm font-medium ${
                       formData.experience === exp
-                        ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
-                        : 'border-white/20 bg-white/10 text-white'
+                        ? 'border-[#C9A84C] bg-[#C9A84C] text-white shadow-sm'
+                        : 'border-[#E5D8C2] bg-white/70 text-[#5F5345] hover:bg-white'
                     }`}
                   >
                     {exp}
@@ -416,7 +422,7 @@ export default function DatingProfileSetup() {
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-400/30 text-red-300 px-4 py-3 rounded-xl text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-500 px-4 py-3 rounded-xl text-sm">
                 {error}
               </div>
             )}
@@ -434,13 +440,13 @@ export default function DatingProfileSetup() {
 
       {step === 2 && (
         <>
-          <p className="text-white/60 text-sm mb-8 text-center">
+          <p className="text-[#6B5A45] text-sm mb-8 text-center">
             추가 정보를 입력해주세요
           </p>
 
           <form onSubmit={handleSubmit} className="w-full max-w-md space-y-7">
             <div>
-              <label className="block text-sm font-medium text-white mb-3">MBTI</label>
+              <label className="block text-sm font-medium text-[#3F3A31] mb-3">MBTI</label>
               <div className="space-y-2">
                 {MBTI_LIST.map((row, rowIdx) => (
                   <div key={rowIdx} className="grid grid-cols-4 gap-2">
@@ -451,8 +457,8 @@ export default function DatingProfileSetup() {
                         onClick={() => setExtraData({ ...extraData, mbti: type })}
                         className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition ${
                           extraData.mbti === type
-                            ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
-                            : 'border-white/20 bg-white/10 text-white hover:bg-white/20'
+                            ? 'border-[#C9A84C] bg-[#C9A84C] text-white shadow-sm'
+                            : 'border-[#E5D8C2] bg-white/70 text-[#5F5345] hover:bg-white'
                         }`}
                       >
                         {type}
@@ -465,8 +471,8 @@ export default function DatingProfileSetup() {
                   onClick={() => setExtraData({ ...extraData, mbti: '모름' })}
                   className={`w-full py-2.5 rounded-xl border-2 text-sm font-semibold transition ${
                     extraData.mbti === '모름'
-                      ? 'border-[#C9A84C] bg-[#C9A84C] text-white'
-                      : 'border-white/20 bg-white/10 text-white hover:bg-white/20'
+                      ? 'border-[#C9A84C] bg-[#C9A84C] text-white shadow-sm'
+                      : 'border-[#E5D8C2] bg-white/70 text-[#5F5345] hover:bg-white'
                   }`}
                 >
                   모름
@@ -475,26 +481,26 @@ export default function DatingProfileSetup() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-2">키</label>
+              <label className="block text-sm font-medium text-[#3F3A31] mb-2">키</label>
               <div className="relative">
                 <input
                   type="number"
                   value={extraData.height}
                   onChange={(e) => setExtraData({ ...extraData, height: e.target.value })}
                   placeholder="예) 175"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent pr-16"
+                  className="w-full px-4 py-3 bg-white/85 border border-[#E5D8C2] rounded-xl text-[#2F2A24] placeholder-[#B7A27A] focus:ring-2 focus:ring-[#C9A84C] focus:border-transparent pr-16 shadow-sm"
                   style={{ fontSize: 16 }}
                   min={100}
                   max={250}
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-white/50 font-medium">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#8A7B68] font-medium">
                   cm
                 </span>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-400/30 text-red-300 px-4 py-3 rounded-xl text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-500 px-4 py-3 rounded-xl text-sm">
                 {error}
               </div>
             )}
@@ -510,7 +516,7 @@ export default function DatingProfileSetup() {
               <button
                 type="button"
                 onClick={() => { setStep(1); setError(''); window.scrollTo({ top: 0, behavior: 'instant' }); }}
-                className="w-full py-3 rounded-xl border border-white/20 text-white/60 text-sm font-medium hover:bg-white/5 transition"
+                className="w-full py-3 rounded-xl border border-[#E5D8C2] text-[#6B5A45] text-sm font-medium hover:bg-white/70 transition"
               >
                 이전으로
               </button>

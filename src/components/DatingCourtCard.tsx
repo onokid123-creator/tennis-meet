@@ -15,6 +15,8 @@ const PAGE  = '#F0F4ED';
 
 /* ─────────── Helpers ─────────── */
 function isClosed(court: Court) {
+  if (court.status === 'closed') return true;
+
   const tm = court.male_count   ?? 0, tf = court.female_count   ?? 0;
   const cm = court.confirmed_male_slots ?? 0, cf = court.confirmed_female_slots ?? 0;
   if (tm === 0 && tf === 0) return false;
@@ -303,13 +305,13 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
                   borderRadius: 999,
                   fontSize: 12,
                   fontWeight: 800,
-                  color: court.reservation_mode === 'planning' ? '#9A5A12' : '#166534',
-                  background: court.reservation_mode === 'planning' ? '#FFF3D6' : '#DCFCE7',
-                  border: court.reservation_mode === 'planning' ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(22,101,52,0.18)',
+                  color: closed ? '#B91C1C' : court.reservation_mode === 'planning' ? '#9A5A12' : '#166534',
+                  background: closed ? '#FEE2E2' : court.reservation_mode === 'planning' ? '#FFF3D6' : '#DCFCE7',
+                  border: closed ? '1px solid rgba(185,28,28,0.22)' : court.reservation_mode === 'planning' ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(22,101,52,0.18)',
                   boxShadow: '0 3px 10px rgba(0,0,0,0.14)',
                 }}
               >
-                {court.reservation_mode === 'planning' ? '🗓️ 코트 협의' : '🎾 코트 예약 완료'}
+                {closed ? '모집 마감' : court.reservation_mode === 'planning' ? '코트 협의' : '코트 예약 완료'}
               </div>
 
               {/* dark gradient */}
@@ -746,12 +748,12 @@ const closeLightbox = () => {
                       fontWeight: 900,
                       lineHeight: 1.1,
                       whiteSpace: 'nowrap',
-                      color: court.reservation_mode === 'planning' ? '#9A5A12' : '#166534',
-                      background: court.reservation_mode === 'planning' ? '#FFF8E8' : '#DCFCE7',
-                      border: court.reservation_mode === 'planning' ? '1px solid rgba(201,168,76,0.45)' : '1px solid rgba(22,101,52,0.18)',
+                      color: closed ? '#B91C1C' : court.reservation_mode === 'planning' ? '#9A5A12' : '#166534',
+                      background: closed ? '#FEE2E2' : court.reservation_mode === 'planning' ? '#FFF8E8' : '#DCFCE7',
+                      border: closed ? '1px solid rgba(185,28,28,0.22)' : court.reservation_mode === 'planning' ? '1px solid rgba(201,168,76,0.45)' : '1px solid rgba(22,101,52,0.18)',
                     }}
                   >
-                    🗓️ {court.reservation_mode === 'planning' ? '코트 협의' : '코트 완료'}
+                    {closed ? '모집 마감' : `${court.reservation_mode === 'planning' ? '코트 협의' : '코트 완료'}`}
                   </span>
                 )}
 
@@ -915,16 +917,24 @@ const closeLightbox = () => {
                     marginTop: 8,
                   }}
                 >
-                  {tm > 0 && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 8px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      남 {tm}명
+                  {closed ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#6B7280', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      모집 마감
                     </span>
-                  )}
+                  ) : (
+                    <>
+                      {tm > 0 && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 8px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          남 {rmM <= 0 ? '마감' : `${rmM}명 남음`}
+                        </span>
+                      )}
 
-                  {tf > 0 && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 8px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      여 {tf}명
-                    </span>
+                      {tf > 0 && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 8px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          여 {rmF <= 0 ? '마감' : `${rmF}명 남음`}
+                        </span>
+                      )}
+                    </>
                   )}
 
                   {court.experience_wanted && (

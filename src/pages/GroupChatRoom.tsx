@@ -453,6 +453,10 @@ export default function GroupChatRoom() {
 
   const handleConfirmParticipant = async (participant: GroupChatParticipant) => {
     if (!participant.profile) return;
+    if (!court) {
+      showToastMsg('삭제된 코트에서는 매칭 확정을 사용할 수 없습니다.');
+      return;
+    }
     if (blockedUserIds.includes(participant.user_id)) {
       showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
       return;
@@ -540,6 +544,11 @@ export default function GroupChatRoom() {
   };
 
   const handleMatchConfirm = async () => {
+    if (!court) {
+      showToastMsg('삭제된 코트에서는 매칭 확정을 사용할 수 없습니다.');
+      return;
+    }
+
     const blockedConfirmed = participants.filter((p) => p.status === 'confirmed' && p.user_id !== hostId && blockedUserIds.includes(p.user_id));
     if (blockedConfirmed.length > 0) {
       showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
@@ -610,6 +619,11 @@ export default function GroupChatRoom() {
 
   const handleMatchCancelConfirm = async () => {
     setShowCancelConfirm(false);
+
+    if (!court) {
+      showToastMsg('삭제된 코트에서는 매칭 취소를 사용할 수 없습니다.');
+      return;
+    }
 
     await supabase
       .from('court_group_chats')
@@ -986,17 +1000,17 @@ export default function GroupChatRoom() {
               </span>
             </div>
             {/* 2줄: 장소명 + 코트번호 */}
-            {court?.court_name && (
-              <p className="text-[12px] font-semibold mt-1 leading-snug" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                {court.court_name}{(court as { court_number?: string }).court_number ? ` · ${/^\d+$/.test(String((court as { court_number?: string }).court_number).trim()) ? `${String((court as { court_number?: string }).court_number).trim()}번 코트` : (court as { court_number?: string }).court_number}` : ''}
-              </p>
-            )}
+            <p className="text-[12px] font-semibold mt-1 leading-snug" style={{ color: 'rgba(255,255,255,0.9)' }}>
+              {court?.court_name
+                ? `${court.court_name}${(court as { court_number?: string }).court_number ? ` · ${/^\d+$/.test(String((court as { court_number?: string }).court_number).trim()) ? `${String((court as { court_number?: string }).court_number).trim()}번 코트` : (court as { court_number?: string }).court_number}` : ''}`
+                : '삭제된 코트'}
+            </p>
             {/* 3줄: 날짜 · 시간 */}
-            {court?.date && (
-              <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                {new Date(court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}{court.start_time ? `  ${court.start_time}${court.end_time ? ` – ${court.end_time}` : ''}` : ''}
-              </p>
-            )}
+            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              {court?.date
+                ? `${new Date(court.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}${court.start_time ? `  ${court.start_time}${court.end_time ? ` – ${court.end_time}` : ''}` : ''}`
+                : '일정 정보 없음'}
+            </p>
           </div>
         </div>
         <button
@@ -1092,7 +1106,7 @@ export default function GroupChatRoom() {
         );
       })()}
 
-      {isHost && (
+      {isHost && court && (
         <div
           className="px-3 py-2 flex-shrink-0"
           style={{ background: isDating ? 'rgba(255,245,250,0.95)' : '#fff', borderBottom: `1px solid ${isDating ? 'rgba(201,84,122,0.12)' : 'rgba(45,106,79,0.1)'}` }}
@@ -1297,14 +1311,16 @@ export default function GroupChatRoom() {
                     <span className="text-sm font-medium" style={{ color: participantTitleColor }}>{p.profile?.name}</span>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      disabled={actionLoading === p.user_id}
-                      onClick={() => handleConfirmParticipant(p)}
-                      className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition disabled:opacity-50 active:scale-95"
-                      style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : '#2D6A4F' }}
-                    >
-                      매칭 확정
-                    </button>
+                    {court && (
+                      <button
+                        disabled={actionLoading === p.user_id}
+                        onClick={() => handleConfirmParticipant(p)}
+                        className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition disabled:opacity-50 active:scale-95"
+                        style={{ background: isDating ? 'linear-gradient(135deg, #8B2252 0%, #C9547A 100%)' : '#2D6A4F' }}
+                      >
+                        매칭 확정
+                      </button>
+                    )}
                     <button
                       disabled={actionLoading === p.user_id}
                       onClick={() => handleRejectParticipant(p)}

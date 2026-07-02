@@ -8,6 +8,7 @@ interface CourtLocation {
   lat: number;
   lng: number;
   placeId?: string;
+  category?: string;
 }
 
 interface CourtMapSearchProps {
@@ -28,6 +29,19 @@ declare global {
 }
 
 const defaultCenter = { lat: 37.5665, lng: 126.978 };
+
+const isTennisCourtLocation = (court: CourtLocation) => {
+  const text = [
+    court.name,
+    court.address,
+    court.category,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return /테니스|tennis/.test(text);
+};
 
 function buildNaverStaticMapUrl(lat: number, lng: number, showMarker: boolean) {
   const params = new URLSearchParams({
@@ -171,12 +185,14 @@ export default function CourtMapSearch({
       const lng = Number(item.x ?? item.point?.x ?? defaultCenter.lng);
       const name = String(item.name || item.title || kw).trim();
       const address = String(item.roadAddress || item.jibunAddress || item.address || '').trim();
+      const category = String(item.category || item.categoryName || '').trim();
 
       return {
         name,
         address,
         lat,
         lng,
+        category,
         placeId: `naver-local-${lng}-${lat}-${index}`,
       };
     });
@@ -241,6 +257,7 @@ export default function CourtMapSearch({
             roadAddress,
             jibunAddress,
             englishAddress: '',
+            category: cleanText(item.category),
             x: String(x),
             y: String(y),
           };
@@ -248,7 +265,19 @@ export default function CourtMapSearch({
         .filter(Boolean);
 
       if (response.status >= 200 && response.status < 300 && addresses.length > 0) {
-        setResults(mapGeocodeResults(kw, addresses));
+        const tennisResults = mapGeocodeResults(kw, addresses).filter(isTennisCourtLocation);
+
+        if (tennisResults.length > 0) {
+          setResults(tennisResults);
+          return;
+        }
+
+        if (index + 1 < queries.length) {
+          await runGeocode(kw, queries, index + 1);
+          return;
+        }
+
+        setResults([]);
         return;
       }
 
@@ -296,6 +325,11 @@ export default function CourtMapSearch({
   };
 
   const handleSelect = (court: CourtLocation) => {
+    if (!isTennisCourtLocation(court)) {
+      alert('테니스장만 선택할 수 있습니다.');
+      return;
+    }
+
     onSelect(court);
     setKeyword(court.name);
     keywordRef.current = court.name;
@@ -359,8 +393,8 @@ export default function CourtMapSearch({
                   : 'border-gray-100 bg-white hover:border-gray-200'
               }`}
             >
-              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-lg">
-                ��
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-4 h-4 text-gray-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{r.name}</p>
