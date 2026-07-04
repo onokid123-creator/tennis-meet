@@ -9,6 +9,7 @@ import { Plus } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import BrandLogo from '../components/BrandLogo';
 import SwipeCourtDeck from '../components/SwipeCourtDeck';
+import TennisCourtCard from '../components/TennisCourtCard';
 import { useVisualViewport } from '../hooks/useVisualViewport';
 import PaywallLimitPopup from '../components/paywall/PaywallLimitPopup';
 import TicketPackPopup from '../components/paywall/TicketPackPopup';
@@ -869,17 +870,31 @@ if (!categoryTab) {
               </p>
             </div>
           </div>
-            ) : (
-              <SwipeCourtDeck
-                courts={filteredCourts}
-                onApply={(court) => openApplyPopup(court)}
-                onInterest={isDating ? (court) => handleInterestCourt(court) : undefined}
-                isInterested={isDating ? (court) => interestedCourtIds.has(court.id) : undefined}
-                isOwnerMode={activeTab === 'mine'}
-                onEdit={(court) => handleEdit(court)}
-                onDelete={(court) => handleDelete(court.id)}
-              />
-            )}
+            ) : isDating ? (
+                <SwipeCourtDeck
+                  courts={filteredCourts}
+                  onApply={(court) => openApplyPopup(court)}
+                  onInterest={(court) => handleInterestCourt(court)}
+                  isInterested={(court) => interestedCourtIds.has(court.id)}
+                  isOwnerMode={activeTab === 'mine'}
+                  onEdit={(court) => handleEdit(court)}
+                  onDelete={(court) => handleDelete(court.id)}
+                />
+              ) : (
+                <div className="space-y-4">
+                  {filteredCourts.map((court) => (
+                    <TennisCourtCard
+                      key={court.id}
+                      court={court}
+                      isOwner={activeTab === 'mine'}
+                      onApply={() => openApplyPopup(court)}
+                      onEdit={() => handleEdit(court)}
+                      onDelete={() => handleDelete(court.id)}
+                    />
+                  ))}
+                </div>
+              )
+            }
           </>
         )}
       </div>
