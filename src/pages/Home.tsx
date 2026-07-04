@@ -17,6 +17,7 @@ import SubscriptionPopup from '../components/paywall/SubscriptionPopup';
 type Tab = 'others' | 'mine';
 type CategoryTab = 'tennis' | 'dating';
 type AgeFilter = 'all' | '20s' | '30s' | '40s' | '50s';
+type GenderFilter = 'all' | 'male' | 'female';
 
 const AGE_FILTERS: Array<{ key: AgeFilter; label: string }> = [
   { key: 'all', label: '전체' },
@@ -24,6 +25,12 @@ const AGE_FILTERS: Array<{ key: AgeFilter; label: string }> = [
   { key: '30s', label: '30대' },
   { key: '40s', label: '40대' },
   { key: '50s', label: '50대 이상' },
+];
+
+const GENDER_FILTERS: Array<{ key: GenderFilter; label: string }> = [
+  { key: 'all', label: '전체' },
+  { key: 'male', label: '남성' },
+  { key: 'female', label: '여성' },
 ];
 
 function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () => void; onClose: () => void }) {
@@ -87,6 +94,7 @@ const vpHeight = useVisualViewport();
   });
  const [categoryTab, setCategoryTab] = useState<CategoryTab | null>(null);
   const [selectedAgeFilters, setSelectedAgeFilters] = useState<AgeFilter[]>(['all']);
+  const [selectedGenderFilter, setSelectedGenderFilter] = useState<GenderFilter>('all');
   const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
 const [showPaywallPopup, setShowPaywallPopup] = useState(false);
 const [paywallStep, setPaywallStep] = useState<'first_limit' | 'ticket_pack' | 'subscription_intro' | 'out_of_tickets' | null>(null);
@@ -617,10 +625,22 @@ if (!categoryTab) {
     });
   };
 
+  const normalizeGender = (gender?: string | null) => {
+    if (!gender) return '';
+    if (gender === 'male' || gender === '남성' || gender === '남자') return 'male';
+    if (gender === 'female' || gender === '여성' || gender === '여자') return 'female';
+    return gender;
+  };
+
+  const isGenderMatched = (gender?: string | null) => {
+    if (selectedGenderFilter === 'all') return true;
+    return normalizeGender(gender) === selectedGenderFilter;
+  };
+
   const purposeMatchedCourts = courts.filter((court) => court.purpose === categoryTab);
 
-  const filteredCourts = activeTab === 'others'
-    ? purposeMatchedCourts.filter((court) => isAgeMatched(court.owner_age))
+  const filteredCourts = activeTab === 'others' && isDating
+    ? purposeMatchedCourts.filter((court) => isAgeMatched(court.owner_age) && isGenderMatched(court.owner_gender))
     : purposeMatchedCourts;
 
   const headerBg = isDating
@@ -763,39 +783,48 @@ if (!categoryTab) {
           </div>
         ) : (
           <>
-            {activeTab === 'others' && (
-              <div className="px-1 pb-3">
+            {activeTab === 'others' && isDating && (
+              <div className="px-1 pb-3 space-y-2">
                 <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide">
-                {AGE_FILTERS.map((filter) => {
-                  const selected = selectedAgeFilters.includes(filter.key);
-                  return (
-                    <button
-                      key={filter.key}
-                      type="button"
-                      onClick={() => toggleAgeFilter(filter.key)}
-                      className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
-                      style={{
-                        background: selected
-                          ? isDating
-                            ? '#1F3D2A'
-                            : '#2D6A4F'
-                          : isDating
-                            ? '#FFFFFF'
-                            : 'rgba(45,106,79,0.1)',
-                        color: selected
-                          ? '#fff'
-                          : isDating
-                            ? '#1F3D2A'
-                            : '#2D6A4F',
-                        border: selected
-                          ? '1px solid transparent'
-                          : `1px solid ${isDating ? 'rgba(74,124,92,0.22)' : 'rgba(45,106,79,0.18)'}`,
-                      }}
-                    >
-                      {filter.label}
-                    </button>
-                  );
-                })}
+                  {GENDER_FILTERS.map((filter) => {
+                    const selected = selectedGenderFilter === filter.key;
+                    return (
+                      <button
+                        key={filter.key}
+                        type="button"
+                        onClick={() => setSelectedGenderFilter(filter.key)}
+                        className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
+                        style={{
+                          background: selected ? '#1F3D2A' : '#FFFFFF',
+                          color: selected ? '#fff' : '#1F3D2A',
+                          border: selected ? '1px solid transparent' : '1px solid rgba(74,124,92,0.22)',
+                        }}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide">
+                  {AGE_FILTERS.map((filter) => {
+                    const selected = selectedAgeFilters.includes(filter.key);
+                    return (
+                      <button
+                        key={filter.key}
+                        type="button"
+                        onClick={() => toggleAgeFilter(filter.key)}
+                        className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
+                        style={{
+                          background: selected ? '#1F3D2A' : '#FFFFFF',
+                          color: selected ? '#fff' : '#1F3D2A',
+                          border: selected ? '1px solid transparent' : '1px solid rgba(74,124,92,0.22)',
+                        }}
+                      >
+                        {filter.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
