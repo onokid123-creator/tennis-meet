@@ -506,7 +506,7 @@ export default function GroupChatRoom() {
     await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
-      content: isDating ? `💕 매칭 확정! 설레는 만남 기대해요 🥂` : `🎾 라인업 확정!`,
+      content: isDating ? `매칭 확정! 설레는 만남 기대해요` : `🎾 라인업 확정!`,
       type: 'system',
       is_read: false,
     });
@@ -597,7 +597,7 @@ export default function GroupChatRoom() {
       await Promise.all(mealInserts);
       loadPendingMealProposals();
     }
-    const msg = isDating ? '💕 매칭 확정! 설레는 만남 기대해요 🥂' : '🎾 라인업 확정!';
+    const msg = isDating ? '매칭 확정! 설레는 만남 기대해요' : '🎾 라인업 확정!';
     const ok = await supabase.from('court_group_chat_messages').insert({
       group_chat_id: groupChatId!,
       sender_id: null,
@@ -1082,7 +1082,7 @@ export default function GroupChatRoom() {
             style={{ background: isDating ? '#2A1525' : '#162f22', borderBottom: `1px solid ${accentColor}25` }}
           >
             <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              {isFull ? '마감 ✅' : `현재 ${filledSlots}/${totalSlots}명 모집중 ${isDating ? '🥂' : '🎾'}`}
+              {isFull ? '마감 ✅' : `현재 ${filledSlots}/${totalSlots}명 모집중${isDating ? '' : ' 🎾'}`}
             </span>
             <div className="flex items-center gap-3">
               {totalMale > 0 && (
@@ -1257,7 +1257,7 @@ export default function GroupChatRoom() {
                       </div>
                       {p.status === 'confirmed' && (
                         <span className="text-xs font-medium" style={{ color: isDating ? '#C9547A' : '#2D6A4F' }}>
-                          확정 {isDating ? '💌' : '🎾'}
+                          확정
                         </span>
                       )}
                     </div>

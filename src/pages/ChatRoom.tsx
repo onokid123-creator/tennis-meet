@@ -1720,7 +1720,7 @@ console.log('[PUSH] send-push result:', JSON.stringify({
 
   const purpose = chatPurpose ?? 'tennis';
   const welcomeMsg = purpose === 'dating'
-    ? '💌 설레는 만남 시작! 식사도 같이해요 🍽️'
+    ? '설레는 만남 시작! 식사도 같이해요'
     : '🎾 매칭됐어요! 코트에서 만나요!';
 
   const otherId = otherUser.user_id || otherUser.id;
@@ -1777,7 +1777,7 @@ console.log('[PUSH] send-push result:', JSON.stringify({
         .maybeSingle();
       const leaverName = myProf?.name ?? '누군가';
       const content = chatPurpose === 'dating'
-        ? `💌 ${leaverName}님이 나가기를 요청했습니다`
+        ? `${leaverName}님이 나가기를 요청했습니다`
         : `🎾 ${leaverName}님이 나가기를 요청했습니다`;
       await supabase.from('messages').insert({
         chat_id: chatId,
@@ -1843,7 +1843,7 @@ console.log('[PUSH] send-push result:', JSON.stringify({
         chat_id: chatId,
         sender_id: user.id,
         content: chatPurpose === 'dating'
-          ? `💌 ${requesterName}님이 자리를 떠났습니다`
+          ? `${requesterName}님이 자리를 떠났습니다`
           : `🎾 ${requesterName}님이 코트를 떠났습니다`,
         is_read: false,
         type: 'system',
@@ -2003,7 +2003,7 @@ console.log('[PUSH] send-push result:', JSON.stringify({
       .maybeSingle();
     const leaverName = myProf?.name ?? '누군가';
     const leaveMsg = chatPurpose === 'dating'
-      ? `💌 ${leaverName}님이 자리를 떠났습니다`
+      ? `${leaverName}님이 자리를 떠났습니다`
       : `🎾 ${leaverName}님이 코트를 떠났습니다`;
 
     const { data: existing } = await supabase
@@ -2128,7 +2128,7 @@ console.log('[PUSH] send-push result:', JSON.stringify({
     setKickingId(targetId);
     try {
       const kickMsg = chatPurpose === 'dating'
-        ? `${targetName}님이 자리를 떠났습니다 💌`
+        ? `${targetName}님이 자리를 떠났습니다`
         : `${targetName}님이 퇴장되었습니다 🎾`;
 
       if (courtId) {
@@ -2287,7 +2287,7 @@ if (receiverProfile?.fcm_token) {
     body: {
       token: receiverProfile.fcm_token,
       title: senderProfile?.name || '상대방',
-    body: `💕 ${senderProfile?.name || '상대방'}님과 매칭이 확정됐고, 식사 제안이 왔어요!`,
+    body: `${senderProfile?.name || '상대방'}님과 매칭이 확정됐고, 식사 제안이 왔어요!`,
       data: {
         type: 'meal_proposal',
         chatId: chatId,
@@ -2470,7 +2470,7 @@ if (senderProfile?.fcm_token) {
       loadPendingMealProposals();
     }
     const msg = chatPurpose === 'dating'
-      ? '💕 매칭 확정! 설레는 만남 기대해요 🥂'
+      ? '매칭 확정! 설레는 만남 기대해요'
       : '🎾 라인업 확정!';
     const ok = await sendMessage(msg, 'system');
 if (otherUser && user) {
@@ -2733,7 +2733,7 @@ if (receiverProfile?.fcm_token) {
       title: senderProfile?.name || '상대방',
       body:
         chatPurpose === 'dating'
-          ? `💕 ${participantName}님과 매칭이 확정됐어요!`
+          ? `${participantName}님과 매칭이 확정됐어요!`
           : `🎾 오직테니스 매칭이 확정됐어요!`,
       data: {
         type: 'match_confirmed',
@@ -2820,7 +2820,7 @@ if (receiverProfile?.fcm_token) {
       body: {
         token: mealReceiverProfile.fcm_token,
         title: senderProfile?.name || '상대방',
-        body: `💕 ${senderProfile?.name || '상대방'}님과 매칭이 확정됐고, 식사 제안이 도착했어요!`,
+        body: `${senderProfile?.name || '상대방'}님과 매칭이 확정됐고, 식사 제안이 도착했어요!`,
         data: {
           type: 'meal_proposal',
           chatId: chatId,
@@ -2833,7 +2833,7 @@ if (receiverProfile?.fcm_token) {
 }
       
       const confirmMsg = chatPurpose === 'dating'
-        ? `💕 ${participantName}님 매칭이 확정됐어요!`
+        ? `${participantName}님 매칭이 확정됐어요!`
         : `🎾 ${participantName}님 라인업이 확정됐어요!`;
       await sendMessage(confirmMsg, 'system');
       if (chatPurpose === 'dating' && includeMealProposal) setShowMealSentPopup(true);
@@ -3270,7 +3270,7 @@ paddingBottom: '14px',
                         className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
                         style={{ background: 'rgba(45,106,79,0.12)', color: '#2D6A4F' }}
                       >
-                        확정 {isDating ? '💕' : '🎾'}
+                        확정
                       </span>
                     )}
                     <button
@@ -3287,7 +3287,7 @@ paddingBottom: '14px',
                     className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
                     style={{ background: 'rgba(45,106,79,0.12)', color: '#2D6A4F' }}
                   >
-                    확정 {isDating ? '💕' : '🎾'}
+                    확정
                   </span>
                 ) : null}
               </div>

@@ -784,8 +784,11 @@ if (!categoryTab) {
         ) : (
           <>
             {activeTab === 'others' && isDating && (
-              <div className="px-1 pb-3 space-y-2">
-                <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide">
+              <div className="px-1 pb-4 space-y-2">
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                  <span className="shrink-0 text-xs font-bold" style={{ color: 'rgba(31,61,42,0.62)', minWidth: 30 }}>
+                    성별
+                  </span>
                   {GENDER_FILTERS.map((filter) => {
                     const selected = selectedGenderFilter === filter.key;
                     return (
@@ -793,11 +796,12 @@ if (!categoryTab) {
                         key={filter.key}
                         type="button"
                         onClick={() => setSelectedGenderFilter(filter.key)}
-                        className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
+                        className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
                         style={{
                           background: selected ? '#1F3D2A' : '#FFFFFF',
                           color: selected ? '#fff' : '#1F3D2A',
                           border: selected ? '1px solid transparent' : '1px solid rgba(74,124,92,0.22)',
+                          boxShadow: selected ? '0 2px 7px rgba(31,61,42,0.14)' : 'none',
                         }}
                       >
                         {filter.label}
@@ -806,7 +810,10 @@ if (!categoryTab) {
                   })}
                 </div>
 
-                <div className="flex items-center justify-center gap-2 overflow-x-auto scrollbar-hide">
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                  <span className="shrink-0 text-xs font-bold" style={{ color: 'rgba(31,61,42,0.62)', minWidth: 30 }}>
+                    나이
+                  </span>
                   {AGE_FILTERS.map((filter) => {
                     const selected = selectedAgeFilters.includes(filter.key);
                     return (
@@ -814,11 +821,12 @@ if (!categoryTab) {
                         key={filter.key}
                         type="button"
                         onClick={() => toggleAgeFilter(filter.key)}
-                        className="shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
+                        className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition active:scale-95"
                         style={{
                           background: selected ? '#1F3D2A' : '#FFFFFF',
                           color: selected ? '#fff' : '#1F3D2A',
                           border: selected ? '1px solid transparent' : '1px solid rgba(74,124,92,0.22)',
+                          boxShadow: selected ? '0 2px 7px rgba(31,61,42,0.14)' : 'none',
                         }}
                       >
                         {filter.label}

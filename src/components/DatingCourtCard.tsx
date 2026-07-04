@@ -905,45 +905,48 @@ const closeLightbox = () => {
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: 'flex-start',
-                    gap: 5,
-                    width: '100%',
-                    overflow: 'visible',
-                    marginTop: 8,
-                  }}
-                >
-                  {closed ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#6B7280', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      모집 마감
-                    </span>
-                  ) : (
-                    <>
-                      {tm > 0 && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                          남 {rmM <= 0 ? '마감' : `${rmM}명 남음`}
-                        </span>
-                      )}
 
-                      {tf > 0 && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                          여 {rmF <= 0 ? '마감' : `${rmF}명 남음`}
-                        </span>
-                      )}
-                    </>
-                  )}
-
-                  {court.experience_wanted && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F3F4F6', borderRadius: 999, padding: '4px 8px', fontSize: 10, color: '#4B5563', fontWeight: 800, whiteSpace: 'nowrap', maxWidth: 82, overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 1 }}>
-                      {String(court.experience_wanted).includes('상관') ? '구력 상관없어요' : `선호 ${court.experience_wanted}`}
-                    </span>
-                  )}
-                </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '0 14px 2px' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'flex-start',
+              gap: 6,
+              width: '100%',
+              overflow: 'visible',
+            }}
+          >
+            {closed ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#6B7280', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                모집 마감
+              </span>
+            ) : (
+              <>
+                {tm > 0 && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    남 {rmM <= 0 ? '마감' : `${rmM}명 남음`}
+                  </span>
+                )}
+
+                {tf > 0 && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    여 {rmF <= 0 ? '마감' : `${rmF}명 남음`}
+                  </span>
+                )}
+              </>
+            )}
+
+            {court.experience_wanted && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F3F4F6', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#4B5563', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'visible', flexShrink: 0 }}>
+                {String(court.experience_wanted).includes('상관') ? '구력 상관없어요' : `선호 ${court.experience_wanted}`}
+              </span>
+            )}
           </div>
         </div>
 
