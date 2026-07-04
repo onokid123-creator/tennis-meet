@@ -25,7 +25,6 @@ const SignUp = lazy(() => import('./pages/SignUp'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const PurposeSelection = lazy(() => import('./pages/PurposeSelection'));
-const TennisQuiz = lazy(() => import('./pages/TennisQuiz'));
 const ProfileSetup = lazy(() => import('./pages/ProfileSetup'));
 const Home = lazy(() => import('./pages/Home'));
 const CreateCourt = lazy(() => import('./pages/CreateCourt'));
@@ -228,14 +227,6 @@ function AppRoutes() {
         />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route
-          path="/tennis-quiz"
-          element={
-            <ProtectedRoute requireComplete={false}>
-              <TennisQuiz />
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/purpose-selection"
           element={
