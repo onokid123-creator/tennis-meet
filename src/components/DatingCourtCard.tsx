@@ -26,8 +26,8 @@ function isClosed(court: Court) {
 function badge(court: Court): string | null {
   const s = court.format ?? court.match_type ?? null;
   if (!s) return null;
-  if (s === '단식') return '단식 · 1대1';
-  if (s === '혼복') return '혼복 · 2대2';
+  if (s === '단식') return '단식';
+  if (s === '혼복') return '혼복';
   return s;
 }
 

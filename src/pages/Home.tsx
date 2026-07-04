@@ -7,7 +7,6 @@ import { supabase } from '../lib/supabase';
 import { Court } from '../types';
 import { Plus } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
-import TennisCourtCard from '../components/TennisCourtCard';
 import BrandLogo from '../components/BrandLogo';
 import SwipeCourtDeck from '../components/SwipeCourtDeck';
 import { useVisualViewport } from '../hooks/useVisualViewport';
@@ -833,29 +832,16 @@ if (!categoryTab) {
               </p>
             </div>
           </div>
-            ) : isDating ? (
+            ) : (
               <SwipeCourtDeck
                 courts={filteredCourts}
                 onApply={(court) => openApplyPopup(court)}
-                onInterest={(court) => handleInterestCourt(court)}
-                isInterested={(court) => interestedCourtIds.has(court.id)}
+                onInterest={isDating ? (court) => handleInterestCourt(court) : undefined}
+                isInterested={isDating ? (court) => interestedCourtIds.has(court.id) : undefined}
                 isOwnerMode={activeTab === 'mine'}
                 onEdit={(court) => handleEdit(court)}
                 onDelete={(court) => handleDelete(court.id)}
               />
-            ) : (
-              <div className="space-y-4">
-                {filteredCourts.map((court) => (
-                  <TennisCourtCard
-                key={court.id}
-                court={court}
-                isOwner={court.user_id === user?.id}
-                onApply={activeTab === 'others' ? () => openApplyPopup(court) : undefined}
-                onEdit={() => handleEdit(court)}
-                onDelete={() => handleDelete(court.id)}
-              />
-                ))}
-              </div>
             )}
           </>
         )}
