@@ -8,17 +8,17 @@ const QUIZZES = [
   {
     image: quiz001,
     hint: '시__',
-    answers: ['시너', '신너', '시네르', '신네르', 'sinner', 'jannik sinner', 'jannick sinner', '야닉 시너', '얀닉 시너', '야니크 시너', '얀니크 시너'],
+    answers: ['시너', '신너', 'sinner', 'jannik sinner', '야닉 시너', '얀닉 시너'],
   },
   {
     image: quiz002,
     hint: '알___',
-    answers: ['알카라스', '알카러스', '알카리스', '알카라즈', '알카레스', 'alcaraz', 'carlos alcaraz', '카를로스 알카라스', '카를로스 알카리스'],
+    answers: ['알카라스', '알카러스', 'alcaraz', 'carlos alcaraz', '카를로스 알카라스'],
   },
   {
     image: quiz003,
     hint: '조____',
-    answers: ['조코비치', '조코', '조코비취', '조코비', 'djokovic', 'jokovic', 'novak djokovic', '노박 조코비치', '노바크 조코비치'],
+    answers: ['조코비치', '조코', 'djokovic', 'novak djokovic', '노박 조코비치'],
   },
 ];
 
@@ -54,7 +54,7 @@ export default function TennisQuiz() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAF8] flex items-start justify-center px-5 pb-6 pt-[calc(env(safe-area-inset-top)+24px)]">
+    <div className="min-h-screen bg-[#F8FAF8] flex items-center justify-center px-5 py-6">
       <div className="w-full max-w-md bg-white rounded-[30px] shadow-2xl px-6 py-7 border border-green-900/10">
         <div className="flex justify-center gap-2 mb-5">
           {QUIZZES.map((_, i) => (
@@ -87,8 +87,8 @@ export default function TennisQuiz() {
           </p>
         </div>
 
-        <div className="relative rounded-2xl overflow-hidden bg-[#F3F5F2] aspect-[4/3] mb-5">
-          <img src={quiz.image} alt="테니스 퀴즈" className="w-full h-full object-contain" />
+        <div className="relative rounded-2xl overflow-hidden bg-gray-950 aspect-[4/3] mb-5">
+          <img src={quiz.image} alt="테니스 퀴즈" className="w-full h-full object-cover" />
           <div className="absolute top-3 left-3 rounded-full bg-black/60 px-3 py-1.5 text-sm font-bold text-emerald-300">
             문제 {index + 1}/3
           </div>
