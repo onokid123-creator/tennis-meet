@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Court, Profile } from '../types';
-import { ChevronLeft, ChevronRight, X, Pencil, Trash2, MapPin, Calendar, Clock, Heart, Users, ChevronDown, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Pencil, Trash2, MapPin, Calendar, Clock, Users, ChevronDown, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 /* ─────────── Design tokens ─────────── */
@@ -553,8 +553,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
             </div>
           ) : (
             <PinkBtn onClick={() => { onClose(); onApply!(); }}>
-              <Heart style={{ width: 17, height: 17, fill: WHITE, strokeWidth: 0 }} />
-             참여 신청하기
+              참여 신청하기
             </PinkBtn>
           )}
         </div>
@@ -909,11 +908,11 @@ const closeLightbox = () => {
                 <div
                   style={{
                     display: 'flex',
-                    flexWrap: 'nowrap',
-                    justifyContent: 'center',
+                    flexWrap: 'wrap',
+                    justifyContent: 'flex-start',
                     gap: 5,
                     width: '100%',
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     marginTop: 8,
                   }}
                 >
@@ -924,13 +923,13 @@ const closeLightbox = () => {
                   ) : (
                     <>
                       {tm > 0 && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 8px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
                           남 {rmM <= 0 ? '마감' : `${rmM}명 남음`}
                         </span>
                       )}
 
                       {tf > 0 && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 8px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', background: '#F2F8F3', border: '1px solid rgba(45,106,79,0.14)', borderRadius: 999, padding: '4px 10px', fontSize: 10, color: '#2D6A4F', fontWeight: 850, whiteSpace: 'nowrap', flexShrink: 0 }}>
                           여 {rmF <= 0 ? '마감' : `${rmF}명 남음`}
                         </span>
                       )}
@@ -1021,8 +1020,7 @@ const closeLightbox = () => {
                   onPointerDown={(e) => (e.currentTarget.style.opacity = '0.88')}
                   onPointerUp={(e) => (e.currentTarget.style.opacity = '1')}
                 >
-                  <Heart style={{ width: 14, height: 14, fill: WHITE, strokeWidth: 0 }} />
-                  코트에서 만날까요?
+                  참여 신청하기
                 </button>
               )
             )}

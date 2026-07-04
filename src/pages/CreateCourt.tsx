@@ -482,10 +482,10 @@ const isTennis = purpose === 'tennis';
         '같이 칠 분들께 한마디! 💬',
       ]
     : [
-        isPlanningMode ? '어디서 치실 예정이세요?' : '코트 위 설레는 만남을 등록해봐요 🥂',
+        isPlanningMode ? '어디서 치실 예정이세요?' : '코트 위 설레는 만남을 등록해봐요',
         isPlanningMode ? '언제 만나고 싶으세요?' : '언제 만나고 싶으세요? 💫',
-        '어떤 분을 찾고 계세요? 💝',
-        '설레는 첫인상을 남겨요 💌',
+        '어떤 분을 찾고 계세요?',
+        '매칭 소개글',
       ];
 
   const slideStyle: React.CSSProperties = {
@@ -668,8 +668,8 @@ const isTennis = purpose === 'tennis';
               <p className="text-sm font-semibold text-gray-700 mb-2">경기 방식</p>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { label: '단식 (1대1 미팅 💑)', value: '단식' },
-                  { label: '혼복 (2대2 미팅 👫👫)', value: '혼복' },
+                  { label: '단식 (1대1 미팅)', value: '단식' },
+                  { label: '혼복 (2대2 미팅)', value: '혼복' },
                 ].map(({ label, value }) => (
                   <button
                     key={value}
@@ -745,8 +745,8 @@ const isTennis = purpose === 'tennis';
               <p className="text-sm font-semibold text-gray-700 mb-3">코트비</p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: '같이 나눠요 💑', value: 'dutch' },
-                  { label: '제가 낼게요 😊', value: 'host' },
+                  { label: '같이 나눠요', value: 'dutch' },
+                  { label: '제가 낼게요', value: 'host' },
                 ].map(({ label, value }) => (
                   <button
                     key={value}
@@ -765,8 +765,6 @@ const isTennis = purpose === 'tennis';
               </div>
             </div>
 
-
-
           </div>
         )}
 
@@ -776,8 +774,7 @@ const isTennis = purpose === 'tennis';
 
             {!isTennis && (
               <p className="text-sm font-medium text-center py-2" style={{ color: '#C9A84C' }}>
-                🍽️ 테니스 끝난 후 식사 한번 해봐요 😊
-              </p>
+</p>
             )}
 
             {!isPlanningMode && (
@@ -804,7 +801,7 @@ const isTennis = purpose === 'tennis';
                 placeholder={
                   isTennis
                     ? '예) 즐겁게 같이 치실 분 환영해요! 실력 무관 🎾'
-                    : '예) 테니스 좋아하는 활발한 성격이에요 😊 같이 치고 맛있는 거 먹어요!'
+                    : '예) 같이 즐겁게 테니스 치고 싶어요!'
                 }
                 rows={4}
                 className="w-full text-sm text-gray-800 resize-none focus:outline-none placeholder-gray-400 leading-relaxed"
@@ -925,7 +922,7 @@ const isTennis = purpose === 'tennis';
               {!isTennis && costOption && (
                 <div className="flex gap-2 text-sm">
                   <span className="text-gray-500 w-16 flex-shrink-0">비용</span>
-                  <span className="font-medium text-gray-900">{costOption === 'dutch' ? '같이 나눠요 💑' : '제가 낼게요 😊'}</span>
+                  <span className="font-medium text-gray-900">{costOption === 'dutch' ? '같이 나눠요' : '제가 낼게요'}</span>
                 </div>
               )}
               {isTennis && courtFee && (

@@ -316,21 +316,21 @@ function DatingProfilePopup({
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(30,10,18,0.8)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}
     >
       {fullscreen && photos.length > 0 && (
         <div
           className="fixed inset-0 z-[70] flex items-center justify-center"
-          style={{ background: '#0d0008' }}
+          style={{ background: 'rgba(0,0,0,0.95)' }}
           onClick={() => setFullscreen(false)}
         >
           <button
             onClick={() => setFullscreen(false)}
             className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(183,110,121,0.3)', border: '1px solid rgba(183,110,121,0.5)' }}
+            style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.4)' }}
           >
-            <X className="w-5 h-5" style={{ color: '#FFB6C1' }} />
+            <X className="w-5 h-5" style={{ color: '#FFFFFF' }} />
           </button>
           <img src={photos[mainIdx]} alt={profile.name} className="max-w-full max-h-full object-contain" />
         </div>

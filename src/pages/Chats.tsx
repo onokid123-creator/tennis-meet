@@ -849,7 +849,7 @@ if (tab === 'tennis') {
 {showDatingProfilePopup && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-5">
     <div className="w-full max-w-sm rounded-3xl bg-white p-6">
-      <div className="text-3xl mb-3">🥂</div>
+      <div className="text-3xl mb-3">🎾</div>
 
       <h2
         className="text-lg font-bold mb-2"
@@ -875,7 +875,7 @@ if (tab === 'tennis') {
         className="w-full h-12 rounded-2xl text-white font-semibold"
         style={{
           background:
-            'linear-gradient(135deg, #2D6A4F 0%, #E8A598 100%)',
+            'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
         }}
       >
         프로필 등록하기
@@ -952,21 +952,16 @@ function DatingEmptyState() {
   return (
     <div className="text-center py-20">
       <div
-        className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-5 relative"
-        style={{
-          background:
-            'linear-gradient(135deg, rgba(45,106,79,0.08) 0%, rgba(201,168,76,0.08) 100%)',
-        }}
+        className="w-20 h-20 rounded-full flex items-center justify-center text-4xl mx-auto mb-4"
+        style={{ background: 'rgba(45,106,79,0.08)' }}
       >
-        <span style={{ fontSize: '2.6rem' }}>🥂</span>
+        🎾
       </div>
-      <p className="font-semibold text-sm mb-1.5" style={{ color: '#8B3060' }}>
-        진행 중인 설레는 만남이 없어요
+      <p className="font-semibold text-sm mb-1" style={{ color: '#1B4332' }}>
+        참여 중인 테니스 모임이 없어요
       </p>
-      <p className="text-xs leading-relaxed" style={{ color: 'rgba(27,67,50,0.5)' }}>
-        홈에서 마음에 드는 분께
-        <br />
-        신청해보세요!
+      <p className="text-xs" style={{ color: 'rgba(27,67,50,0.5)' }}>
+        홈에서 코트를 찾아 신청해보세요!
       </p>
     </div>
   );
@@ -1305,11 +1300,11 @@ function DatingGroupChatRow({ gc, blockedIds = [], onPress }: { gc: CourtGroupCh
         <div
           className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
           style={{
-            background: 'linear-gradient(135deg, #C9A84C 0%, #E8A598 100%)',
+            background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
             boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
           }}
         >
-          🥂
+          🎾
         </div>
       </div>
 
@@ -1436,11 +1431,11 @@ function DatingChatRow({
         <div
           className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
           style={{
-            background: 'linear-gradient(135deg, #C9A84C 0%, #E8A598 100%)',
+            background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
             boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
           }}
         >
-          {isGroup ? '🥂' : '🎾'}
+          {isGroup ? '🎾' : '🎾'}
         </div>
       </div>
 
