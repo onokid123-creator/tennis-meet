@@ -220,12 +220,12 @@ export default function SignUp() {
       await signUp(formData.email, formData.password, formData.name, age, formData.gender);
       localStorage.removeItem('profile_photo_fallback');
       setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 0);
-      navigate('/purpose-selection');
+      navigate('/tennis-quiz');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       console.error('[SignUp Page] 회원가입 실패:', msg);
       if (msg.includes('이미 가입된')) {
-        navigate('/purpose-selection');
+        navigate('/tennis-quiz');
         return;
       }
       setError(msg || '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.');
