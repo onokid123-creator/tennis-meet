@@ -20,6 +20,10 @@ const MBTI_LIST = [
   ['ESTJ', 'ESFJ', 'ENFJ', 'ENTJ'],
 ];
 
+const MAX_ORIGINAL_PHOTO_SIZE = 15 * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 1200;
+const JPEG_QUALITY = 0.8;
+
 const experienceOptions = ['1년미만', '1년차', '2년차', '3년차', '4년차', '5년이상'];
 
 export default function DatingProfileSetup() {
@@ -69,16 +73,65 @@ export default function DatingProfileSetup() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.currentTarget;
+    const file = input.files?.[0];
     if (!file) return;
+
     const idx = activeSlotRef.current;
-    const preview = URL.createObjectURL(file);
-    setPhotos((prev) => {
-      const next = [...prev];
-      next[idx] = { file, preview, uploading: false };
-      return next;
+    const photoLabel = `${idx + 1}번째 사진`;
+
+    console.log('[DatingProfileSetup] file selected', {
+      index: idx,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      overLimit: file.size > MAX_ORIGINAL_PHOTO_SIZE,
     });
-    e.target.value = '';
+
+    if (file.size > MAX_ORIGINAL_PHOTO_SIZE) {
+      setError(`${photoLabel} 용량이 너무 큽니다. 15MB 이하 사진으로 다시 선택해주세요.`);
+      input.value = '';
+      return;
+    }
+
+    if (file.type && !file.type.startsWith('image/')) {
+      setError(`${photoLabel} 파일 형식이 올바르지 않습니다. 이미지 파일을 선택해주세요.`);
+      input.value = '';
+      return;
+    }
+
+    const preview = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      console.log('[DatingProfileSetup] preview load success', {
+        index: idx,
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+      });
+
+      setError('');
+      setPhotos((prev) => {
+        const next = [...prev];
+        next[idx] = { file, preview, uploading: false };
+        return next;
+      });
+    };
+
+    img.onerror = () => {
+      console.error('[DatingProfileSetup] preview load failed', {
+        index: idx,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+      });
+
+      URL.revokeObjectURL(preview);
+      setError(`${photoLabel}을 불러올 수 없습니다. 다른 사진으로 다시 선택해주세요.`);
+    };
+
+    img.src = preview;
+    input.value = '';
   };
 
   const removePhoto = (idx: number) => {
@@ -109,38 +162,108 @@ export default function DatingProfileSetup() {
     setDragOver(null);
   }, []);
 
-  const compressFile = (file: File): Promise<Blob> => {
-    return new Promise((resolve) => {
+  const compressFile = (file: File, index?: number): Promise<Blob> => {
+    const photoLabel = index !== undefined ? `${index + 1}번째 사진` : '사진';
+
+    if (file.size > MAX_ORIGINAL_PHOTO_SIZE) {
+      return Promise.reject(new Error(`${photoLabel} 용량이 너무 큽니다. 15MB 이하 사진으로 다시 선택해주세요.`));
+    }
+
+    if (file.type && !file.type.startsWith('image/')) {
+      return Promise.reject(new Error(`${photoLabel} 파일 형식이 올바르지 않습니다. 이미지 파일을 선택해주세요.`));
+    }
+
+    return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
+
       img.onload = () => {
         URL.revokeObjectURL(url);
-        const canvas = document.createElement('canvas');
-        const maxSize = 1200;
-        let { width, height } = img;
-        if (width > height && width > maxSize) {
-          height = Math.round((height * maxSize) / width);
-          width = maxSize;
-        } else if (height > maxSize) {
-          width = Math.round((width * maxSize) / height);
-          height = maxSize;
+
+        const sourceWidth = img.naturalWidth || img.width;
+        const sourceHeight = img.naturalHeight || img.height;
+
+        if (!sourceWidth || !sourceHeight) {
+          reject(new Error(`${photoLabel}을 불러올 수 없습니다. 다른 사진으로 다시 선택해주세요.`));
+          return;
         }
+
+        const ratio = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(sourceWidth, sourceHeight));
+        const width = Math.max(1, Math.round(sourceWidth * ratio));
+        const height = Math.max(1, Math.round(sourceHeight * ratio));
+
+        const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, width, height);
-        canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', 0.8);
+
+        const context = canvas.getContext('2d');
+        if (!context) {
+          reject(new Error(`${photoLabel}을 처리할 수 없습니다. 다른 사진으로 다시 선택해주세요.`));
+          return;
+        }
+
+        context.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (!blob || blob.size === 0) {
+            reject(new Error(`${photoLabel} 압축에 실패했습니다. 다른 사진으로 다시 선택해주세요.`));
+            return;
+          }
+
+          resolve(blob);
+        }, 'image/jpeg', JPEG_QUALITY);
       };
-      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error(`${photoLabel}을 불러올 수 없습니다. 갤러리에서 다른 사진으로 다시 선택해주세요.`));
+      };
+
       img.src = url;
     });
   };
 
-  const uploadPhoto = async (file: File): Promise<string> => {
-    const compressed = await compressFile(file);
+  const uploadPhoto = async (file: File, index?: number): Promise<string> => {
+    console.log('[DatingProfileSetup] uploadPhoto:start', {
+      index,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      userId: user?.id,
+    });
+
+    const compressed = await compressFile(file, index);
+
+    console.log('[DatingProfileSetup] uploadPhoto:compressed', {
+      index,
+      originalSize: file.size,
+      compressedSize: compressed.size,
+      compressedType: compressed.type,
+    });
+
     const path = `${user!.id}/dating-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const { error: uploadError } = await supabase.storage.from('profile_images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
-    if (uploadError) throw new Error(`사진 업로드 실패: ${uploadError.message}`);
+    const { error: uploadError } = await supabase.storage
+      .from('profile_images')
+      .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+
+    if (uploadError) {
+      console.error('[DatingProfileSetup] uploadPhoto:error', {
+        index,
+        path,
+        message: uploadError.message,
+        error: uploadError,
+      });
+      throw new Error(`${index !== undefined ? index + 1 : ''}번째 사진 업로드에 실패했습니다. 다시 시도해주세요.`);
+    }
+
     const { data: { publicUrl } } = supabase.storage.from('profile_images').getPublicUrl(path);
+
+    console.log('[DatingProfileSetup] uploadPhoto:success', {
+      index,
+      path,
+      publicUrl,
+    });
+
     return publicUrl;
   };
 
@@ -166,12 +289,32 @@ export default function DatingProfileSetup() {
     setLoading(true);
 
     try {
+      console.log('[DatingProfileSetup] submit:start', {
+        userId: user?.id,
+        email: user?.email,
+        gender: formData.gender,
+        photoCount: photos.filter((p) => p.preview).length,
+        mbti: extraData.mbti,
+        height: extraData.height,
+      });
+
       const filledSlots = photos.filter((p) => p.preview);
-      const uploadedUrls: string[] = await Promise.all(
-        filledSlots.map((slot) =>
-          slot.file ? uploadPhoto(slot.file) : Promise.resolve(slot.preview)
-        )
-      );
+
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < filledSlots.length; i += 1) {
+        const slot = filledSlots[i];
+        try {
+          const url = slot.file ? await uploadPhoto(slot.file, i) : slot.preview;
+          uploadedUrls.push(url);
+        } catch (uploadErr) {
+          console.error('[DatingProfileSetup] submit:upload failed', {
+            index: i,
+            error: uploadErr,
+          });
+          throw uploadErr;
+        }
+      }
+
       const primaryPhoto = uploadedUrls[0] || null;
 
       const upsertData = {
@@ -189,7 +332,25 @@ export default function DatingProfileSetup() {
         profile_completed: true,
       };
 
-      await supabase.from('profiles').upsert(upsertData, { onConflict: 'user_id' });
+      console.log('[DatingProfileSetup] profile upsert:start', {
+        userId: user?.id,
+        photoCount: uploadedUrls.length,
+        purpose: upsertData.purpose,
+        profileCompleted: upsertData.profile_completed,
+      });
+
+      const { data: savedProfile, error: upsertError } = await supabase
+        .from('profiles')
+        .upsert(upsertData, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (upsertError) {
+        console.error('[DatingProfileSetup] profile upsert:error', upsertError);
+        throw new Error(`프로필 저장 실패: ${upsertError.message}`);
+      }
+
+      console.log('[DatingProfileSetup] profile upsert:success', savedProfile);
 
       updateProfile({
         name: upsertData.name,
@@ -206,8 +367,8 @@ export default function DatingProfileSetup() {
 
       navigate(from === 'create-court' ? '/create-court' : '/home', { replace: true });
     } catch (err) {
-      console.error('데이팅 프로필 업로드 실패:', err);
-      setError('저장에 실패했습니다. 다시 시도해주세요.');
+      console.error('[DatingProfileSetup] submit:failed', err);
+      setError(err instanceof Error ? err.message : '저장에 실패했습니다. 다시 시도해주세요.');
       setLoading(false);
     }
   };
@@ -345,6 +506,12 @@ export default function DatingProfileSetup() {
                   );
                 })}
               </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-500 px-3 py-2 rounded-xl text-xs mt-3 text-center">
+                  {error}
+                </div>
+              )}
 
               {!hasMinPhotos && (
                 <p className="text-[#B88A22] text-xs mt-2 text-center font-medium">
