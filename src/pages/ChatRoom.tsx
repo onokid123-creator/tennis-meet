@@ -793,6 +793,8 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
 const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingStateRef = useRef(false);
+  const typingLastTrueTrackAtRef = useRef(0);
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1544,6 +1546,11 @@ const channelKey = `${chatId}_${user.id}_${resumeTick}`;
       supabase.removeChannel(broadcastChannel);
       supabase.removeChannel(presenceChannel);
       presenceChannelRef.current = null;
+      typingStateRef.current = false;
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
@@ -1551,7 +1558,28 @@ const channelKey = `${chatId}_${user.id}_${resumeTick}`;
 
   const broadcastTyping = async (typing: boolean) => {
     if (!presenceChannelRef.current || !user) return;
-    await presenceChannelRef.current.track({ user_id: user.id, typing, online_at: new Date().toISOString() });
+
+    const now = Date.now();
+
+    if (typing) {
+      if (typingStateRef.current) return;
+      if (now - typingLastTrueTrackAtRef.current < 2500) return;
+      typingStateRef.current = true;
+      typingLastTrueTrackAtRef.current = now;
+    } else {
+      if (!typingStateRef.current) return;
+      typingStateRef.current = false;
+    }
+
+    try {
+      await presenceChannelRef.current.track({
+        user_id: user.id,
+        typing,
+        online_at: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.warn('[ChatRoom] typing presence track skipped', error);
+    }
   };
 
   const resetMessageInputHeight = () => {
