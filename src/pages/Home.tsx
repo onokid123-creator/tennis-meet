@@ -14,9 +14,11 @@ import { useVisualViewport } from '../hooks/useVisualViewport';
 import PaywallLimitPopup from '../components/paywall/PaywallLimitPopup';
 import TicketPackPopup from '../components/paywall/TicketPackPopup';
 import SubscriptionPopup from '../components/paywall/SubscriptionPopup';
+import DatingPeopleList from '../components/dating/DatingPeopleList';
 
 type Tab = 'others' | 'mine';
 type CategoryTab = 'tennis' | 'dating';
+type DatingMode = 'court' | 'people';
 type AgeFilter = 'all' | '20s' | '30s' | '40s' | '50s';
 type GenderFilter = 'all' | 'male' | 'female';
 
@@ -94,6 +96,7 @@ const vpHeight = useVisualViewport();
     return saved === 'mine' ? 'mine' : 'others';
   });
  const [categoryTab, setCategoryTab] = useState<CategoryTab | null>(null);
+  const [datingMode, setDatingMode] = useState<DatingMode>('court');
   const [selectedAgeFilters, setSelectedAgeFilters] = useState<AgeFilter[]>(['all']);
   const [selectedGenderFilter, setSelectedGenderFilter] = useState<GenderFilter>('all');
   const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
@@ -332,6 +335,9 @@ useEffect(() => {
     setCourts([]);
     setCategoryTab(tab);
     setActiveTab('others');
+    if (tab === 'dating') {
+      setDatingMode('court');
+    }
     localStorage.setItem('home_category_tab', tab);
   };
 
@@ -708,7 +714,12 @@ if (!categoryTab) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCreateCourt('planning')}
+                  onClick={() => {
+                    setCategoryTab('dating');
+                    localStorage.setItem('home_category_tab', 'dating');
+                    setActiveTab('others');
+                    setDatingMode('people');
+                  }}
                   className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition active:scale-95"
                   style={{ background: '#FFF3D6', color: '#9A5A12', border: '1.5px solid rgba(201,168,76,0.45)', boxShadow: '0 2px 8px rgba(201,168,76,0.18)' }}
                 >
@@ -774,7 +785,9 @@ if (!categoryTab) {
       </header>
 
       <div className={isDating ? 'px-4 py-4' : 'px-4 py-5'}>
-        {loading ? (
+        {activeTab === 'others' && isDating && datingMode === 'people' ? (
+          <DatingPeopleList />
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div
               className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
