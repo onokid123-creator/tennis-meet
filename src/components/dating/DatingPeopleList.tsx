@@ -628,7 +628,7 @@ export default function DatingPeopleList() {
                           {person.name || '이름 없음'}
                         </p>
                         <p className="text-xs mt-0.5" style={{ color: 'rgba(31,61,42,0.55)' }}>
-                          {person.age ? `${person.age}세` : '나이 미입력'} · {formatHeight(person.height)}
+                          {person.age ? `나이: ${person.age}세` : '나이 미입력'} · {formatHeight(person.height)}
                         </p>
                       </div>
 
@@ -646,7 +646,7 @@ export default function DatingPeopleList() {
                           className="px-2 py-1 rounded-full text-[11px] font-semibold"
                           style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}
                         >
-                          MBTI {person.mbti}
+                          MBTI: {person.mbti}
                         </span>
                       )}
                     </div>
@@ -684,7 +684,7 @@ export default function DatingPeopleList() {
       )}
       {applicationTarget && (
         <div
-          className="fixed inset-0 z-[9999] flex items-end justify-center"
+          className="fixed inset-0 z-[10000] flex items-end justify-center"
           style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={() => {
             if (!applicationSubmitting) {
@@ -694,18 +694,19 @@ export default function DatingPeopleList() {
           }}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-5 pb-4"
+            className="w-full max-w-md rounded-t-3xl px-5 pt-4 pb-4 overflow-y-auto"
             style={{
               background: '#FFFFFF',
-              paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 20px)',
+              maxHeight: '62dvh',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 18px)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
+            <div className="w-10 h-1 rounded-full mx-auto mb-3 bg-gray-200" />
             <p className="text-base font-bold mb-1" style={{ color: '#1F3D2A' }}>
               {applicationTarget.name || '회원'}님에게 신청 보내기
             </p>
-            <p className="text-xs mb-4" style={{ color: 'rgba(31,61,42,0.55)' }}>
+            <p className="text-xs mb-2" style={{ color: 'rgba(31,61,42,0.55)' }}>
               함께 치고 싶은 이유나 가능한 시간을 간단히 적어주세요.
             </p>
 
@@ -714,7 +715,7 @@ export default function DatingPeopleList() {
               onChange={(e) => setApplicationMessage(e.target.value)}
               placeholder="예: 안녕하세요! 시간 맞으면 같이 테니스 치고 싶어요 :)"
               maxLength={300}
-              className="w-full min-h-[120px] rounded-2xl px-4 py-3 text-sm outline-none resize-none"
+              className="w-full min-h-[72px] rounded-2xl px-4 py-2.5 text-sm outline-none resize-none"
               style={{
                 background: '#F7FAF4',
                 border: '1px solid rgba(74,124,92,0.2)',
@@ -722,7 +723,7 @@ export default function DatingPeopleList() {
               }}
             />
 
-            <div className="flex justify-between items-center mt-2 mb-4">
+            <div className="flex justify-between items-center mt-1 mb-1.5">
               <span className="text-xs" style={{ color: 'rgba(31,61,42,0.45)' }}>
                 {applicationMessage.length}/300
               </span>
@@ -736,7 +737,7 @@ export default function DatingPeopleList() {
                   setApplicationTarget(null);
                   setApplicationMessage('');
                 }}
-                className="py-3 rounded-xl text-sm font-bold transition active:scale-95 disabled:opacity-60"
+                className="py-2.5 rounded-xl text-sm font-bold transition active:scale-95 disabled:opacity-60"
                 style={{
                   background: '#F3F4F6',
                   color: '#374151',
@@ -748,7 +749,7 @@ export default function DatingPeopleList() {
                 type="button"
                 disabled={applicationSubmitting}
                 onClick={handleSubmitApplication}
-                className="py-3 rounded-xl text-sm font-bold text-white transition active:scale-95 disabled:opacity-60"
+                className="py-2.5 rounded-xl text-sm font-bold text-white transition active:scale-95 disabled:opacity-60"
                 style={{ background: 'linear-gradient(135deg, #3D6B4E 0%, #5A8A6E 100%)' }}
               >
                 {applicationSubmitting ? '보내는 중...' : '신청 보내기'}
