@@ -28,6 +28,24 @@ type CourtInterestItem = {
   court?: any | null;
 };
 
+type DatingPeopleApplicationItem = {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  message?: string | null;
+  status: string;
+  rejection_reason?: string | null;
+  sender_deleted?: boolean;
+  receiver_deleted?: boolean;
+  applicant_notified?: boolean;
+  chat_id?: string | null;
+  created_at: string;
+  accepted_at?: string | null;
+  rejected_at?: string | null;
+  sender?: Profile | null;
+  receiver?: Profile | null;
+};
+
 function DefaultProfileAvatar({
   type = 'tennis',
   size = 96,
@@ -911,6 +929,8 @@ const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
   const [directionTab, setDirectionTab] = useState<DirectionTab>('received');
   const [receivedApps, setReceivedApps] = useState<Application[]>([]);
   const [sentApps, setSentApps] = useState<Application[]>([]);
+  const [receivedPeopleApps, setReceivedPeopleApps] = useState<DatingPeopleApplicationItem[]>([]);
+  const [sentPeopleApps, setSentPeopleApps] = useState<DatingPeopleApplicationItem[]>([]);
   const [interestApps, setInterestApps] = useState<CourtInterestItem[]>([]);
   const [sentInterestApps, setSentInterestApps] = useState<CourtInterestItem[]>([]);
   const [interestDirectionTab, setInterestDirectionTab] = useState<InterestDirectionTab>('received');
@@ -919,6 +939,12 @@ const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [interestPhotoProfile, setInterestPhotoProfile] = useState<Profile | null>(null);
+  const [peopleApplicationTarget, setPeopleApplicationTarget] = useState<CourtInterestItem | null>(null);
+  const [peopleApplicationMessage, setPeopleApplicationMessage] = useState('');
+  const [peopleApplicationSubmitting, setPeopleApplicationSubmitting] = useState(false);
+  const [sentPeopleApplicationIds, setSentPeopleApplicationIds] = useState<Set<string>>(new Set());
+  const [expandedPeopleMessages, setExpandedPeopleMessages] = useState<Set<string>>(new Set());
+  const [peopleApplicationActionId, setPeopleApplicationActionId] = useState<string | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<Application | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -1146,6 +1172,8 @@ latestApplicationsRequestRef.current = requestId;
 
 let nextReceivedApps: Application[] = [];
 let nextSentApps: Application[] = [];
+let nextReceivedPeopleApps: DatingPeopleApplicationItem[] = [];
+let nextSentPeopleApps: DatingPeopleApplicationItem[] = [];
 let nextInterestApps: CourtInterestItem[] = [];
 let nextSentInterestApps: CourtInterestItem[] = [];
     const silent = options?.silent ?? false;
@@ -1169,6 +1197,8 @@ let nextSentInterestApps: CourtInterestItem[] = [];
         { data: sentInterestsRaw },
         { data: personInterestsRaw },
         { data: sentPersonInterestsRaw },
+        { data: receivedPeopleRaw },
+        { data: sentPeopleRaw },
       ] = await Promise.race([
         Promise.all([
           supabase
@@ -1205,6 +1235,18 @@ let nextSentInterestApps: CourtInterestItem[] = [];
             .eq('sender_id', currentUser.id)
             .eq('sender_deleted', false)
             .order('created_at', { ascending: false }),
+          supabase
+            .from('dating_people_applications')
+            .select('*')
+            .eq('receiver_id', currentUser.id)
+            .eq('receiver_deleted', false)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('dating_people_applications')
+            .select('*')
+            .eq('sender_id', currentUser.id)
+            .eq('sender_deleted', false)
+            .order('created_at', { ascending: false }),
         ]),
         timeoutPromise,
       ]);
@@ -1215,6 +1257,8 @@ let nextSentInterestApps: CourtInterestItem[] = [];
       const sentInterestList = sentInterestsRaw || [];
       const personInterestList = personInterestsRaw || [];
       const sentPersonInterestList = sentPersonInterestsRaw || [];
+      const receivedPeopleList = receivedPeopleRaw || [];
+      const sentPeopleList = sentPeopleRaw || [];
 
       const applicantIds = [...new Set(receivedList.map((a) => a.applicant_id).filter(Boolean))];
       const ownerIds = [...new Set(sentList.map((a) => a.host_id).filter(Boolean))];
@@ -1222,6 +1266,10 @@ let nextSentInterestApps: CourtInterestItem[] = [];
       const sentInterestOwnerIds = [...new Set(sentInterestList.map((i) => i.host_id).filter(Boolean))];
       const personInterestSenderIds = [...new Set(personInterestList.map((i) => i.sender_id).filter(Boolean))];
       const sentPersonInterestReceiverIds = [...new Set(sentPersonInterestList.map((i) => i.receiver_id).filter(Boolean))];
+      const receivedPeopleSenderIds = [...new Set(receivedPeopleList.map((i) => i.sender_id).filter(Boolean))];
+      const receivedPeopleReceiverIds = [...new Set(receivedPeopleList.map((i) => i.receiver_id).filter(Boolean))];
+      const sentPeopleSenderIds = [...new Set(sentPeopleList.map((i) => i.sender_id).filter(Boolean))];
+      const sentPeopleReceiverIds = [...new Set(sentPeopleList.map((i) => i.receiver_id).filter(Boolean))];
       const allProfileIds = [...new Set([
         ...applicantIds,
         ...ownerIds,
@@ -1229,6 +1277,10 @@ let nextSentInterestApps: CourtInterestItem[] = [];
         ...sentInterestOwnerIds,
         ...personInterestSenderIds,
         ...sentPersonInterestReceiverIds,
+        ...receivedPeopleSenderIds,
+        ...receivedPeopleReceiverIds,
+        ...sentPeopleSenderIds,
+        ...sentPeopleReceiverIds,
       ])];
 
       let profileMap: Record<string, Profile> = {};
@@ -1287,11 +1339,25 @@ let nextSentInterestApps: CourtInterestItem[] = [];
         court: null,
       }));
 
-      const sortByCreatedDesc = (a: CourtInterestItem, b: CourtInterestItem) =>
+      const receivedPeopleApplications = receivedPeopleList.map((item) => ({
+        ...item,
+        sender: profileMap[item.sender_id] ?? null,
+        receiver: profileMap[item.receiver_id] ?? null,
+      }));
+
+      const sentPeopleApplications = sentPeopleList.map((item) => ({
+        ...item,
+        sender: profileMap[item.sender_id] ?? null,
+        receiver: profileMap[item.receiver_id] ?? null,
+      }));
+
+      const sortByCreatedDesc = (a: { created_at: string }, b: { created_at: string }) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
 
      nextReceivedApps = received;
 nextSentApps = sent;
+nextReceivedPeopleApps = receivedPeopleApplications.sort(sortByCreatedDesc);
+nextSentPeopleApps = sentPeopleApplications.sort(sortByCreatedDesc);
 nextInterestApps = [...personInterests, ...interests].sort(sortByCreatedDesc);
 nextSentInterestApps = [...sentPersonInterests, ...sentInterests].sort(sortByCreatedDesc);
 
@@ -1301,8 +1367,14 @@ if (latestApplicationsRequestRef.current !== requestId) {
 
 setReceivedApps(nextReceivedApps);
 setSentApps(nextSentApps);
+setReceivedPeopleApps(nextReceivedPeopleApps);
+setSentPeopleApps(nextSentPeopleApps);
 setInterestApps(nextInterestApps);
 setSentInterestApps(nextSentInterestApps);
+
+      window.setTimeout(() => {
+        window.dispatchEvent(new Event('tennismeet:bottomnav-refresh'));
+      }, 120);
     } catch (err) {
       console.error('신청 목록 가져오기 실패:', {
         name: err instanceof Error ? err.name : undefined,
@@ -1334,6 +1406,9 @@ setSentInterestApps(nextSentInterestApps);
     .on('postgres_changes', { event: '*', schema: 'public', table: 'dating_interests' }, () => {
       fetchApplications();
     })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'dating_people_applications' }, () => {
+      fetchApplications();
+    })
     .subscribe();
 
   return () => {
@@ -1341,6 +1416,105 @@ setSentInterestApps(nextSentInterestApps);
     // window.removeEventListener('auth-resynced', handleResumed);
   };
 }, [fetchApplications, fetchMealProposals]);
+  useEffect(() => {
+    if (!user || purposeTab !== 'dating') return;
+
+    const refreshPeopleApplications = () => {
+      if (document.visibilityState === 'visible') {
+        fetchApplications({ silent: true });
+      }
+    };
+
+    refreshPeopleApplications();
+
+    const interval = window.setInterval(refreshPeopleApplications, 1500);
+
+    return () => window.clearInterval(interval);
+  }, [user, purposeTab, directionTab, interestDirectionTab, fetchApplications]);
+  useEffect(() => {
+    if (!user || purposeTab !== 'dating') return;
+
+    const markDatingReceivedSeen = async () => {
+      const now = new Date().toISOString();
+
+      try {
+        if (directionTab === 'received') {
+          await supabase
+            .from('dating_people_applications')
+            .update({ receiver_seen_at: now })
+            .eq('receiver_id', user.id)
+            .eq('status', 'pending')
+            .eq('receiver_deleted', false)
+            .is('receiver_seen_at', null);
+        }
+
+        if (directionTab === 'interest' && interestDirectionTab === 'received') {
+          await supabase
+            .from('dating_interests')
+            .update({ receiver_seen_at: now })
+            .eq('receiver_id', user.id)
+            .eq('status', 'active')
+            .eq('receiver_deleted', false)
+            .is('receiver_seen_at', null);
+        }
+      } catch (error) {
+        console.error('[Applications] mark dating received seen failed:', error);
+      }
+    };
+
+    markDatingReceivedSeen();
+  }, [user, purposeTab, directionTab, interestDirectionTab]);
+
+
+  useEffect(() => {
+    if (!user || purposeTab !== 'dating') return;
+
+    const markDatingItemsSeen = async () => {
+      const now = new Date().toISOString();
+
+      try {
+        if (directionTab === 'received') {
+          const { error } = await supabase
+            .from('dating_people_applications')
+            .update({ receiver_seen_at: now })
+            .eq('receiver_id', user.id)
+            .eq('status', 'pending')
+            .eq('receiver_deleted', false)
+            .is('receiver_seen_at', null);
+
+          if (!error) {
+            setReceivedPeopleApps((prev) =>
+              prev.map((item) => ({ ...item, receiver_seen_at: (item as any).receiver_seen_at || now } as any))
+            );
+          }
+        }
+
+        if (directionTab === 'interest' && interestDirectionTab === 'received') {
+          const { error } = await supabase
+            .from('dating_interests')
+            .update({ receiver_seen_at: now })
+            .eq('receiver_id', user.id)
+            .eq('status', 'active')
+            .eq('receiver_deleted', false)
+            .is('receiver_seen_at', null);
+
+          if (!error) {
+            setInterestApps((prev) =>
+              prev.map((item) => ({ ...item, receiver_seen_at: (item as any).receiver_seen_at || now } as any))
+            );
+          }
+        }
+      } catch (error) {
+        console.error('[Applications] mark dating items seen failed:', error);
+      }
+    };
+
+    markDatingItemsSeen();
+  }, [user, purposeTab, directionTab, interestDirectionTab]);
+
+
+
+
 
   const isGroupFormat = (format: string): boolean => {
     return ['복식', '혼복', '남복', '여복'].some((f) => format.includes(f));
@@ -1735,11 +1909,20 @@ if (applicantProfile?.fcm_token) {
   };
   const filteredReceived = receivedApps.filter((a) => a.purpose === purposeTab && a.status === 'pending');
   const filteredSent = sentApps.filter((a) => a.purpose === purposeTab);
+  const filteredPeopleReceived = purposeTab === 'dating'
+    ? receivedPeopleApps.filter((a) => a.status === 'pending')
+    : [];
+  const filteredPeopleSent = purposeTab === 'dating'
+    ? sentPeopleApps
+    : [];
   const mealProposalReceivedCount = purposeTab === 'dating' ? pendingMealProposals.filter((p) => p.receiver_id === user?.id).length : 0;
   const mealProposalResultCount = purposeTab === 'dating' ? resultMealProposals.length : 0;
   const acceptedNotifCount = filteredSent.filter((a) => a.status === 'accepted' && !a.applicant_notified && a.chat_id).length;
-  const pendingReceivedCount = filteredReceived.length + mealProposalReceivedCount;
-  const pendingSentCount = mealProposalResultCount + acceptedNotifCount;
+  const unreadPeopleReceivedCount = filteredPeopleReceived.filter((item) => !(item as any).receiver_seen_at).length;
+  const unreadDatingInterestCount = interestApps.filter((item) => item.kind === 'person' && !(item as any).receiver_seen_at).length;
+
+  const pendingReceivedCount = filteredReceived.length + unreadPeopleReceivedCount + mealProposalReceivedCount;
+  const pendingSentCount = filteredPeopleSent.length + mealProposalResultCount + acceptedNotifCount;
 const handlePurposeTabChange = (tab: PurposeTab) => {
   if (tab === 'dating') {
   if (!profile?.mbti && !profile?.height) {
@@ -1933,6 +2116,333 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     );
   };
 
+  const handleAcceptPeopleApplication = async (item: DatingPeopleApplicationItem) => {
+    if (!user || peopleApplicationActionId) return;
+
+    const ok = window.confirm('이 신청을 수락하시겠어요?');
+    if (!ok) return;
+
+    setPeopleApplicationActionId(item.id);
+
+    try {
+      const { error } = await supabase
+        .from('dating_people_applications')
+        .update({
+          status: 'accepted',
+          accepted_at: new Date().toISOString(),
+        })
+        .eq('id', item.id)
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      await fetchApplications({ silent: true });
+      alert('신청을 수락했습니다.');
+    } catch (error) {
+      console.error('[Applications] accept people application failed:', error);
+      alert('신청 수락에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setPeopleApplicationActionId(null);
+    }
+  };
+
+  const handleRejectPeopleApplication = async (item: DatingPeopleApplicationItem) => {
+    if (!user || peopleApplicationActionId) return;
+
+    const reason = window.prompt('거절 사유를 입력해주세요. 상대방은 거절 사유 보기에서 확인할 수 있습니다.');
+    if (reason === null) return;
+
+    setPeopleApplicationActionId(item.id);
+
+    try {
+      const { error } = await supabase
+        .from('dating_people_applications')
+        .update({
+          status: 'rejected',
+          rejection_reason: reason.trim() || null,
+          rejected_at: new Date().toISOString(),
+        })
+        .eq('id', item.id)
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+
+      await fetchApplications({ silent: true });
+      alert('신청을 거절했습니다.');
+    } catch (error) {
+      console.error('[Applications] reject people application failed:', error);
+      alert('신청 거절에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setPeopleApplicationActionId(null);
+    }
+  };
+
+  const handleCancelPeopleApplication = async (item: DatingPeopleApplicationItem) => {
+    if (!user || peopleApplicationActionId) return;
+
+    const ok = window.confirm('보낸 신청을 취소하시겠어요? 사용한 신청권은 복구되지 않습니다.');
+    if (!ok) return;
+
+    setPeopleApplicationActionId(item.id);
+
+    try {
+      const { data: deletedRows, error } = await supabase
+        .from('dating_people_applications')
+        .delete()
+        .eq('id', item.id)
+        .eq('sender_id', user.id)
+        .eq('status', 'pending')
+        .select('id');
+
+      if (error) throw error;
+
+      if (!deletedRows || deletedRows.length === 0) {
+        alert('신청 취소에 실패했습니다. 권한 또는 신청 상태를 확인해주세요.');
+        return;
+      }
+
+      setSentPeopleApps((prev) => prev.filter((app) => app.id !== item.id));
+      setReceivedPeopleApps((prev) => prev.filter((app) => app.id !== item.id));
+      setExpandedPeopleMessages((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+
+      if (item.receiver_id) {
+        setSentPeopleApplicationIds((prev) => {
+          const next = new Set(prev);
+          next.delete(item.receiver_id);
+          return next;
+        });
+      }
+
+      window.setTimeout(() => {
+        fetchApplications({ silent: true });
+      }, 350);
+
+      alert('신청을 취소했습니다.');
+    } catch (error) {
+      console.error('[Applications] cancel people application failed:', error);
+      alert('신청 취소에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setPeopleApplicationActionId(null);
+    }
+  };
+
+  const renderPeopleApplicationCard = (item: DatingPeopleApplicationItem, direction: 'received' | 'sent') => {
+    const member = direction === 'received' ? item.sender : item.receiver;
+    const photos: string[] = member?.photo_urls?.length
+      ? member.photo_urls
+      : member?.photo_url
+      ? [member.photo_url]
+      : [];
+
+    const statusTime =
+      item.status === 'accepted'
+        ? item.accepted_at
+        : item.status === 'rejected'
+        ? item.rejected_at
+        : item.created_at;
+
+    const statusDate = statusTime
+      ? new Date(statusTime).toLocaleString('ko-KR', {
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })
+      : '';
+
+    const statusTimeLabel =
+      item.status === 'accepted'
+        ? '수락 시간'
+        : item.status === 'rejected'
+        ? '거절 시간'
+        : direction === 'received'
+        ? '받은 신청'
+        : '보낸 신청';
+
+    const messageText = item.message?.trim() || '신청 메시지가 없습니다.';
+    const isMessageExpanded = expandedPeopleMessages.has(item.id);
+    const shouldShowMore = messageText.length > 34 || messageText.includes('\n');
+
+    return (
+      <div
+        key={`people-application-${item.id}`}
+        className="rounded-3xl px-4 py-4"
+        style={{
+          background: '#FFFFFF',
+          border: '1px solid rgba(45,106,79,0.12)',
+          boxShadow: '0 8px 24px rgba(27,67,50,0.08)',
+        }}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0"
+            style={{ background: '#F3F4F6', border: '1px solid rgba(45,106,79,0.14)' }}
+          >
+            {photos[0] ? (
+              <img
+                src={photos[0]}
+                alt={member?.name || 'profile'}
+                className="w-full h-full"
+                style={{ objectFit: 'cover', objectPosition: 'center top' }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <DefaultProfileAvatar type="dating" size={44} />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="min-w-0">
+                <p className="text-base font-bold truncate" style={{ color: '#10251B' }}>
+                  {member?.name || '알 수 없음'}
+                </p>
+                <div className="flex items-center gap-1.5 text-xs mt-0.5" style={{ color: 'rgba(16,37,27,0.55)' }}>
+                  {member?.age && <span>나이: {member.age}세</span>}
+                  {member?.height && <span>· 키: {member.height}cm</span>}
+                </div>
+              </div>
+
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+                style={{
+                  color: item.status === 'pending' ? '#1B4332' : item.status === 'accepted' ? '#C9A84C' : '#DC2626',
+                  background: item.status === 'pending' ? 'rgba(45,106,79,0.08)' : item.status === 'accepted' ? 'rgba(201,168,76,0.12)' : 'rgba(239,68,68,0.08)',
+                  border: item.status === 'pending' ? '1px solid rgba(45,106,79,0.18)' : item.status === 'accepted' ? '1px solid rgba(201,168,76,0.28)' : '1px solid rgba(239,68,68,0.18)',
+                }}
+              >
+                {item.status === 'pending' ? '대기중' : item.status === 'accepted' ? '수락됨' : '거절됨'}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {member?.experience && (
+                <span className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}>
+                  구력: {member.experience}
+                </span>
+              )}
+              {member?.mbti && (
+                <span className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}>
+                  MBTI: {member.mbti}
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3">
+              <p className="text-[11px] font-semibold mb-1.5" style={{ color: 'rgba(16,37,27,0.45)' }}>
+                신청 메시지
+              </p>
+
+              <div
+                className="relative px-3 py-2 rounded-2xl text-xs leading-relaxed"
+                style={{
+                  background: '#F7FAF4',
+                  color: '#1F3D2A',
+                }}
+              >
+                <div
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: isMessageExpanded ? 'unset' : 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: isMessageExpanded ? 'visible' : 'hidden',
+                    whiteSpace: 'pre-line',
+                    paddingRight: shouldShowMore ? 58 : 0,
+                  }}
+                >
+                  {messageText}
+                </div>
+
+                {shouldShowMore && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setExpandedPeopleMessages((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(item.id)) {
+                          next.delete(item.id);
+                        } else {
+                          next.add(item.id);
+                        }
+                        return next;
+                      });
+                    }}
+                    className="absolute right-2 bottom-1 text-[11px] font-semibold px-1"
+                    style={{
+                      color: 'rgba(16,37,27,0.58)',
+                      background: '#F7FAF4',
+                    }}
+                  >
+                    {isMessageExpanded ? '접기 ˄' : '더보기 ˅'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-2 text-xs" style={{ color: 'rgba(16,37,27,0.5)' }}>
+              {statusTimeLabel}
+              {statusDate ? ` · ${statusDate}` : ''}
+            </div>
+
+            {item.status === 'pending' && direction === 'received' && (
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <button
+                  type="button"
+                  disabled={peopleApplicationActionId === item.id}
+                  onClick={() => handleRejectPeopleApplication(item)}
+                  className="py-2.5 rounded-xl text-xs font-bold transition active:scale-95 disabled:opacity-60"
+                  style={{
+                    background: '#FFFFFF',
+                    color: '#DC2626',
+                    border: '1px solid rgba(239,68,68,0.22)',
+                  }}
+                >
+                  {peopleApplicationActionId === item.id ? '처리 중' : '거절하기'}
+                </button>
+                <button
+                  type="button"
+                  disabled={peopleApplicationActionId === item.id}
+                  onClick={() => handleAcceptPeopleApplication(item)}
+                  className="py-2.5 rounded-xl text-xs font-bold text-white transition active:scale-95 disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+                >
+                  {peopleApplicationActionId === item.id ? '처리 중' : '수락하기'}
+                </button>
+              </div>
+            )}
+
+            {item.status === 'pending' && direction === 'sent' && (
+              <div className="flex justify-end mt-3">
+                <button
+                  type="button"
+                  disabled={peopleApplicationActionId === item.id}
+                  onClick={() => handleCancelPeopleApplication(item)}
+                  className="py-2.5 px-4 rounded-xl text-xs font-bold transition active:scale-95 disabled:opacity-60"
+                  style={{
+                    background: '#FFFFFF',
+                    color: '#374151',
+                    border: '1px solid rgba(55,65,81,0.18)',
+                  }}
+                >
+                  {peopleApplicationActionId === item.id ? '취소 중' : '신청 취소'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleDeleteSentInterest = async (item: CourtInterestItem) => {
     if (!user || !item.id || deletingInterestId === item.id) return;
 
@@ -1956,6 +2466,180 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       alert('관심 삭제에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setDeletingInterestId(null);
+    }
+  };
+
+  const normalizeGenderForTicket = (gender?: string | null) => {
+    if (!gender) return null;
+    if (gender === '남성' || gender === '남자' || gender === 'male') return 'male';
+    if (gender === '여성' || gender === '여자' || gender === 'female') return 'female';
+    return null;
+  };
+
+  const consumePeopleApplicationTicketIfNeeded = async () => {
+    if (!user) return false;
+
+    const { data: latestProfile, error } = await supabase
+      .from('profiles')
+      .select('gender,is_subscribed,free_meeting_count,ticket_count')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Applications] people application ticket profile error:', error);
+      alert('프로필 정보를 불러오지 못했습니다.');
+      return false;
+    }
+
+    const isMale = normalizeGenderForTicket(latestProfile?.gender) === 'male';
+    const isSubscribed = !!latestProfile?.is_subscribed;
+
+    if (!isMale || isSubscribed) return true;
+
+    const freeMeetingCount = latestProfile?.free_meeting_count ?? 0;
+    const ticketCount = latestProfile?.ticket_count ?? 0;
+
+    if (freeMeetingCount < 3) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ free_meeting_count: freeMeetingCount + 1 })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('[Applications] free meeting update error:', updateError);
+        alert('신청권 처리에 실패했습니다.');
+        return false;
+      }
+
+      return true;
+    }
+
+    if (ticketCount > 0) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ ticket_count: Math.max(0, ticketCount - 1) })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('[Applications] ticket update error:', updateError);
+        alert('신청권 처리에 실패했습니다.');
+        return false;
+      }
+
+      return true;
+    }
+
+    setShowPurchaseRequiredPopup(true);
+    return false;
+  };
+
+  const openPeopleApplicationPopup = async (item: CourtInterestItem) => {
+    if (!user || item.kind !== 'person' || !item.user_id) return;
+
+    if (sentPeopleApplicationIds.has(item.user_id)) {
+      alert('이미 신청을 보낸 회원입니다.');
+      return;
+    }
+
+    const { data: existing, error } = await supabase
+      .from('dating_people_applications')
+      .select('id')
+      .eq('sender_id', user.id)
+      .eq('receiver_id', item.user_id)
+      .eq('status', 'pending')
+      .eq('sender_deleted', false)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Applications] check existing people application error:', error);
+      alert('신청 상태를 확인하지 못했습니다.');
+      return;
+    }
+
+    if (existing) {
+      setSentPeopleApplicationIds((prev) => new Set(prev).add(item.user_id));
+      alert('이미 신청을 보낸 회원입니다.');
+      return;
+    }
+
+    setPeopleApplicationTarget(item);
+    setPeopleApplicationMessage('');
+  };
+
+  const handleSubmitPeopleApplication = async () => {
+    if (!user || !peopleApplicationTarget || peopleApplicationSubmitting) return;
+
+    const receiverId = peopleApplicationTarget.user_id;
+    const message = peopleApplicationMessage.trim();
+
+    if (!receiverId) {
+      alert('신청 대상 정보가 없습니다.');
+      return;
+    }
+
+    if (!message) {
+      alert('신청 메시지를 입력해주세요.');
+      return;
+    }
+
+    setPeopleApplicationSubmitting(true);
+
+    try {
+      const { data: existing, error: existingError } = await supabase
+        .from('dating_people_applications')
+        .select('id')
+        .eq('sender_id', user.id)
+        .eq('receiver_id', receiverId)
+        .eq('status', 'pending')
+        .eq('sender_deleted', false)
+        .maybeSingle();
+
+      if (existingError) {
+        console.error('[Applications] existing people application error:', existingError);
+        alert('신청 상태를 확인하지 못했습니다.');
+        return;
+      }
+
+      if (existing) {
+        setSentPeopleApplicationIds((prev) => new Set(prev).add(receiverId));
+        alert('이미 신청을 보낸 회원입니다.');
+        setPeopleApplicationTarget(null);
+        setPeopleApplicationMessage('');
+        return;
+      }
+
+      const canProceed = await consumePeopleApplicationTicketIfNeeded();
+      if (!canProceed) return;
+
+      const { error } = await supabase
+        .from('dating_people_applications')
+        .insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          message,
+          status: 'pending',
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          setSentPeopleApplicationIds((prev) => new Set(prev).add(receiverId));
+          alert('이미 신청을 보낸 회원입니다.');
+          setPeopleApplicationTarget(null);
+          setPeopleApplicationMessage('');
+          return;
+        }
+
+        console.error('[Applications] submit people application error:', error);
+        alert('신청 보내기에 실패했습니다.');
+        return;
+      }
+
+      setSentPeopleApplicationIds((prev) => new Set(prev).add(receiverId));
+      alert('신청을 보냈습니다.');
+      setPeopleApplicationTarget(null);
+      setPeopleApplicationMessage('');
+    } finally {
+      setPeopleApplicationSubmitting(false);
     }
   };
 
@@ -2022,39 +2706,57 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 </span>
 
                 {isSentInterest && (
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleDeleteSentInterest(item);
-                    }}
-                    disabled={deletingInterestId === item.id}
-                    className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60 flex-shrink-0"
-                    style={{
-                      color: '#DC2626',
-                      background: 'rgba(239,68,68,0.08)',
-                      border: '1px solid rgba(239,68,68,0.18)',
-                    }}
-                  >
-                    {deletingInterestId === item.id ? '삭제 중' : '삭제'}
-                  </button>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openPeopleApplicationPopup(item);
+                      }}
+                      disabled={sentPeopleApplicationIds.has(item.user_id)}
+                      className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60"
+                      style={{
+                        color: sentPeopleApplicationIds.has(item.user_id) ? '#6B7280' : '#1B4332',
+                        background: sentPeopleApplicationIds.has(item.user_id) ? '#F3F4F6' : 'rgba(45,106,79,0.08)',
+                        border: sentPeopleApplicationIds.has(item.user_id) ? '1px solid rgba(107,114,128,0.18)' : '1px solid rgba(45,106,79,0.18)',
+                      }}
+                    >
+                      {sentPeopleApplicationIds.has(item.user_id) ? '신청 완료' : '신청하기'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDeleteSentInterest(item);
+                      }}
+                      disabled={deletingInterestId === item.id}
+                      className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60"
+                      style={{
+                        color: '#DC2626',
+                        background: 'rgba(239,68,68,0.08)',
+                        border: '1px solid rgba(239,68,68,0.18)',
+                      }}
+                    >
+                      {deletingInterestId === item.id ? '삭제 중' : '삭제'}
+                    </button>
+                  </div>
                 )}
               </div>
 
               <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'rgba(16,37,27,0.55)' }}>
-                {member?.age && <span>{member.age}세</span>}
-                {member?.height && <span>· {member.height}cm</span>}
+                {member?.age && <span>나이: {member.age}세</span>}
+                {member?.height && <span>· 키: {member.height}cm</span>}
               </div>
 
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {member?.experience && (
                   <span className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}>
-                    구력 {member.experience}
+                    구력: {member.experience}
                   </span>
                 )}
                 {member?.mbti && (
                   <span className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}>
-                    MBTI {member.mbti}
+                    MBTI: {member.mbti}
                   </span>
                 )}
               </div>
@@ -2127,9 +2829,9 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             </div>
 
             <div className="flex items-center gap-1.5 text-xs mb-1.5" style={{ color: 'rgba(16,37,27,0.55)' }}>
-              {member?.age && <span>{member.age}세</span>}
+              {member?.age && <span>나이: {member.age}세</span>}
               {member?.gender && <span>· {member.gender}</span>}
-              {member?.height && <span>· {member.height}cm</span>}
+              {member?.height && <span>· 키: {member.height}cm</span>}
             </div>
 
             {(member?.tennis_career || member?.tennis_experience || member?.experience) && (
@@ -2391,12 +3093,17 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             { key: 'received' as DirectionTab, label: '받은 신청', count: pendingReceivedCount },
             { key: 'sent' as DirectionTab, label: '보낸 신청', count: pendingSentCount },
             ...(purposeTab === 'dating'
-              ? [{ key: 'interest' as DirectionTab, label: '관심', count: interestApps.length + sentInterestApps.length }]
+              ? [{ key: 'interest' as DirectionTab, label: '관심', count: unreadDatingInterestCount }]
               : []),
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setDirectionTab(tab.key)}
+              onClick={() => {
+                    setDirectionTab(tab.key);
+                    window.setTimeout(() => {
+                      fetchApplications({ silent: true });
+                    }, 80);
+                  }}
               className="flex-1 py-3 text-sm font-semibold transition-all duration-200 relative flex items-center justify-center gap-1.5"
               style={{ color: directionTab === tab.key ? '#fff' : 'rgba(255,255,255,0.45)' }}
             >
@@ -2563,13 +3270,13 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       )}
 
       <div className="px-4 py-5">
-        {loading && filteredReceived.length === 0 && filteredSent.length === 0 && interestApps.length === 0 && sentInterestApps.length === 0 && pendingMealProposals.length === 0 && resultMealProposals.length === 0 ? (
+        {loading && filteredReceived.length === 0 && filteredPeopleReceived.length === 0 && filteredSent.length === 0 && filteredPeopleSent.length === 0 && interestApps.length === 0 && sentInterestApps.length === 0 && pendingMealProposals.length === 0 && resultMealProposals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: isDating ? 'rgba(45,106,79,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }} />
             <p className="text-sm" style={{ color: isDating ? 'rgba(45,106,79,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
           </div>
         ) : directionTab === 'received' ? (
-          filteredReceived.length === 0 ? (
+          filteredReceived.length === 0 && filteredPeopleReceived.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-5">
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center"
@@ -2598,6 +3305,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             </div>
           ) : (
             <div className="space-y-3">
+              {filteredPeopleReceived.map((app) => renderPeopleApplicationCard(app, 'received'))}
               {filteredReceived.map((app) => renderReceivedCard(app))}
             </div>
           )
@@ -2613,7 +3321,12 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               ].map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setInterestDirectionTab(tab.key)}
+                  onClick={() => {
+                    setInterestDirectionTab(tab.key);
+                    window.setTimeout(() => {
+                      fetchApplications({ silent: true });
+                    }, 80);
+                  }}
                   className="rounded-full py-2 text-xs font-bold transition-all"
                   style={{
                     background: interestDirectionTab === tab.key ? '#1B4332' : 'transparent',
@@ -2648,7 +3361,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               </div>
             )}
           </div>
-        ) : filteredSent.length === 0 ? (
+        ) : filteredSent.length === 0 && filteredPeopleSent.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-5">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
@@ -2677,10 +3390,86 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           </div>
         ) : (
           <div className="space-y-3">
+            {filteredPeopleSent.map((app) => renderPeopleApplicationCard(app, 'sent'))}
             {filteredSent.map((app) => renderSentCard(app))}
           </div>
         )}
       </div>
+{peopleApplicationTarget && (
+  <div
+    className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/45"
+    onClick={() => {
+      if (!peopleApplicationSubmitting) {
+        setPeopleApplicationTarget(null);
+        setPeopleApplicationMessage('');
+      }
+    }}
+  >
+    <div
+      className="w-full max-w-md rounded-t-3xl bg-white px-5 pt-4 pb-4 overflow-y-auto"
+      style={{
+        maxHeight: '62dvh',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 18px)',
+        marginBottom: 0,
+      }}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className="w-10 h-1 rounded-full mx-auto mb-3 bg-gray-200" />
+
+      <h2 className="text-lg font-bold mb-1" style={{ color: '#1B4332' }}>
+        {peopleApplicationTarget.user?.name || '회원'}님에게 신청하기
+      </h2>
+      <p className="text-xs mb-2" style={{ color: 'rgba(27,67,50,0.58)' }}>
+        함께 치고 싶은 이유나 가능한 시간을 간단히 적어주세요.
+      </p>
+
+      <textarea
+        value={peopleApplicationMessage}
+        onChange={(event) => setPeopleApplicationMessage(event.target.value)}
+        maxLength={300}
+        placeholder="예: 안녕하세요! 시간 맞으면 같이 테니스 치고 싶어요 :)"
+        className="w-full min-h-[72px] rounded-2xl px-4 py-2.5 text-sm outline-none resize-none"
+        style={{
+          background: '#F7FAF4',
+          border: '1px solid rgba(45,106,79,0.18)',
+          color: '#1B4332',
+        }}
+      />
+
+      <div className="flex justify-between items-center mt-1 mb-1.5">
+        <span className="text-xs" style={{ color: 'rgba(27,67,50,0.45)' }}>
+          {peopleApplicationMessage.length}/300
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={peopleApplicationSubmitting}
+          onClick={() => {
+            setPeopleApplicationTarget(null);
+            setPeopleApplicationMessage('');
+          }}
+          className="h-11 rounded-xl font-semibold disabled:opacity-60"
+          style={{ background: '#F3F4F6', color: '#374151' }}
+        >
+          취소
+        </button>
+
+        <button
+          type="button"
+          disabled={peopleApplicationSubmitting}
+          onClick={handleSubmitPeopleApplication}
+          className="h-11 rounded-xl text-white font-semibold disabled:opacity-60"
+          style={{ background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)' }}
+        >
+          {peopleApplicationSubmitting ? '보내는 중...' : '신청 보내기'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 {showPurchaseRequiredPopup && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-5">
     <div className="w-full max-w-sm rounded-3xl bg-white p-6">

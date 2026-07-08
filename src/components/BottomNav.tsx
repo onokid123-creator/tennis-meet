@@ -27,66 +27,157 @@ export default function BottomNav({ active }: BottomNavProps) {
   })();
 
   const fetchUnreadCounts = useCallback(async (currentChatId: string | null = null) => {
-    if (!user) return;
-
-    const { data: participantRows } = await supabase
-      .from('chat_participants')
-      .select('chat_id')
-      .eq('user_id', user.id)
-      .eq('is_active', true);
-
-    const chatIds = (participantRows ?? []).map((r) => r.chat_id);
-
-    if (chatIds.length > 0) {
-      const filteredIds = currentChatId
-        ? chatIds.filter((id) => id !== currentChatId)
-        : chatIds;
-      if (filteredIds.length > 0) {
-        const { count } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .in('chat_id', filteredIds)
-          .eq('is_read', false)
-          .neq('sender_id', user.id);
-        setUnreadChats(count || 0);
-      } else {
-        setUnreadChats(0);
-      }
-    } else {
+    if (!user) {
       setUnreadChats(0);
+      setPendingApps(0);
+      return;
     }
 
-    const { count: appsCount } = await supabase
-      .from('applications')
-      .select('id', { count: 'exact', head: true })
-      .eq('owner_id', user.id)
-      .eq('status', 'pending')
-      .eq('receiver_deleted', false);
+    const getCount = async (label: string, query: any) => {
+      const { count, error } = await query;
+      if (error) {
+        console.error(`[BottomNav] ${label} count failed`, error);
+        return 0;
+      }
+      return count || 0;
+    };
 
-    const { count: mealReceivedCount } = await supabase
-      .from('meal_proposals')
-      .select('id', { count: 'exact', head: true })
-      .eq('receiver_id', user.id)
-      .eq('status', 'pending')
-      .eq('receiver_deleted', false);
+    try {
+      const { data: participantRows, error: participantError } = await supabase
+        .from('chat_participants')
+        .select('chat_id,last_read_at')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
 
-    const { count: mealResultCount } = await supabase
-      .from('meal_proposals')
-      .select('id', { count: 'exact', head: true })
-      .eq('sender_id', user.id)
-      .eq('sender_seen', false)
-      .in('status', ['accepted', 'rejected']);
+      if (participantError) {
+        console.error('[BottomNav] chat participants failed', participantError);
+        setUnreadChats(0);
+      } else {
+        const readMap = new Map<string, string | null>();
 
-    const { count: acceptedNotifCount } = await supabase
-      .from('applications')
-      .select('id', { count: 'exact', head: true })
-      .eq('applicant_id', user.id)
-      .eq('status', 'accepted')
-      .eq('applicant_notified', false)
-      .eq('sender_deleted', false)
-      .not('chat_id', 'is', null);
+        (participantRows ?? []).forEach((row) => {
+          if (row.chat_id) {
+            readMap.set(row.chat_id, row.last_read_at ?? null);
+          }
+        });
 
-    setPendingApps((appsCount || 0) + (mealReceivedCount || 0) + (mealResultCount || 0) + (acceptedNotifCount || 0));
+        const chatIds = Array.from(readMap.keys()).filter((id) => id !== currentChatId);
+        let unreadMessageCount = 0;
+
+        if (chatIds.length > 0) {
+          const { data: messages, error: messagesError } = await supabase
+            .from('messages')
+            .select('id,chat_id,sender_id,created_at')
+            .in('chat_id', chatIds)
+            .neq('sender_id', user.id);
+
+          if (messagesError) {
+            console.error('[BottomNav] unread messages failed', messagesError);
+          } else {
+            (messages ?? []).forEach((msg) => {
+              if (!msg.chat_id || !msg.created_at) return;
+
+              const lastReadAt = readMap.get(msg.chat_id);
+
+              if (!lastReadAt || new Date(msg.created_at) > new Date(lastReadAt)) {
+                unreadMessageCount += 1;
+              }
+            });
+          }
+        }
+
+        setUnreadChats(unreadMessageCount);
+      }
+
+      const appsCount = await getCount(
+        'court applications',
+        supabase
+          .from('applications')
+          .select('id', { count: 'exact', head: true })
+          .eq('owner_id', user.id)
+          .eq('status', 'pending')
+          .eq('receiver_deleted', false)
+      );
+
+      const datingPeopleCount = await getCount(
+        'dating people applications',
+        supabase
+          .from('dating_people_applications')
+          .select('id', { count: 'exact', head: true })
+          .eq('receiver_id', user.id)
+          .eq('status', 'pending')
+          .eq('receiver_deleted', false)
+          .is('receiver_seen_at', null)
+      );
+
+      const datingInterestCount = await getCount(
+        'dating interests',
+        supabase
+          .from('dating_interests')
+          .select('id', { count: 'exact', head: true })
+          .eq('receiver_id', user.id)
+          .eq('status', 'active')
+          .eq('receiver_deleted', false)
+          .is('receiver_seen_at', null)
+      );
+
+      const mealReceivedCount = await getCount(
+        'meal received',
+        supabase
+          .from('meal_proposals')
+          .select('id', { count: 'exact', head: true })
+          .eq('receiver_id', user.id)
+          .eq('status', 'pending')
+          .eq('receiver_deleted', false)
+      );
+
+      const mealResultCount = await getCount(
+        'meal result',
+        supabase
+          .from('meal_proposals')
+          .select('id', { count: 'exact', head: true })
+          .eq('sender_id', user.id)
+          .eq('sender_seen', false)
+          .in('status', ['accepted', 'rejected'])
+      );
+
+      const acceptedNotifCount = await getCount(
+        'accepted applications',
+        supabase
+          .from('applications')
+          .select('id', { count: 'exact', head: true })
+          .eq('applicant_id', user.id)
+          .eq('status', 'accepted')
+          .eq('applicant_notified', false)
+          .eq('sender_deleted', false)
+          .not('chat_id', 'is', null)
+      );
+
+      const nextPendingApps =
+        appsCount +
+        datingPeopleCount +
+        datingInterestCount +
+        mealReceivedCount +
+        mealResultCount +
+        acceptedNotifCount;
+
+      console.log('[BottomNav badge counts]', {
+        userId: user.id,
+        appsCount,
+        datingPeopleCount,
+        datingInterestCount,
+        mealReceivedCount,
+        mealResultCount,
+        acceptedNotifCount,
+        nextPendingApps,
+      });
+
+      setPendingApps(nextPendingApps);
+    } catch (error) {
+      console.error('[BottomNav] fetchUnreadCounts failed', error);
+      setUnreadChats(0);
+      setPendingApps(0);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -182,13 +273,41 @@ export default function BottomNav({ active }: BottomNavProps) {
       )
       .subscribe();
 
+    const datingChannel = supabase
+      .channel(`bottomnav_dating_${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dating_interests' }, () => {
+        scheduleFetchUnreadCounts();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dating_people_applications' }, () => {
+        scheduleFetchUnreadCounts();
+      })
+      .subscribe();
+
     return () => {
       if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(appsChannel);
       supabase.removeChannel(mealChannel);
+      supabase.removeChannel(datingChannel);
     };
   }, [user, fetchUnreadCounts]);
+
+  useEffect(() => {
+    const handleBottomNavRefresh = () => {
+      if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+
+      fetchDebounceRef.current = setTimeout(() => {
+        const currentActiveChatId = locationRef.current.match(/^\/chat\/(.+)$/)?.[1] ?? null;
+        fetchUnreadCounts(currentActiveChatId);
+      }, 150);
+    };
+
+    window.addEventListener('tennismeet:bottomnav-refresh', handleBottomNavRefresh);
+
+    return () => {
+      window.removeEventListener('tennismeet:bottomnav-refresh', handleBottomNavRefresh);
+    };
+  }, [fetchUnreadCounts]);
 
   const navItems = [
     { id: 'home', label: '홈', icon: Home, path: '/home', badge: 0 },
@@ -217,13 +336,13 @@ export default function BottomNav({ active }: BottomNavProps) {
           return (
             <button
               key={item.id}
-             onClick={() => {
-  if (item.id === 'chats') {
-    navigate(`/chats?refresh=${Date.now()}`);
-  } else {
-    navigate(item.path);
-  }
-}}
+              onClick={() => {
+                if (item.id === 'chats') {
+                  navigate(`/chats?refresh=${Date.now()}`);
+                } else {
+                  navigate(item.path);
+                }
+              }}
               className="flex flex-col items-center gap-1 relative"
             >
               <div className="relative">
