@@ -158,6 +158,12 @@ export default function DatingPeopleList() {
   const [ageFilter, setAgeFilter] = useState<PeopleAgeFilter>('all');
   const [experienceFilter, setExperienceFilter] = useState<ExperienceFilter>('all');
   const [photoViewer, setPhotoViewer] = useState<{ name: string; photos: string[]; index: number } | null>(null);
+  const [sentInterestIds, setSentInterestIds] = useState<Set<string>>(new Set());
+  const [pendingApplicationIds, setPendingApplicationIds] = useState<Set<string>>(new Set());
+  const [processingPersonId, setProcessingPersonId] = useState<string | null>(null);
+  const [applicationTarget, setApplicationTarget] = useState<DatingPerson | null>(null);
+  const [applicationMessage, setApplicationMessage] = useState('');
+  const [applicationSubmitting, setApplicationSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchPeople = async () => {
@@ -214,6 +220,33 @@ export default function DatingPeopleList() {
 
       const validPeople = (data ?? []).filter((person) => getPhotos(person as DatingPerson).length > 0);
       setPeople(validPeople as DatingPerson[]);
+
+      const targetIds = validPeople.map((person) => (person as DatingPerson).user_id).filter(Boolean);
+
+      if (targetIds.length > 0) {
+        const [{ data: interests }, { data: applications }] = await Promise.all([
+          supabase
+            .from('dating_interests')
+            .select('receiver_id')
+            .eq('sender_id', user.id)
+            .in('receiver_id', targetIds)
+            .eq('sender_deleted', false),
+          supabase
+            .from('dating_people_applications')
+            .select('receiver_id,status')
+            .eq('sender_id', user.id)
+            .in('receiver_id', targetIds)
+            .eq('sender_deleted', false)
+            .eq('status', 'pending'),
+        ]);
+
+        setSentInterestIds(new Set((interests ?? []).map((row) => row.receiver_id)));
+        setPendingApplicationIds(new Set((applications ?? []).map((row) => row.receiver_id)));
+      } else {
+        setSentInterestIds(new Set());
+        setPendingApplicationIds(new Set());
+      }
+
       setLoading(false);
     };
 
@@ -228,6 +261,221 @@ export default function DatingPeopleList() {
       );
     });
   }, [people, ageFilter, experienceFilter]);
+
+  const isMaleUser = (gender?: string | null) => {
+    const normalized = normalizeGender(gender);
+    return normalized === 'male';
+  };
+
+  const loadLatestTicketProfile = async () => {
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('gender,is_subscribed,free_interest_count,interest_ticket_count,free_meeting_count,ticket_count')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[DatingPeopleList] ticket profile error:', error);
+      alert('프로필 정보를 불러오지 못했습니다.');
+      return null;
+    }
+
+    return data;
+  };
+
+  const consumeInterestTicketIfNeeded = async () => {
+    const latestProfile = await loadLatestTicketProfile();
+    if (!latestProfile) return false;
+
+    const isMale = isMaleUser(latestProfile.gender);
+    const isSubscribed = !!latestProfile.is_subscribed;
+
+    if (!isMale || isSubscribed) return true;
+
+    const freeInterestCount = latestProfile.free_interest_count ?? 0;
+    const interestTicketCount = latestProfile.interest_ticket_count ?? 0;
+
+    if (freeInterestCount < 3) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ free_interest_count: freeInterestCount + 1 })
+        .eq('user_id', user!.id);
+
+      if (error) {
+        console.error('[DatingPeopleList] free interest update error:', error);
+        alert('관심 신청권 처리에 실패했습니다.');
+        return false;
+      }
+
+      return true;
+    }
+
+    if (interestTicketCount > 0) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ interest_ticket_count: Math.max(0, interestTicketCount - 1) })
+        .eq('user_id', user!.id);
+
+      if (error) {
+        console.error('[DatingPeopleList] interest ticket update error:', error);
+        alert('관심 신청권 처리에 실패했습니다.');
+        return false;
+      }
+
+      return true;
+    }
+
+    alert('관심 신청권이 부족합니다. 신청권을 구매하거나 구독이 필요합니다.');
+    return false;
+  };
+
+  const consumeApplicationTicketIfNeeded = async () => {
+    const latestProfile = await loadLatestTicketProfile();
+    if (!latestProfile) return false;
+
+    const isMale = isMaleUser(latestProfile.gender);
+    const isSubscribed = !!latestProfile.is_subscribed;
+
+    if (!isMale || isSubscribed) return true;
+
+    const freeMeetingCount = latestProfile.free_meeting_count ?? 0;
+    const ticketCount = latestProfile.ticket_count ?? 0;
+
+    if (freeMeetingCount < 3) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ free_meeting_count: freeMeetingCount + 1 })
+        .eq('user_id', user!.id);
+
+      if (error) {
+        console.error('[DatingPeopleList] free meeting update error:', error);
+        alert('신청권 처리에 실패했습니다.');
+        return false;
+      }
+
+      return true;
+    }
+
+    if (ticketCount > 0) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ticket_count: Math.max(0, ticketCount - 1) })
+        .eq('user_id', user!.id);
+
+      if (error) {
+        console.error('[DatingPeopleList] ticket update error:', error);
+        alert('신청권 처리에 실패했습니다.');
+        return false;
+      }
+
+      return true;
+    }
+
+    alert('코트 신청권이 부족합니다. 신청권을 구매하거나 구독이 필요합니다.');
+    return false;
+  };
+
+  const handleSendInterest = async (person: DatingPerson) => {
+    if (!user || processingPersonId) return;
+
+    if (sentInterestIds.has(person.user_id)) {
+      alert('이미 관심을 보낸 회원입니다.');
+      return;
+    }
+
+    setProcessingPersonId(person.user_id);
+
+    try {
+      const canProceed = await consumeInterestTicketIfNeeded();
+      if (!canProceed) return;
+
+      const { error } = await supabase
+        .from('dating_interests')
+        .insert({
+          sender_id: user.id,
+          receiver_id: person.user_id,
+          status: 'active',
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          setSentInterestIds((prev) => new Set(prev).add(person.user_id));
+          alert('이미 관심을 보낸 회원입니다.');
+          return;
+        }
+
+        console.error('[DatingPeopleList] send interest error:', error);
+        alert('관심 보내기에 실패했습니다.');
+        return;
+      }
+
+      setSentInterestIds((prev) => new Set(prev).add(person.user_id));
+      alert('관심을 보냈습니다.');
+    } finally {
+      setProcessingPersonId(null);
+    }
+  };
+
+  const openApplicationPopup = (person: DatingPerson) => {
+    if (pendingApplicationIds.has(person.user_id)) {
+      alert('이미 신청을 보낸 회원입니다.');
+      return;
+    }
+
+    setApplicationTarget(person);
+    setApplicationMessage('');
+  };
+
+  const handleSubmitApplication = async () => {
+    if (!user || !applicationTarget || applicationSubmitting) return;
+
+    const message = applicationMessage.trim();
+    if (!message) {
+      alert('신청 메시지를 입력해주세요.');
+      return;
+    }
+
+    setApplicationSubmitting(true);
+    setProcessingPersonId(applicationTarget.user_id);
+
+    try {
+      const canProceed = await consumeApplicationTicketIfNeeded();
+      if (!canProceed) return;
+
+      const { error } = await supabase
+        .from('dating_people_applications')
+        .insert({
+          sender_id: user.id,
+          receiver_id: applicationTarget.user_id,
+          message,
+          status: 'pending',
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          setPendingApplicationIds((prev) => new Set(prev).add(applicationTarget.user_id));
+          alert('이미 신청을 보낸 회원입니다.');
+          setApplicationTarget(null);
+          setApplicationMessage('');
+          return;
+        }
+
+        console.error('[DatingPeopleList] submit application error:', error);
+        alert('신청 보내기에 실패했습니다.');
+        return;
+      }
+
+      setPendingApplicationIds((prev) => new Set(prev).add(applicationTarget.user_id));
+      alert('신청을 보냈습니다.');
+      setApplicationTarget(null);
+      setApplicationMessage('');
+    } finally {
+      setApplicationSubmitting(false);
+      setProcessingPersonId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -406,23 +654,25 @@ export default function DatingPeopleList() {
                     <div className="grid grid-cols-2 gap-2 mt-1.5">
                       <button
                         type="button"
-                        onClick={() => alert('관심 보내기는 다음 단계에서 연결합니다.')}
-                        className="py-2 rounded-lg text-xs font-bold transition active:scale-95"
+                        onClick={() => handleSendInterest(person)}
+                        disabled={processingPersonId === person.user_id || sentInterestIds.has(person.user_id)}
+                        className="py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-60"
                         style={{
-                          background: '#F7FAF4',
+                          background: sentInterestIds.has(person.user_id) ? '#EEF7F1' : '#F7FAF4',
                           color: '#1F3D2A',
                           border: '1px solid rgba(74,124,92,0.22)',
                         }}
                       >
-                        관심 보내기
+                        {sentInterestIds.has(person.user_id) ? '관심 완료' : processingPersonId === person.user_id ? '처리 중' : '관심 보내기'}
                       </button>
                       <button
                         type="button"
-                        onClick={() => alert('신청 보내기는 다음 단계에서 연결합니다.')}
-                        className="py-2 rounded-lg text-xs font-bold text-white transition active:scale-95"
-                        style={{ background: 'linear-gradient(135deg, #3D6B4E 0%, #5A8A6E 100%)' }}
+                        onClick={() => openApplicationPopup(person)}
+                        disabled={processingPersonId === person.user_id || pendingApplicationIds.has(person.user_id)}
+                        className="py-2 rounded-lg text-xs font-bold text-white transition active:scale-95 disabled:opacity-60"
+                        style={{ background: pendingApplicationIds.has(person.user_id) ? '#9CA3AF' : 'linear-gradient(135deg, #3D6B4E 0%, #5A8A6E 100%)' }}
                       >
-                        신청 보내기
+                        {pendingApplicationIds.has(person.user_id) ? '신청 완료' : processingPersonId === person.user_id ? '처리 중' : '신청 보내기'}
                       </button>
                     </div>
                   </div>
@@ -432,6 +682,82 @@ export default function DatingPeopleList() {
           })}
         </div>
       )}
+      {applicationTarget && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={() => {
+            if (!applicationSubmitting) {
+              setApplicationTarget(null);
+              setApplicationMessage('');
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 pb-4"
+            style={{
+              background: '#FFFFFF',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 20px)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
+            <p className="text-base font-bold mb-1" style={{ color: '#1F3D2A' }}>
+              {applicationTarget.name || '회원'}님에게 신청 보내기
+            </p>
+            <p className="text-xs mb-4" style={{ color: 'rgba(31,61,42,0.55)' }}>
+              함께 치고 싶은 이유나 가능한 시간을 간단히 적어주세요.
+            </p>
+
+            <textarea
+              value={applicationMessage}
+              onChange={(e) => setApplicationMessage(e.target.value)}
+              placeholder="예: 안녕하세요! 시간 맞으면 같이 테니스 치고 싶어요 :)"
+              maxLength={300}
+              className="w-full min-h-[120px] rounded-2xl px-4 py-3 text-sm outline-none resize-none"
+              style={{
+                background: '#F7FAF4',
+                border: '1px solid rgba(74,124,92,0.2)',
+                color: '#1F3D2A',
+              }}
+            />
+
+            <div className="flex justify-between items-center mt-2 mb-4">
+              <span className="text-xs" style={{ color: 'rgba(31,61,42,0.45)' }}>
+                {applicationMessage.length}/300
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={applicationSubmitting}
+                onClick={() => {
+                  setApplicationTarget(null);
+                  setApplicationMessage('');
+                }}
+                className="py-3 rounded-xl text-sm font-bold transition active:scale-95 disabled:opacity-60"
+                style={{
+                  background: '#F3F4F6',
+                  color: '#374151',
+                }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={applicationSubmitting}
+                onClick={handleSubmitApplication}
+                className="py-3 rounded-xl text-sm font-bold text-white transition active:scale-95 disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #3D6B4E 0%, #5A8A6E 100%)' }}
+              >
+                {applicationSubmitting ? '보내는 중...' : '신청 보내기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {photoViewer && (
         <div
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"

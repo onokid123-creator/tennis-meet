@@ -11,11 +11,17 @@ type PurposeTab = 'tennis' | 'dating';
 type DirectionTab = 'received' | 'sent' | 'interest';
 type InterestDirectionTab = 'received' | 'sent';
 
+type InterestItemKind = 'court' | 'person';
+
 type CourtInterestItem = {
   id: string;
-  court_id: string;
+  kind?: InterestItemKind;
+  court_id?: string | null;
   user_id: string;
-  host_id: string;
+  host_id?: string | null;
+  sender_id?: string | null;
+  receiver_id?: string | null;
+  status?: string | null;
   created_at: string;
   user?: Profile | null;
   owner?: Profile | null;
@@ -1156,7 +1162,14 @@ let nextSentInterestApps: CourtInterestItem[] = [];
         setTimeout(() => reject(new Error('applications_timeout')), 6000)
       );
 
-      const [{ data: receivedRaw }, { data: sentRaw }, { data: interestsRaw }, { data: sentInterestsRaw }] = await Promise.race([
+      const [
+        { data: receivedRaw },
+        { data: sentRaw },
+        { data: interestsRaw },
+        { data: sentInterestsRaw },
+        { data: personInterestsRaw },
+        { data: sentPersonInterestsRaw },
+      ] = await Promise.race([
         Promise.all([
           supabase
             .from('applications')
@@ -1180,6 +1193,18 @@ let nextSentInterestApps: CourtInterestItem[] = [];
             .select(`*, court:court_id (*)`)
             .eq('user_id', currentUser.id)
             .order('created_at', { ascending: false }),
+          supabase
+            .from('dating_interests')
+            .select('*')
+            .eq('receiver_id', currentUser.id)
+            .eq('receiver_deleted', false)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('dating_interests')
+            .select('*')
+            .eq('sender_id', currentUser.id)
+            .eq('sender_deleted', false)
+            .order('created_at', { ascending: false }),
         ]),
         timeoutPromise,
       ]);
@@ -1188,12 +1213,23 @@ let nextSentInterestApps: CourtInterestItem[] = [];
       const sentList = sentRaw || [];
       const interestList = interestsRaw || [];
       const sentInterestList = sentInterestsRaw || [];
+      const personInterestList = personInterestsRaw || [];
+      const sentPersonInterestList = sentPersonInterestsRaw || [];
 
       const applicantIds = [...new Set(receivedList.map((a) => a.applicant_id).filter(Boolean))];
       const ownerIds = [...new Set(sentList.map((a) => a.host_id).filter(Boolean))];
       const interestUserIds = [...new Set(interestList.map((i) => i.user_id).filter(Boolean))];
       const sentInterestOwnerIds = [...new Set(sentInterestList.map((i) => i.host_id).filter(Boolean))];
-      const allProfileIds = [...new Set([...applicantIds, ...ownerIds, ...interestUserIds, ...sentInterestOwnerIds])];
+      const personInterestSenderIds = [...new Set(personInterestList.map((i) => i.sender_id).filter(Boolean))];
+      const sentPersonInterestReceiverIds = [...new Set(sentPersonInterestList.map((i) => i.receiver_id).filter(Boolean))];
+      const allProfileIds = [...new Set([
+        ...applicantIds,
+        ...ownerIds,
+        ...interestUserIds,
+        ...sentInterestOwnerIds,
+        ...personInterestSenderIds,
+        ...sentPersonInterestReceiverIds,
+      ])];
 
       let profileMap: Record<string, Profile> = {};
       if (allProfileIds.length > 0) {
@@ -1218,19 +1254,46 @@ let nextSentInterestApps: CourtInterestItem[] = [];
 
       const interests = interestList.map((i) => ({
         ...i,
+        kind: 'court' as InterestItemKind,
         user: profileMap[i.user_id] ?? null,
       }));
 
       const sentInterests = sentInterestList.map((i) => ({
         ...i,
+        kind: 'court' as InterestItemKind,
         owner: profileMap[i.host_id] ?? null,
         user: profileMap[i.host_id] ?? null,
       }));
 
+      const personInterests = personInterestList.map((i) => ({
+        ...i,
+        kind: 'person' as InterestItemKind,
+        court_id: null,
+        user_id: i.sender_id,
+        host_id: i.receiver_id,
+        user: profileMap[i.sender_id] ?? null,
+        owner: profileMap[i.receiver_id] ?? null,
+        court: null,
+      }));
+
+      const sentPersonInterests = sentPersonInterestList.map((i) => ({
+        ...i,
+        kind: 'person' as InterestItemKind,
+        court_id: null,
+        user_id: i.receiver_id,
+        host_id: i.sender_id,
+        user: profileMap[i.receiver_id] ?? null,
+        owner: profileMap[i.receiver_id] ?? null,
+        court: null,
+      }));
+
+      const sortByCreatedDesc = (a: CourtInterestItem, b: CourtInterestItem) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+
      nextReceivedApps = received;
 nextSentApps = sent;
-nextInterestApps = interests;
-nextSentInterestApps = sentInterests;
+nextInterestApps = [...personInterests, ...interests].sort(sortByCreatedDesc);
+nextSentInterestApps = [...sentPersonInterests, ...sentInterests].sort(sortByCreatedDesc);
 
 if (latestApplicationsRequestRef.current !== requestId) {
   return;
@@ -1266,6 +1329,9 @@ setSentInterestApps(nextSentInterestApps);
       fetchMealProposals();
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'court_interests' }, () => {
+      fetchApplications();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'dating_interests' }, () => {
       fetchApplications();
     })
     .subscribe();
@@ -1870,24 +1936,24 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
   const handleDeleteSentInterest = async (item: CourtInterestItem) => {
     if (!user || !item.id || deletingInterestId === item.id) return;
 
-    const ok = window.confirm('보낸 관심을 삭제하시겠어요?');
+    const ok = window.confirm(item.kind === 'person' ? '보낸 관심을 삭제하시겠어요?' : '보낸 관심 코트를 삭제하시겠어요?');
     if (!ok) return;
 
     setDeletingInterestId(item.id);
 
     try {
-      const { error } = await supabase
-        .from('court_interests')
-        .delete()
-        .eq('id', item.id)
-        .eq('user_id', user.id);
+      const query = item.kind === 'person'
+        ? supabase.from('dating_interests').delete().eq('id', item.id).eq('sender_id', user.id)
+        : supabase.from('court_interests').delete().eq('id', item.id).eq('user_id', user.id);
+
+      const { error } = await query;
 
       if (error) throw error;
 
       setSentInterestApps((prev) => prev.filter((app) => app.id !== item.id));
     } catch (error) {
       console.error('[Applications] delete sent interest failed:', error);
-      alert('관심 코트 삭제에 실패했습니다. 다시 시도해주세요.');
+      alert('관심 삭제에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setDeletingInterestId(null);
     }
@@ -1910,6 +1976,98 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     const interestedDate = item.created_at
       ? new Date(item.created_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
       : '';
+
+    if (item.kind === 'person') {
+      const personPhotos: string[] = member?.photo_urls?.length
+        ? member.photo_urls
+        : member?.photo_url
+        ? [member.photo_url]
+        : [];
+
+      return (
+        <div
+          key={item.id}
+          className="rounded-3xl px-4 py-4"
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid rgba(45,106,79,0.12)',
+            boxShadow: '0 8px 24px rgba(27,67,50,0.08)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => member && setInterestPhotoProfile(member)}
+              className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0"
+              style={{ background: '#F3F4F6', border: '1px solid rgba(45,106,79,0.14)', padding: 0 }}
+            >
+              {personPhotos[0] ? (
+                <img
+                  src={personPhotos[0]}
+                  alt={member?.name || 'profile'}
+                  className="w-full h-full"
+                  style={{ objectFit: 'cover', objectPosition: 'center top' }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <DefaultProfileAvatar type="dating" size={44} />
+                </div>
+              )}
+            </button>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-base font-bold truncate" style={{ color: '#10251B' }}>
+                  {member?.name || '알 수 없음'}
+                </span>
+
+                {isSentInterest && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDeleteSentInterest(item);
+                    }}
+                    disabled={deletingInterestId === item.id}
+                    className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60 flex-shrink-0"
+                    style={{
+                      color: '#DC2626',
+                      background: 'rgba(239,68,68,0.08)',
+                      border: '1px solid rgba(239,68,68,0.18)',
+                    }}
+                  >
+                    {deletingInterestId === item.id ? '삭제 중' : '삭제'}
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'rgba(16,37,27,0.55)' }}>
+                {member?.age && <span>{member.age}세</span>}
+                {member?.height && <span>· {member.height}cm</span>}
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {member?.experience && (
+                  <span className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}>
+                    구력 {member.experience}
+                  </span>
+                )}
+                {member?.mbti && (
+                  <span className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}>
+                    MBTI {member.mbti}
+                  </span>
+                )}
+              </div>
+
+              <div className="text-xs" style={{ color: 'rgba(16,37,27,0.58)' }}>
+                {isSentInterest ? '내가 관심을 보냈어요' : '나에게 관심을 보냈어요'}
+                {interestedDate ? ` · ${interestedDate}` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div
@@ -2233,7 +2391,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             { key: 'received' as DirectionTab, label: '받은 신청', count: pendingReceivedCount },
             { key: 'sent' as DirectionTab, label: '보낸 신청', count: pendingSentCount },
             ...(purposeTab === 'dating'
-              ? [{ key: 'interest' as DirectionTab, label: '관심 코트', count: interestApps.length + sentInterestApps.length }]
+              ? [{ key: 'interest' as DirectionTab, label: '관심', count: interestApps.length + sentInterestApps.length }]
               : []),
           ].map((tab) => (
             <button
@@ -2480,7 +2638,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                     {interestDirectionTab === 'received' ? '받은 관심이 없어요' : '보낸 관심이 없어요'}
                   </p>
                   <p className="text-xs" style={{ color: 'rgba(45,106,79,0.55)' }}>
-                    {interestDirectionTab === 'received' ? '회원이 관심 코트를 누르면 여기에 표시됩니다.' : '내가 관심 표시한 코트가 여기에 표시됩니다.'}
+                    {interestDirectionTab === 'received' ? '회원이 관심을 보내면 여기에 표시됩니다.' : '내가 보낸 관심이 여기에 표시됩니다.'}
                   </p>
                 </div>
               </div>
