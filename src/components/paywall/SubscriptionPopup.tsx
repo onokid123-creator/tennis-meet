@@ -43,7 +43,7 @@ export default function SubscriptionPopup({
 
             <p className="text-sm leading-relaxed text-gray-700 mb-4">
               · 코트 신청 무제한<br />
-              · 관심 코트 신청 무제한<br />
+              · 관심 신청 무제한<br />
               · 월간 자동 갱신 구독<br />
               · {cancelGuide}
             </p>

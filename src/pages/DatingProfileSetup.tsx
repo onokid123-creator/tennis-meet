@@ -26,6 +26,26 @@ const JPEG_QUALITY = 0.8;
 
 const experienceOptions = ['1년미만', '1년차', '2년차', '3년차', '4년차', '5년이상'];
 
+const ACTIVITY_REGIONS = [
+  '서울',
+  '경기',
+  '인천',
+  '부산',
+  '대구',
+  '대전',
+  '광주',
+  '울산',
+  '세종',
+  '강원',
+  '충북',
+  '충남',
+  '전북',
+  '전남',
+  '경북',
+  '경남',
+  '제주',
+];
+
 export default function DatingProfileSetup() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,7 +56,7 @@ export default function DatingProfileSetup() {
   const activeSlotRef = useRef<number>(0);
   const dragIndexRef = useRef<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [photos, setPhotos] = useState<PhotoSlot[]>([
     { ...EMPTY_SLOT },
@@ -54,6 +74,7 @@ export default function DatingProfileSetup() {
   const [extraData, setExtraData] = useState({
     mbti: '',
     height: '',
+    activity_region: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -282,7 +303,7 @@ export default function DatingProfileSetup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!extraData.mbti || !extraData.height.trim()) {
+    if (!extraData.mbti || !extraData.height.trim() || !extraData.activity_region) {
       setError('모든 항목을 입력해주세요');
       return;
     }
@@ -296,6 +317,7 @@ export default function DatingProfileSetup() {
         photoCount: photos.filter((p) => p.preview).length,
         mbti: extraData.mbti,
         height: extraData.height,
+        activity_region: extraData.activity_region,
       });
 
       const filledSlots = photos.filter((p) => p.preview);
@@ -327,6 +349,7 @@ export default function DatingProfileSetup() {
         photo_urls: uploadedUrls,
         mbti: extraData.mbti || null,
         height: extraData.height ? Number(extraData.height) : null,
+        activity_region: extraData.activity_region || null,
         experience: formData.experience,
         purpose: 'dating',
         profile_completed: true,
@@ -360,6 +383,7 @@ export default function DatingProfileSetup() {
         photo_urls: uploadedUrls,
         mbti: extraData.mbti || undefined,
         height: extraData.height ? Number(extraData.height) : undefined,
+        activity_region: extraData.activity_region || undefined,
         experience: formData.experience,
         purpose: 'dating',
         profile_completed: true,
@@ -374,6 +398,7 @@ export default function DatingProfileSetup() {
   };
 
   const isStep2Valid = extraData.mbti !== '' && extraData.height.trim() !== '';
+  const isStep3Valid = extraData.activity_region !== '';
 
   return (
     <div className="min-h-screen flex flex-col items-center px-5 py-10" style={{ background: 'linear-gradient(180deg, #FFF8F1 0%, #F7EFE4 52%, #EEF7F0 100%)' }}>
@@ -396,8 +421,10 @@ export default function DatingProfileSetup() {
 
       <div className="flex items-center gap-2 mt-3 mb-6">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step === 1 ? 'bg-[#C9A84C] text-white shadow-sm' : 'bg-white/70 text-[#C9A84C] border border-[#E7D9BE]'}`}>1</div>
-        <div className={`h-0.5 w-10 transition-all ${step === 2 ? 'bg-[#C9A84C]' : 'bg-[#E7D9BE]'}`} />
+        <div className={`h-0.5 w-10 transition-all ${step >= 2 ? 'bg-[#C9A84C]' : 'bg-[#E7D9BE]'}`} />
         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step === 2 ? 'bg-[#C9A84C] text-white shadow-sm' : 'bg-white/70 text-[#B7A27A] border border-[#E7D9BE]'}`}>2</div>
+        <div className={`h-0.5 w-10 transition-all ${step >= 3 ? 'bg-[#C9A84C]' : 'bg-[#E7D9BE]'}`} />
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${step === 3 ? 'bg-[#C9A84C] text-white shadow-sm' : 'bg-white/70 text-[#B7A27A] border border-[#E7D9BE]'}`}>3</div>
       </div>
 
       {step === 1 && (
@@ -611,7 +638,7 @@ export default function DatingProfileSetup() {
             추가 정보를 입력해주세요
           </p>
 
-          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-7">
+          <form onSubmit={(e) => { e.preventDefault(); if (!isStep2Valid) return; setStep(3); setError(''); window.scrollTo({ top: 0, behavior: 'instant' }); }} className="w-full max-w-md space-y-7">
             <div>
               <label className="block text-sm font-medium text-[#3F3A31] mb-3">MBTI</label>
               <div className="space-y-2">
@@ -675,10 +702,10 @@ export default function DatingProfileSetup() {
             <div className="space-y-3">
               <button
                 type="submit"
-                disabled={loading || !isStep2Valid}
+                disabled={!isStep2Valid}
                 className="w-full bg-[#C9A84C] text-white py-4 rounded-xl font-bold text-base hover:bg-[#b89840] transition disabled:opacity-40 shadow-lg shadow-[#C9A84C]/20"
               >
-                {loading ? '저장 중...' : '프로필 등록 완료'}
+                다음 단계
               </button>
               <button
                 type="button"
@@ -686,6 +713,82 @@ export default function DatingProfileSetup() {
                 className="w-full py-3 rounded-xl border border-[#E5D8C2] text-[#6B5A45] text-sm font-medium hover:bg-white/70 transition"
               >
                 이전으로
+              </button>
+            </div>
+          </form>
+        </>
+      )}
+
+      {step === 3 && (
+        <>
+          <p className="text-[#6B5A45] text-sm mb-8 text-center leading-relaxed">
+            주로 활동하는 지역을 선택해주세요.<br />
+            선택한 지역은 사람부터 구할래요에 프로필 정보로 노출돼요.
+          </p>
+
+          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
+            <div
+              className="rounded-2xl px-4 py-4"
+              style={{ background: 'rgba(255,255,255,0.72)', border: '1px solid #EADDC8' }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{ background: 'rgba(45,106,79,0.08)' }}
+                >
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                <p className="text-sm leading-6" style={{ color: '#5F5345' }}>
+                  선택한 지역은 <b>사람부터 구할래요</b>에서 다른 이성 회원들에게 프로필 정보로 노출돼요.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5">
+              {ACTIVITY_REGIONS.filter((region) => region !== '전체').map((region) => {
+                const selected = extraData.activity_region === region;
+                return (
+                  <button
+                    key={region}
+                    type="button"
+                    onClick={() => setExtraData({ ...extraData, activity_region: region })}
+                    className="py-3 rounded-xl border-2 text-sm font-semibold transition active:scale-95"
+                    style={{
+                      borderColor: selected ? '#C9A84C' : '#E5D8C2',
+                      background: selected ? '#C9A84C' : 'rgba(255,255,255,0.7)',
+                      color: selected ? '#FFFFFF' : '#5F5345',
+                      boxShadow: selected ? '0 4px 12px rgba(201,168,76,0.22)' : 'none',
+                    }}
+                  >
+                    {region}
+                  </button>
+                );
+              })}
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-500 px-4 py-3 rounded-xl text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <button
+                type="submit"
+                disabled={loading || !isStep3Valid}
+                className="w-full bg-[#C9A84C] text-white py-4 rounded-xl font-bold text-base hover:bg-[#b89840] transition disabled:opacity-40 shadow-lg shadow-[#C9A84C]/20"
+              >
+                {loading ? '저장 중...' : '프로필 등록 완료'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setStep(2); setError(''); window.scrollTo({ top: 0, behavior: 'instant' }); }}
+                className="w-full py-3 rounded-xl border border-[#E5D8C2] text-[#6B5A45] text-sm font-medium hover:bg-white/70 transition"
+              >
+                이전 단계
               </button>
             </div>
           </form>

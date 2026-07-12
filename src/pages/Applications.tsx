@@ -10,6 +10,7 @@ import { useVisualViewport } from '../hooks/useVisualViewport';
 type PurposeTab = 'tennis' | 'dating';
 type DirectionTab = 'received' | 'sent' | 'interest';
 type InterestDirectionTab = 'received' | 'sent';
+type DatingMeetModeTab = 'court' | 'people';
 
 type InterestItemKind = 'court' | 'person';
 
@@ -224,8 +225,14 @@ function ApplicantPhotoCarousel({ profile }: { profile: Profile }) {
 
   const photos: string[] = profile.photo_urls?.length
     ? profile.photo_urls
+    : (profile as any).dating_representative_photo_url
+    ? [(profile as any).dating_representative_photo_url]
     : profile.photo_url
     ? [profile.photo_url]
+    : (profile as any).tennis_photo_urls?.length
+    ? (profile as any).tennis_photo_urls
+    : (profile as any).tennis_photo_url
+    ? [(profile as any).tennis_photo_url]
     : [];
 
   const prev = (e: React.MouseEvent) => {
@@ -934,6 +941,7 @@ const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
   const [interestApps, setInterestApps] = useState<CourtInterestItem[]>([]);
   const [sentInterestApps, setSentInterestApps] = useState<CourtInterestItem[]>([]);
   const [interestDirectionTab, setInterestDirectionTab] = useState<InterestDirectionTab>('received');
+  const [datingMeetModeTab, setDatingMeetModeTab] = useState<DatingMeetModeTab>('court');
   const [deletingInterestId, setDeletingInterestId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -960,6 +968,13 @@ const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
   const [showMealRejectPopup, setShowMealRejectPopup] = useState(false);
   const [showMealAcceptPopup, setShowMealAcceptPopup] = useState(false);
   const [showPurchaseRequiredPopup, setShowPurchaseRequiredPopup] = useState(false);
+
+
+  useEffect(() => {
+    if (purposeTab !== 'dating') {
+      setDatingMeetModeTab('court');
+    }
+  }, [purposeTab]);
 
   useEffect(() => {
     if (purposeTab !== 'dating' && directionTab === 'interest') {
@@ -1598,7 +1613,7 @@ setSentInterestApps(nextSentInterestApps);
 
       const { data: hostProfile } = await supabase
         .from('profiles')
-        .select('gender, is_subscribed, free_meeting_count, ticket_count')
+        .select('gender, is_subscribed, free_meeting_count, ticket_count,activity_region')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -1915,14 +1930,40 @@ if (applicantProfile?.fcm_token) {
   const filteredPeopleSent = purposeTab === 'dating'
     ? sentPeopleApps
     : [];
+  const isPeopleDatingMode = purposeTab === 'dating' && datingMeetModeTab === 'people';
+  const isCourtDatingMode = purposeTab === 'dating' && datingMeetModeTab === 'court';
+
+  const visiblePeopleReceived = isPeopleDatingMode ? filteredPeopleReceived : [];
+  const visiblePeopleSent = isPeopleDatingMode ? filteredPeopleSent : [];
+
+  const visibleCourtReceived = purposeTab === 'dating'
+    ? (isCourtDatingMode ? filteredReceived : [])
+    : filteredReceived;
+
+  const visibleCourtSent = purposeTab === 'dating'
+    ? (isCourtDatingMode ? filteredSent : [])
+    : filteredSent;
+
+  const visibleInterestApps = purposeTab === 'dating'
+    ? interestApps.filter((item: any) => isPeopleDatingMode ? item.kind === 'person' : item.kind !== 'person')
+    : interestApps;
+
+  const visibleSentInterestApps = purposeTab === 'dating'
+    ? sentInterestApps.filter((item: any) => isPeopleDatingMode ? item.kind === 'person' : item.kind !== 'person')
+    : sentInterestApps;
+
   const mealProposalReceivedCount = purposeTab === 'dating' ? pendingMealProposals.filter((p) => p.receiver_id === user?.id).length : 0;
   const mealProposalResultCount = purposeTab === 'dating' ? resultMealProposals.length : 0;
   const acceptedNotifCount = filteredSent.filter((a) => a.status === 'accepted' && !a.applicant_notified && a.chat_id).length;
   const unreadPeopleReceivedCount = filteredPeopleReceived.filter((item) => !(item as any).receiver_seen_at).length;
-  const unreadDatingInterestCount = interestApps.filter((item) => item.kind === 'person' && !(item as any).receiver_seen_at).length;
+  const unreadDatingInterestCount = purposeTab === 'dating' ? visibleInterestApps.length : interestApps.length;
 
-  const pendingReceivedCount = filteredReceived.length + unreadPeopleReceivedCount + mealProposalReceivedCount;
-  const pendingSentCount = filteredPeopleSent.length + mealProposalResultCount + acceptedNotifCount;
+  const pendingReceivedCount = purposeTab === 'dating'
+    ? ((isPeopleDatingMode ? visiblePeopleReceived.length : visibleCourtReceived.filter((a) => a.status === 'pending').length) + mealProposalReceivedCount)
+    : filteredReceived.filter((a) => a.status === 'pending').length;
+  const pendingSentCount = purposeTab === 'dating'
+    ? ((isPeopleDatingMode ? visiblePeopleSent.filter((a) => a.status === 'pending').length : visibleCourtSent.filter((a) => a.status === 'pending').length) + mealProposalResultCount)
+    : filteredSent.filter((a) => a.status === 'pending').length;
 const handlePurposeTabChange = (tab: PurposeTab) => {
   if (tab === 'dating') {
   if (!profile?.mbti && !profile?.height) {
@@ -1972,6 +2013,20 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
   };
   const isDatingCard = purposeTab === 'dating';
 
+  const openPhotoProfile = (target?: any, e?: React.MouseEvent, preferredPhotos?: string[]) => {
+    e?.stopPropagation();
+    if (!target) return;
+
+    const nextProfile = { ...target };
+    if (preferredPhotos && preferredPhotos.length > 0) {
+      nextProfile.photo_urls = preferredPhotos;
+      nextProfile.photo_url = preferredPhotos[0];
+    }
+
+    setInterestPhotoProfile(nextProfile as Profile);
+  };
+
+
   const renderReceivedCard = (app: Application) => {
     const applicant = app.applicant;
     const isTennisApp = app.purpose === 'tennis';
@@ -2015,6 +2070,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               </div>
             ) : photos.length > 0 ? (
               <img
+                onClick={(e) => openPhotoProfile(applicant, e, photos)}
                 src={photos[0]}
                 alt={applicant?.name}
                 className="w-full h-full"
@@ -2099,11 +2155,30 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           className="flex items-center justify-between py-2 px-3"
           style={{ borderTop: '1px solid #F0F0F0' }}
         >
-          {app.status === 'pending' ? (
-            <span className="text-xs font-medium" style={{ color: '#C9A84C' }}>탭하여 프로필 보기</span>
-          ) : (
-            <span />
-          )}
+          <div className="flex items-center gap-2">
+            {app.status === 'pending' ? (
+              <span className="text-xs font-medium" style={{ color: '#C9A84C' }}>탭하여 프로필 보기</span>
+            ) : app.status === 'accepted' && app.chat_id ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGoToPeopleApplicationChat(app);
+                }}
+                className="text-xs font-semibold px-3 py-1.5 rounded-full transition active:scale-95"
+                style={{
+                  background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+                  color: '#FFFFFF',
+                  boxShadow: '0 2px 8px rgba(27,67,50,0.18)',
+                }}
+              >
+                채팅하기
+              </button>
+            ) : (
+              <span />
+            )}
+          </div>
+
           <button
             onClick={(e) => { e.stopPropagation(); setDeleteTarget(app); }}
             className="text-xs font-medium px-3 py-1 rounded-full transition active:scale-95"
@@ -2116,6 +2191,32 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     );
   };
 
+  const handleGoToPeopleApplicationChat = async (item: DatingPeopleApplicationItem) => {
+    const { data, error } = await supabase
+      .from('dating_people_applications')
+      .select('chat_id')
+      .eq('id', item.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Applications] reload people application chat_id failed:', error);
+    }
+
+    const freshChatId = data?.chat_id || item.chat_id;
+
+    if (!freshChatId) {
+      alert('채팅방 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    navigate(`/chat/${freshChatId}`, {
+      state: {
+        source: 'peopleApplication',
+        applicationId: item.id,
+      },
+    });
+  };
+
   const handleAcceptPeopleApplication = async (item: DatingPeopleApplicationItem) => {
     if (!user || peopleApplicationActionId) return;
 
@@ -2125,20 +2226,20 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     setPeopleApplicationActionId(item.id);
 
     try {
-      const { error } = await supabase
-        .from('dating_people_applications')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', item.id)
-        .eq('receiver_id', user.id)
-        .eq('status', 'pending');
+      const { data: chatId, error } = await supabase.rpc('accept_dating_people_application', {
+        p_application_id: item.id,
+      });
 
       if (error) throw error;
 
       await fetchApplications({ silent: true });
-      alert('신청을 수락했습니다.');
+      window.dispatchEvent(new Event('tennismeet:bottomnav-refresh'));
+
+      alert('신청을 수락했습니다. 채팅방이 생성됐어요.');
+
+      if (chatId) {
+        navigate(`/chat/${chatId}`);
+      }
     } catch (error) {
       console.error('[Applications] accept people application failed:', error);
       alert('신청 수락에 실패했습니다. 다시 시도해주세요.');
@@ -2287,6 +2388,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           >
             {photos[0] ? (
               <img
+                onClick={(e) => openPhotoProfile(member, e, photos)}
                 src={photos[0]}
                 alt={member?.name || 'profile'}
                 className="w-full h-full"
@@ -2311,16 +2413,36 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 </div>
               </div>
 
-              <span
-                className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                style={{
-                  color: item.status === 'pending' ? '#1B4332' : item.status === 'accepted' ? '#C9A84C' : '#DC2626',
-                  background: item.status === 'pending' ? 'rgba(45,106,79,0.08)' : item.status === 'accepted' ? 'rgba(201,168,76,0.12)' : 'rgba(239,68,68,0.08)',
-                  border: item.status === 'pending' ? '1px solid rgba(45,106,79,0.18)' : item.status === 'accepted' ? '1px solid rgba(201,168,76,0.28)' : '1px solid rgba(239,68,68,0.18)',
-                }}
-              >
-                {item.status === 'pending' ? '대기중' : item.status === 'accepted' ? '수락됨' : '거절됨'}
-              </span>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <span
+                  className="text-xs font-bold px-2.5 py-1 rounded-full"
+                  style={{
+                    color: item.status === 'pending' ? '#1B4332' : item.status === 'accepted' ? '#C9A84C' : '#DC2626',
+                    background: item.status === 'pending' ? 'rgba(45,106,79,0.08)' : item.status === 'accepted' ? 'rgba(201,168,76,0.12)' : 'rgba(239,68,68,0.08)',
+                    border: item.status === 'pending' ? '1px solid rgba(45,106,79,0.18)' : item.status === 'accepted' ? '1px solid rgba(201,168,76,0.28)' : '1px solid rgba(239,68,68,0.18)',
+                  }}
+                >
+                  {item.status === 'pending' ? '대기중' : item.status === 'accepted' ? '수락됨' : '거절됨'}
+                </span>
+
+                {item.status === 'accepted' && item.chat_id && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleGoToPeopleApplicationChat(item);
+                    }}
+                    className="text-[11px] font-bold px-2.5 py-1 rounded-full transition active:scale-95"
+                    style={{
+                      background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+                      color: '#FFFFFF',
+                      boxShadow: '0 2px 8px rgba(27,67,50,0.18)',
+                    }}
+                  >
+                    채팅하기
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -2481,7 +2603,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
 
     const { data: latestProfile, error } = await supabase
       .from('profiles')
-      .select('gender,is_subscribed,free_meeting_count,ticket_count')
+      .select('gender,is_subscribed,free_meeting_count,ticket_count,activity_region')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -2681,7 +2803,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => member && setInterestPhotoProfile(member)}
+              onClick={(e) => openPhotoProfile(member, e)}
               className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0"
               style={{ background: '#F3F4F6', border: '1px solid rgba(45,106,79,0.14)', padding: 0 }}
             >
@@ -2784,7 +2906,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => member && setInterestPhotoProfile(member)}
+            onClick={(e) => openPhotoProfile(member, e)}
             className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0"
             style={{ background: '#F3F4F6', border: '1px solid rgba(45,106,79,0.14)', padding: 0 }}
           >
@@ -2896,9 +3018,18 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
   const renderSentCard = (app: Application) => {
     const host = app.owner;
     const isTennisApp = app.purpose === 'tennis';
-   const hostPhoto = isTennisApp
-  ? host?.tennis_photo_url
-  : host?.photo_url;
+    const hostPhotos: string[] = isTennisApp
+      ? (host as any)?.tennis_photo_urls?.length
+        ? (host as any).tennis_photo_urls
+        : (host as any)?.tennis_photo_url
+        ? [(host as any).tennis_photo_url]
+        : []
+      : host?.photo_urls?.length
+      ? host.photo_urls
+      : host?.photo_url
+      ? [host.photo_url]
+      : [];
+    const hostPhoto = hostPhotos[0];
     const hasRejectionReason = app.status === 'rejected' && !!app.rejection_reason;
     const hasAcceptedNotif = app.status === 'accepted' && !app.applicant_notified && !!app.chat_id;
 
@@ -2992,6 +3123,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           >
             {hostPhoto ? (
               <img
+                onClick={(e) => openPhotoProfile(host, e, hostPhotos)}
                 src={hostPhoto}
                 alt={host?.name}
                 className="w-full h-full"
@@ -3087,6 +3219,42 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             </button>
           ))}
         </div>
+
+        {purposeTab === 'dating' && (
+          <div className="grid grid-cols-2 gap-3 px-5 pb-4">
+            {[
+              { key: 'court' as DatingMeetModeTab, label: '코트 잡았어요' },
+              { key: 'people' as DatingMeetModeTab, label: '사람부터 구할래요' },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setDatingMeetModeTab(tab.key);
+                  window.setTimeout(() => {
+                    fetchApplications({ silent: true });
+                    window.dispatchEvent(new Event('tennismeet:bottomnav-refresh'));
+                  }, 80);
+                }}
+                className="h-14 rounded-2xl text-sm font-extrabold transition-all flex items-center justify-center gap-2"
+                style={{
+                  background: datingMeetModeTab === tab.key
+                    ? 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)'
+                    : '#FFFFFF',
+                  color: datingMeetModeTab === tab.key ? '#FFFFFF' : '#1B4332',
+                  border: datingMeetModeTab === tab.key
+                    ? '1.5px solid rgba(27,67,50,0.28)'
+                    : '1.5px solid rgba(27,67,50,0.18)',
+                  boxShadow: datingMeetModeTab === tab.key
+                    ? '0 8px 20px rgba(27,67,50,0.18)'
+                    : '0 4px 12px rgba(27,67,50,0.05)',
+                }}
+              >
+                <span>{tab.key === 'court' ? '▦' : '♙'}</span>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex" style={{ borderTop: '1px solid rgba(201,168,76,0.2)' }}>
           {[
@@ -3270,13 +3438,13 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       )}
 
       <div className="px-4 py-5">
-        {loading && filteredReceived.length === 0 && filteredPeopleReceived.length === 0 && filteredSent.length === 0 && filteredPeopleSent.length === 0 && interestApps.length === 0 && sentInterestApps.length === 0 && pendingMealProposals.length === 0 && resultMealProposals.length === 0 ? (
+        {loading && (isPeopleDatingMode ? visiblePeopleReceived.length === 0 : visibleCourtReceived.length === 0) && (isPeopleDatingMode ? visiblePeopleSent.length === 0 : visibleCourtSent.length === 0) && interestApps.length === 0 && sentInterestApps.length === 0 && pendingMealProposals.length === 0 && resultMealProposals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: isDating ? 'rgba(45,106,79,0.4)' : 'rgba(45,106,79,0.4)', borderTopColor: 'transparent' }} />
             <p className="text-sm" style={{ color: isDating ? 'rgba(45,106,79,0.6)' : 'rgba(45,106,79,0.6)' }}>불러오는 중...</p>
           </div>
         ) : directionTab === 'received' ? (
-          filteredReceived.length === 0 && filteredPeopleReceived.length === 0 ? (
+          (isPeopleDatingMode ? visiblePeopleReceived.length === 0 : visibleCourtReceived.length === 0) ? (
             <div className="flex flex-col items-center justify-center py-20 gap-5">
               <div
                 className="w-20 h-20 rounded-full flex items-center justify-center"
@@ -3296,17 +3464,18 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               </div>
               <div className="text-center">
                 <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#2D6A4F' : '#2D6A4F' }}>
-                  {isDating ? '받은 만남 신청이 없어요' : '받은 테니스 신청이 없어요'}
+                  {isDating ? (isPeopleDatingMode ? '받은 사람 신청이 없어요' : '받은 코트 신청이 없어요') : '받은 테니스 신청이 없어요'}
                 </p>
                 <p className="text-xs" style={{ color: isDating ? 'rgba(45,106,79,0.55)' : 'rgba(45,106,79,0.55)' }}>
-                  {isDating ? '코트 등록 후 인연을 기다려보세요!' : '코트 등록 후 파트너를 기다려보세요!'}
+                  {isDating ? (isPeopleDatingMode ? '마음에 드는 분께 먼저 말을 걸어보세요!' : '코트 등록 후 인연을 기다려보세요!') : '코트 등록 후 파트너를 기다려보세요!'}
                 </p>
               </div>
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredPeopleReceived.map((app) => renderPeopleApplicationCard(app, 'received'))}
-              {filteredReceived.map((app) => renderReceivedCard(app))}
+              {isPeopleDatingMode
+                ? visiblePeopleReceived.map((app) => renderPeopleApplicationCard(app, 'received'))
+                : visibleCourtReceived.map((app) => renderReceivedCard(app))}
             </div>
           )
         ) : purposeTab === 'dating' && directionTab === 'interest' ? (
@@ -3316,8 +3485,8 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               style={{ background: '#fff', border: '1px solid rgba(45,106,79,0.12)' }}
             >
               {[
-                { key: 'received' as InterestDirectionTab, label: '받은 관심', count: interestApps.length },
-                { key: 'sent' as InterestDirectionTab, label: '보낸 관심', count: sentInterestApps.length },
+                { key: 'received' as InterestDirectionTab, label: '받은 관심', count: visibleInterestApps.length },
+                { key: 'sent' as InterestDirectionTab, label: '보낸 관심', count: visibleSentInterestApps.length },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -3338,7 +3507,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               ))}
             </div>
 
-            {(interestDirectionTab === 'received' ? interestApps : sentInterestApps).length === 0 ? (
+            {(interestDirectionTab === 'received' ? visibleInterestApps : visibleSentInterestApps).length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-5">
                 <div
                   className="w-20 h-20 rounded-full flex items-center justify-center"
@@ -3357,11 +3526,11 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               </div>
             ) : (
               <div className="space-y-3">
-                {(interestDirectionTab === 'received' ? interestApps : sentInterestApps).map((item) => renderInterestCard(item))}
+                {(interestDirectionTab === 'received' ? visibleInterestApps : visibleSentInterestApps).map((item) => renderInterestCard(item))}
               </div>
             )}
           </div>
-        ) : filteredSent.length === 0 && filteredPeopleSent.length === 0 ? (
+        ) : (isPeopleDatingMode ? visiblePeopleSent.length === 0 : visibleCourtSent.length === 0) ? (
           <div className="flex flex-col items-center justify-center py-20 gap-5">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
@@ -3381,17 +3550,18 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             </div>
             <div className="text-center">
               <p className="font-semibold text-sm mb-1" style={{ color: isDating ? '#2D6A4F' : '#2D6A4F' }}>
-                {isDating ? '보낸 만남 신청이 없어요' : '보낸 테니스 신청이 없어요'}
+                {isDating ? (isPeopleDatingMode ? '보낸 사람 신청이 없어요' : '보낸 코트 신청이 없어요') : '보낸 테니스 신청이 없어요'}
               </p>
               <p className="text-xs" style={{ color: isDating ? 'rgba(45,106,79,0.55)' : 'rgba(45,106,79,0.55)' }}>
-                {isDating ? '마음에 드는 분께 먼저 말을 걸어보세요!' : '파트너를 찾아 신청해보세요!'}
+                {isDating ? (isPeopleDatingMode ? '마음에 드는 분께 먼저 말을 걸어보세요!' : '관심 코트에서 신청을 보내보세요!') : '파트너를 찾아 신청해보세요!'}
               </p>
             </div>
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredPeopleSent.map((app) => renderPeopleApplicationCard(app, 'sent'))}
-            {filteredSent.map((app) => renderSentCard(app))}
+            {isPeopleDatingMode
+              ? visiblePeopleSent.map((app) => renderPeopleApplicationCard(app, 'sent'))
+              : visibleCourtSent.map((app) => renderSentCard(app))}
           </div>
         )}
       </div>

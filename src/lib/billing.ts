@@ -194,7 +194,7 @@ export async function initBilling() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('ticket_count')
+        .select('ticket_count,activity_region')
         .eq('user_id', user.id)
         .single();
 
@@ -213,7 +213,7 @@ export async function initBilling() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('interest_ticket_count')
+        .select('interest_ticket_count,activity_region')
         .eq('user_id', user.id)
         .single();
 

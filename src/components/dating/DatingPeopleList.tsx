@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { TouchEvent } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -18,6 +19,7 @@ type DatingPerson = {
   height?: number | string | null;
   purpose?: string | null;
   profile_completed?: boolean | null;
+  activity_region?: string | null;
   created_at?: string | null;
 };
 
@@ -150,20 +152,98 @@ const formatHeight = (height?: number | string | null) => {
   return text.includes('cm') ? text : `${text}cm`;
 };
 
-export default function DatingPeopleList() {
-  const { user, profile } = useAuth();
+const ACTIVITY_REGIONS = [
+  '전체',
+  '서울',
+  '경기',
+  '인천',
+  '부산',
+  '대구',
+  '대전',
+  '광주',
+  '울산',
+  '세종',
+  '강원',
+  '충북',
+  '충남',
+  '전북',
+  '전남',
+  '경북',
+  '경남',
+  '제주',
+];
+
+export default function DatingPeopleList({
+  onRequireCourtTicket,
+  onRequireInterestTicket,
+}: {
+  onRequireCourtTicket?: () => void;
+  onRequireInterestTicket?: () => void;
+} = {}) {
+  const { user, profile, updateProfile } = useAuth() as any;
   const [people, setPeople] = useState<DatingPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ageFilter, setAgeFilter] = useState<PeopleAgeFilter>('all');
   const [experienceFilter, setExperienceFilter] = useState<ExperienceFilter>('all');
+  const [regionFilter, setRegionFilter] = useState<string>((profile as any)?.activity_region || '전체');
+  const [showRegionFilterSheet, setShowRegionFilterSheet] = useState(false);
   const [photoViewer, setPhotoViewer] = useState<{ name: string; photos: string[]; index: number } | null>(null);
+  const [myActivityRegion, setMyActivityRegion] = useState<string>((profile as any)?.activity_region || '');
+  const [showActivityRegionPopup, setShowActivityRegionPopup] = useState(false);
+  const [activityRegionDraft, setActivityRegionDraft] = useState<string>((profile as any)?.activity_region || '서울');
+  const [activityRegionSaving, setActivityRegionSaving] = useState(false);
+  const photoTouchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [sentInterestIds, setSentInterestIds] = useState<Set<string>>(new Set());
   const [pendingApplicationIds, setPendingApplicationIds] = useState<Set<string>>(new Set());
   const [processingPersonId, setProcessingPersonId] = useState<string | null>(null);
   const [applicationTarget, setApplicationTarget] = useState<DatingPerson | null>(null);
   const [applicationMessage, setApplicationMessage] = useState('');
   const [applicationSubmitting, setApplicationSubmitting] = useState(false);
+
+  const movePhotoViewer = (direction: 'prev' | 'next') => {
+    setPhotoViewer((prev) => {
+      if (!prev || prev.photos.length <= 1) return prev;
+
+      if (direction === 'prev') {
+        return { ...prev, index: prev.index === 0 ? prev.photos.length - 1 : prev.index - 1 };
+      }
+
+      return { ...prev, index: prev.index === prev.photos.length - 1 ? 0 : prev.index + 1 };
+    });
+  };
+
+  const handlePhotoTouchStart = (event: TouchEvent<HTMLImageElement>) => {
+    event.stopPropagation();
+
+    const touch = event.touches[0];
+    photoTouchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+  };
+
+  const handlePhotoTouchEnd = (event: TouchEvent<HTMLImageElement>) => {
+    event.stopPropagation();
+
+    const start = photoTouchStartRef.current;
+    photoTouchStartRef.current = null;
+
+    if (!start || !photoViewer || photoViewer.photos.length <= 1) return;
+
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+
+    if (Math.abs(dx) < 45) return;
+    if (Math.abs(dx) < Math.abs(dy) * 1.2) return;
+
+    if (dx < 0) {
+      movePhotoViewer('next');
+    } else {
+      movePhotoViewer('prev');
+    }
+  };
 
   useEffect(() => {
     const fetchPeople = async () => {
@@ -178,7 +258,7 @@ export default function DatingPeopleList() {
 
       const { data: latestProfile, error: myProfileError } = await supabase
         .from('profiles')
-        .select('user_id, gender')
+        .select('user_id, gender, activity_region')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -189,6 +269,15 @@ export default function DatingPeopleList() {
         setLoading(false);
         return;
       }
+
+      const latestActivityRegion = ((latestProfile as any)?.activity_region || (profile as any)?.activity_region || '') as string;
+      setMyActivityRegion(latestActivityRegion);
+      if (latestActivityRegion) {
+        setRegionFilter((prev) => prev === '전체' ? latestActivityRegion : prev);
+      }
+
+      // 지역 설정 팝업은 Home의 '테니스 메이트' 버튼 진입 시에만 처리한다.
+      // 사람부터 구할래요 목록 진입에서는 자동 팝업을 띄우지 않는다.
 
       const myGender = latestProfile?.gender || profile?.gender;
       const targetGenderValues = getOppositeGenderValues(myGender);
@@ -202,12 +291,12 @@ export default function DatingPeopleList() {
 
       const { data, error: peopleError } = await supabase
         .from('profiles')
-        .select('user_id,name,age,gender,photo_url,photo_urls,dating_representative_photo_url,experience,mbti,height,purpose,profile_completed,created_at')
-        .eq('purpose', 'dating')
+        .select('user_id,name,age,gender,photo_url,photo_urls,dating_representative_photo_url,experience,mbti,height,activity_region,purpose,profile_completed,created_at')
         .eq('profile_completed', true)
         .in('gender', targetGenderValues)
         .neq('user_id', user.id)
-        .not('photo_urls', 'is', null)
+        .not('age', 'is', null)
+        .or('photo_url.not.is.null,photo_urls.not.is.null,dating_representative_photo_url.not.is.null')
         .order('created_at', { ascending: false });
 
       if (peopleError) {
@@ -218,10 +307,23 @@ export default function DatingPeopleList() {
         return;
       }
 
-      const validPeople = (data ?? []).filter((person) => getPhotos(person as DatingPerson).length > 0);
-      setPeople(validPeople as DatingPerson[]);
+      const validPeople = (data ?? []).filter((person) => {
+        const candidate = person as DatingPerson;
+        const photos = getPhotos(candidate);
+        const hasDatingRepresentative = Boolean(candidate.dating_representative_photo_url);
+        const hasDatingNamedPhoto = photos.some((url) => {
+          const lower = String(url || '').toLowerCase();
+          return lower.includes('/dating-') || lower.includes('dating-');
+        });
 
-      const targetIds = validPeople.map((person) => (person as DatingPerson).user_id).filter(Boolean);
+        return photos.length > 0 && (hasDatingRepresentative || hasDatingNamedPhoto);
+      });
+
+      const regionPeople = validPeople;
+
+      setPeople(regionPeople as DatingPerson[]);
+
+      const targetIds = regionPeople.map((person) => (person as DatingPerson).user_id).filter(Boolean);
 
       if (targetIds.length > 0) {
         const [{ data: interests }, { data: applications }] = await Promise.all([
@@ -253,14 +355,47 @@ export default function DatingPeopleList() {
     fetchPeople();
   }, [user, profile?.gender]);
 
+  const handleSaveActivityRegion = async () => {
+    if (!user || !activityRegionDraft) return;
+
+    setActivityRegionSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ activity_region: activityRegionDraft })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setMyActivityRegion(activityRegionDraft);
+      updateProfile?.({ activity_region: activityRegionDraft });
+      setShowActivityRegionPopup(false);
+
+      // 지역 저장 후 같은 지역 기준으로 목록을 다시 불러오도록 새로고침
+      window.setTimeout(() => {
+        window.dispatchEvent(new Event('auth-resynced'));
+      }, 50);
+    } catch (error) {
+      console.error('[DatingPeopleList] activity region save failed:', error);
+      alert('활동 지역 저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setActivityRegionSaving(false);
+    }
+  };
+
   const filteredPeople = useMemo(() => {
     return people.filter((person) => {
+      const selectedRegion = regionFilter || '전체';
+      const personRegion = String(person.activity_region || '').trim();
+      if (selectedRegion !== '전체' && personRegion && personRegion !== selectedRegion) {
+        return false;
+      }
       return (
         isAgeMatched(person.age, ageFilter) &&
         isExperienceMatched(person.experience, experienceFilter)
       );
     });
-  }, [people, ageFilter, experienceFilter]);
+  }, [people, ageFilter, experienceFilter, regionFilter]);
 
   const isMaleUser = (gender?: string | null) => {
     const normalized = normalizeGender(gender);
@@ -272,7 +407,7 @@ export default function DatingPeopleList() {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('gender,is_subscribed,free_interest_count,interest_ticket_count,free_meeting_count,ticket_count')
+      .select('gender,is_subscribed,free_interest_count,interest_ticket_count,free_meeting_count,ticket_count,activity_region')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -327,7 +462,11 @@ export default function DatingPeopleList() {
       return true;
     }
 
-    alert('관심 신청권이 부족합니다. 신청권을 구매하거나 구독이 필요합니다.');
+    if (onRequireInterestTicket) {
+      onRequireInterestTicket();
+    } else {
+      alert('관심 신청권이 부족합니다. 신청권을 구매하거나 구독이 필요합니다.');
+    }
     return false;
   };
 
@@ -373,7 +512,11 @@ export default function DatingPeopleList() {
       return true;
     }
 
-    alert('코트 신청권이 부족합니다. 신청권을 구매하거나 구독이 필요합니다.');
+    if (onRequireCourtTicket) {
+      onRequireCourtTicket();
+    } else {
+      alert('신청권이 부족합니다. 신청권을 구매하거나 구독이 필요합니다.');
+    }
     return false;
   };
 
@@ -409,6 +552,36 @@ export default function DatingPeopleList() {
         console.error('[DatingPeopleList] send interest error:', error);
         alert('관심 보내기에 실패했습니다.');
         return;
+      }
+
+
+      const [{ data: datingInterestSenderProfile }, { data: datingInterestReceiverProfile }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('name')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('profiles')
+          .select('fcm_token')
+          .eq('user_id', person.user_id)
+          .maybeSingle(),
+      ]);
+
+      if (datingInterestReceiverProfile?.fcm_token) {
+        const pushResult = await supabase.functions.invoke('send-push', {
+          body: {
+            token: datingInterestReceiverProfile.fcm_token,
+            title: datingInterestSenderProfile?.name || 'Tennis Meet',
+            body: '회원님에게 관심을 보냈어요.',
+            data: {
+              type: 'dating_interest_received',
+              senderId: user.id,
+            },
+          },
+        });
+
+        console.log('[PUSH][dating_interest_received] result:', JSON.stringify(pushResult));
       }
 
       setSentInterestIds((prev) => new Set(prev).add(person.user_id));
@@ -467,6 +640,34 @@ export default function DatingPeopleList() {
         return;
       }
 
+
+      const [{ data: peopleApplicationSenderProfile }, { data: peopleApplicationReceiverProfile }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('name')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('profiles')
+          .select('fcm_token')
+          .eq('user_id', applicationTarget.user_id)
+          .maybeSingle(),
+      ]);
+
+      if (peopleApplicationReceiverProfile?.fcm_token) {
+        await supabase.functions.invoke('send-push', {
+          body: {
+            token: peopleApplicationReceiverProfile.fcm_token,
+            title: peopleApplicationSenderProfile?.name || 'Tennis Meet',
+            body: '새로운 테니스 메이트 신청이 도착했어요.',
+            data: {
+              type: 'dating_people_application_received',
+              senderId: user.id,
+            },
+          },
+        });
+      }
+
       setPendingApplicationIds((prev) => new Set(prev).add(applicationTarget.user_id));
       alert('신청을 보냈습니다.');
       setApplicationTarget(null);
@@ -500,21 +701,43 @@ export default function DatingPeopleList() {
     );
   }
 
-  return (
-    <div className="space-y-4">
-      <div
-        className="grid grid-cols-2 gap-0 rounded-2xl mb-4 overflow-hidden"
-        style={{
+  return (    <div className="space-y-4">
+<div
+        className="grid gap-0 rounded-2xl mb-3 overflow-hidden w-full"
+        style={{ gridTemplateColumns: '88px minmax(0,1fr) minmax(0,1fr)', 
           background: '#FFFFFF',
           border: '1px solid rgba(31,61,42,0.08)',
           boxShadow: '0 6px 18px rgba(31,61,42,0.05)',
         }}
       >
-        <div className="px-3 py-3">
+        <div
+          data-region-filter-column="true"
+          className="px-2 py-2.5"
+          style={{ borderRight: '1px solid rgba(31,61,42,0.08)' }}
+        >
+          <p className="text-xs font-bold mb-2" style={{ color: '#111827' }}>
+            지역
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowRegionFilterSheet(true)}
+            className="w-full h-9 rounded-lg text-[11px] font-bold transition active:scale-95"
+            style={{
+              background: '#F3F7F2',
+              color: '#1B4332',
+              border: '1px solid rgba(27,67,50,0.18)',
+            }}
+            aria-label="활동 지역 필터"
+          >
+            {regionFilter === '전체' ? '전국' : regionFilter} <span style={{ fontSize: 10 }}>⌄</span>
+          </button>
+        </div>
+
+        <div className="px-2 py-2.5">
           <p className="text-xs font-bold mb-2" style={{ color: '#111827' }}>
             나이
           </p>
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
             {AGE_FILTERS.map((filter) => {
               const selected = ageFilter === filter.key;
               return (
@@ -522,7 +745,7 @@ export default function DatingPeopleList() {
                   key={filter.key}
                   type="button"
                   onClick={() => setAgeFilter(filter.key)}
-                  className="shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition active:scale-95"
+                  className="shrink-0 min-w-[46px] h-8 px-1.5 rounded-lg text-[11px] font-semibold transition active:scale-95"
                   style={{
                     background: '#FFFFFF',
                     color: selected ? '#0F5132' : '#1F2937',
@@ -538,13 +761,13 @@ export default function DatingPeopleList() {
         </div>
 
         <div
-          className="px-3 py-3"
+          className="px-2 py-2.5"
           style={{ borderLeft: '1px solid rgba(31,61,42,0.08)' }}
         >
           <p className="text-xs font-bold mb-2" style={{ color: '#111827' }}>
             구력
           </p>
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
             {EXPERIENCE_FILTERS.map((filter) => {
               const selected = experienceFilter === filter.key;
               return (
@@ -552,7 +775,7 @@ export default function DatingPeopleList() {
                   key={filter.key}
                   type="button"
                   onClick={() => setExperienceFilter(filter.key)}
-                  className="shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition active:scale-95"
+                  className="shrink-0 min-w-[46px] h-8 px-1.5 rounded-lg text-[11px] font-semibold transition active:scale-95"
                   style={{
                     background: '#FFFFFF',
                     color: selected ? '#0F5132' : '#1F2937',
@@ -567,6 +790,118 @@ export default function DatingPeopleList() {
           </div>
         </div>
       </div>
+
+      {showRegionFilterSheet && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowRegionFilterSheet(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-4 pb-5"
+            style={{
+              background: '#FFFFFF',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 18px)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
+            <p className="text-base font-extrabold mb-4" style={{ color: '#1B4332' }}>
+              활동 지역 필터
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {ACTIVITY_REGIONS.map((region) => {
+                const selected = regionFilter === region;
+                return (
+                  <button
+                    key={region}
+                    type="button"
+                    onClick={() => {
+                      setRegionFilter(region);
+                      setShowRegionFilterSheet(false);
+                    }}
+                    className="py-3 rounded-xl text-sm font-bold transition active:scale-95"
+                    style={{
+                      background: selected ? '#1B4332' : '#F7FAF4',
+                      color: selected ? '#FFFFFF' : '#1F3D2A',
+                      border: selected ? '1px solid #1B4332' : '1px solid rgba(31,61,42,0.12)',
+                    }}
+                  >
+                    {region}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs mt-3 leading-5" style={{ color: 'rgba(31,61,42,0.55)' }}>
+              특정 지역 선택 시 해당 지역 회원과 지역 미설정 회원이 함께 표시돼요.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showActivityRegionPopup && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white px-5 py-6"
+            style={{ boxShadow: '0 18px 60px rgba(0,0,0,0.22)' }}
+          >
+            <div className="flex justify-center mb-4">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(27,67,50,0.08)' }}
+              >
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </div>
+            </div>
+
+            <h3 className="text-2xl font-extrabold text-center mb-3" style={{ color: '#0B2B2F' }}>
+              주로 어디에서<br />테니스를 치시나요?
+            </h3>
+            <p className="text-sm text-center leading-6 mb-5" style={{ color: 'rgba(11,43,47,0.72)' }}>
+              선택한 지역을 기준으로<br />
+              사람부터 구할래요에서 이성에게 노출됩니다.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {ACTIVITY_REGIONS.filter((region) => region !== '전체').map((region) => {
+                const selected = activityRegionDraft === region;
+                return (
+                  <button
+                    key={region}
+                    type="button"
+                    onClick={() => setActivityRegionDraft(region)}
+                    className="h-12 rounded-xl text-sm font-bold transition active:scale-95"
+                    style={{
+                      background: selected ? '#064E3B' : '#FFFFFF',
+                      color: selected ? '#FFFFFF' : '#111827',
+                      border: selected ? '1.5px solid #064E3B' : '1px solid rgba(17,24,39,0.14)',
+                      boxShadow: selected ? '0 6px 16px rgba(6,78,59,0.16)' : 'none',
+                    }}
+                  >
+                    {region}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              disabled={activityRegionSaving || !activityRegionDraft}
+              onClick={handleSaveActivityRegion}
+              className="w-full h-13 rounded-2xl text-white font-extrabold disabled:opacity-60"
+              style={{ height: 52, background: 'linear-gradient(135deg, #064E3B 0%, #0F6B46 100%)' }}
+            >
+              {activityRegionSaving ? '저장 중...' : '완료'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {filteredPeople.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-5">
@@ -628,7 +963,7 @@ export default function DatingPeopleList() {
                           {person.name || '이름 없음'}
                         </p>
                         <p className="text-xs mt-0.5" style={{ color: 'rgba(31,61,42,0.55)' }}>
-                          {person.age ? `나이: ${person.age}세` : '나이 미입력'} · {formatHeight(person.height)}
+                          {person.age ? `나이: ${person.age}세` : '나이 미입력'} · {formatHeight(person.height)} · 📍 {person.activity_region || '미설정'}
                         </p>
                       </div>
 
@@ -685,7 +1020,7 @@ export default function DatingPeopleList() {
       {applicationTarget && (
         <div
           className="fixed inset-0 z-[10000] flex items-end justify-center"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)' }}
           onClick={() => {
             if (!applicationSubmitting) {
               setApplicationTarget(null);
@@ -694,67 +1029,46 @@ export default function DatingPeopleList() {
           }}
         >
           <div
-            className="w-full max-w-md rounded-t-3xl px-5 pt-4 pb-4 overflow-y-auto"
+            className="w-full max-w-md rounded-t-[30px] px-5 pt-4 pb-5"
             style={{
-              background: '#FFFFFF',
-              maxHeight: '62dvh',
+              background: 'linear-gradient(180deg, #8FBEA2 0%, #A9CFB8 100%)',
+              boxShadow: '0 -14px 44px rgba(0,0,0,0.18)',
               paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 18px)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 rounded-full mx-auto mb-3 bg-gray-200" />
-            <p className="text-base font-bold mb-1" style={{ color: '#1F3D2A' }}>
-              {applicationTarget.name || '회원'}님에게 신청 보내기
-            </p>
-            <p className="text-xs mb-2" style={{ color: 'rgba(31,61,42,0.55)' }}>
-              함께 치고 싶은 이유나 가능한 시간을 간단히 적어주세요.
+            <div className="w-10 h-1.5 rounded-full mx-auto mb-4" style={{ background: 'rgba(255,255,255,0.58)' }} />
+
+            <p className="text-xl font-extrabold text-white text-center mb-4">
+              🎾 테니스 신청 메시지
             </p>
 
             <textarea
               value={applicationMessage}
               onChange={(e) => setApplicationMessage(e.target.value)}
-              placeholder="예: 안녕하세요! 시간 맞으면 같이 테니스 치고 싶어요 :)"
+              placeholder="예) 안녕하세요! 같이 테니스 치고 싶어요 🎾"
               maxLength={300}
-              className="w-full min-h-[72px] rounded-2xl px-4 py-2.5 text-sm outline-none resize-none"
+              className="w-full min-h-[108px] rounded-2xl px-4 py-3 text-base outline-none resize-none"
               style={{
-                background: '#F7FAF4',
-                border: '1px solid rgba(74,124,92,0.2)',
-                color: '#1F3D2A',
+                background: 'rgba(255,255,255,0.10)',
+                border: '1.5px solid rgba(255,255,255,0.54)',
+                color: '#FFFFFF',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.03)',
               }}
             />
 
-            <div className="flex justify-between items-center mt-1 mb-1.5">
-              <span className="text-xs" style={{ color: 'rgba(31,61,42,0.45)' }}>
-                {applicationMessage.length}/300
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                disabled={applicationSubmitting}
-                onClick={() => {
-                  setApplicationTarget(null);
-                  setApplicationMessage('');
-                }}
-                className="py-2.5 rounded-xl text-sm font-bold transition active:scale-95 disabled:opacity-60"
-                style={{
-                  background: '#F3F4F6',
-                  color: '#374151',
-                }}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                disabled={applicationSubmitting}
-                onClick={handleSubmitApplication}
-                className="py-2.5 rounded-xl text-sm font-bold text-white transition active:scale-95 disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg, #3D6B4E 0%, #5A8A6E 100%)' }}
-              >
-                {applicationSubmitting ? '보내는 중...' : '신청 보내기'}
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={applicationSubmitting}
+              onClick={handleSubmitApplication}
+              className="w-full mt-4 py-3.5 rounded-2xl text-base font-extrabold text-white transition active:scale-95 disabled:opacity-60"
+              style={{
+                background: '#3D7A55',
+                boxShadow: '0 9px 20px rgba(31,61,42,0.22)',
+              }}
+            >
+              {applicationSubmitting ? '신청 중...' : '신청하기'}
+            </button>
           </div>
         </div>
       )}
@@ -783,6 +1097,9 @@ export default function DatingPeopleList() {
             alt={photoViewer.name}
             className="max-w-full max-h-[72vh] object-contain"
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={handlePhotoTouchStart}
+            onTouchEnd={handlePhotoTouchEnd}
+            draggable={false}
           />
 
           {photoViewer.photos.length > 1 && (
@@ -791,10 +1108,7 @@ export default function DatingPeopleList() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setPhotoViewer((prev) => {
-                    if (!prev) return prev;
-                    return { ...prev, index: prev.index === 0 ? prev.photos.length - 1 : prev.index - 1 };
-                  });
+                  movePhotoViewer('prev');
                 }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full text-white text-3xl"
                 style={{ background: 'rgba(255,255,255,0.16)' }}
@@ -807,10 +1121,7 @@ export default function DatingPeopleList() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setPhotoViewer((prev) => {
-                    if (!prev) return prev;
-                    return { ...prev, index: prev.index === prev.photos.length - 1 ? 0 : prev.index + 1 };
-                  });
+                  movePhotoViewer('next');
                 }}
                 className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full text-white text-3xl"
                 style={{ background: 'rgba(255,255,255,0.16)' }}

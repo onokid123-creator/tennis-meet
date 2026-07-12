@@ -16,8 +16,8 @@ export default function TicketPackPopup({
   const isInterest = kind === 'interest';
   const mainColor = isInterest ? '#C9A84C' : '#1B4332';
   const titleIcon = isInterest ? '💛' : '🎾';
-  const title = isInterest ? '관심 코트 신청권 팩' : '코트 신청권 팩';
-  const subtitle = isInterest ? '관심 코트를 원하는 만큼 표시할 수 있어요' : '원하는 만큼 신청할 수 있어요';
+  const title = isInterest ? '관심 신청권 팩' : '코트 신청권 팩';
+  const subtitle = isInterest ? '관심를 원하는 만큼 표시할 수 있어요' : '원하는 만큼 신청할 수 있어요';
   const ticket5ProductId = isInterest ? 'tennis_meet_interest_ticket' : 'tennis_meet_ticket';
   const ticket10ProductId = isInterest ? 'tennis_meet_interest_ticket_10' : 'tennis_meet_ticket_10';
 

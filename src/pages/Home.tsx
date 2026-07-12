@@ -75,6 +75,26 @@ function DatingProfileRequiredPopup({ onRegister, onClose }: { onRegister: () =>
 }
 
 
+const HOME_ACTIVITY_REGIONS = [
+  '서울',
+  '경기',
+  '인천',
+  '부산',
+  '대구',
+  '대전',
+  '광주',
+  '울산',
+  '세종',
+  '강원',
+  '충북',
+  '충남',
+  '전북',
+  '전남',
+  '경북',
+  '경남',
+  '제주',
+];
+
 export default function Home() {
 const handlePurchase = async (productId: string) => {
   try {
@@ -100,6 +120,11 @@ const vpHeight = useVisualViewport();
   const [selectedAgeFilters, setSelectedAgeFilters] = useState<AgeFilter[]>(['all']);
   const [selectedGenderFilter, setSelectedGenderFilter] = useState<GenderFilter>('all');
   const [showDatingProfilePopup, setShowDatingProfilePopup] = useState(false);
+  const [showHomeActivityRegionPopup, setShowHomeActivityRegionPopup] = useState(false);
+  const [homeActivityRegionDraft, setHomeActivityRegionDraft] = useState('서울');
+  const [homeActivityRegionSaving, setHomeActivityRegionSaving] = useState(false);
+  const [homeActivityRegionLocal, setHomeActivityRegionLocal] = useState('');
+  const [pendingDatingModeAfterRegion, setPendingDatingModeAfterRegion] = useState<DatingMode>('court');
 const [showPaywallPopup, setShowPaywallPopup] = useState(false);
 const [paywallStep, setPaywallStep] = useState<'first_limit' | 'ticket_pack' | 'subscription_intro' | 'out_of_tickets' | null>(null);
 const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court');
@@ -156,7 +181,7 @@ useEffect(() => {
   }, [user]);
 
   const COURT_FIELDS = 'id,user_id,purpose,status,court_name,court_number,date,start_time,end_time,format,match_type,description,male_slots,female_slots,male_count,female_count,confirmed_male_slots,confirmed_female_slots,current_participants,capacity,cost,experience_wanted,court_fee,tennis_photo_url,owner_photo,owner_photos,dating_photo_visibility,dating_representative_photo_url,owner_name,owner_age,owner_gender,owner_mbti,owner_height,owner_bio,owner_experience,court_intro,reservation_mode,created_at';
-  const PROFILE_FIELDS = 'user_id,name,photo_url,photo_urls,dating_photo_visibility,dating_representative_photo_url,tennis_photo_url,experience,tennis_style,age,gender,purpose,mbti,height';
+  const PROFILE_FIELDS = 'user_id,name,photo_url,photo_urls,dating_photo_visibility,dating_representative_photo_url,tennis_photo_url,experience,tennis_style,age,gender,purpose,mbti,height,activity_region';
 const getCourtCacheKey = (purpose: CategoryTab, tab: Tab) => {
   return `cached_courts_${purpose}_${tab}`;
 };
@@ -314,16 +339,117 @@ useEffect(() => {
     window.removeEventListener('auth-resynced', handleAuthResynced);
   };
 }, [categoryTab, activeTab]);
-  const handleCategoryTab = (tab: CategoryTab) => {
-    if (tab === categoryTab) return;
-    const userPurpose = profile?.purpose;
 
-    if (tab === 'dating' && userPurpose === 'tennis') {
-      if (!profile?.mbti && !profile?.height) {
+  const hasDatingProfileForRegionGate = () => {
+    const p = profile as any;
+    return !!(
+      p?.mbti ||
+      p?.height ||
+      p?.profile_completed ||
+      p?.activity_region ||
+      (Array.isArray(p?.photo_urls) && p.photo_urls.length > 0)
+    );
+  };
+
+  const getCurrentActivityRegion = () => {
+    const p = profile as any;
+    return String(homeActivityRegionLocal || p?.activity_region || '').trim();
+  };
+
+  const getLatestActivityRegionForGate = async () => {
+    const cached = getCurrentActivityRegion();
+    if (cached) return cached;
+
+    if (!user?.id) return '';
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('activity_region')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Home] activity region recheck failed:', error);
+      return '';
+    }
+
+    const latestRegion = String((data as any)?.activity_region || '').trim();
+    if (latestRegion) {
+      setHomeActivityRegionLocal(latestRegion);
+    }
+
+    return latestRegion;
+  };
+
+
+  const enterDatingTabAfterRegionCheck = (mode: DatingMode = 'court') => {
+    setCourts([]);
+    setCategoryTab('dating');
+    localStorage.setItem('home_category_tab', 'dating');
+    setActiveTab('others');
+    setDatingMode(mode);
+  };
+
+  const handleHomeActivityRegionSave = async () => {
+    if (!user?.id || !homeActivityRegionDraft) return;
+
+    try {
+      setHomeActivityRegionSaving(true);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ activity_region: homeActivityRegionDraft })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setHomeActivityRegionLocal(homeActivityRegionDraft);
+      setShowHomeActivityRegionPopup(false);
+
+      window.setTimeout(() => {
+        window.dispatchEvent(new Event('auth-resynced'));
+      }, 50);
+
+      enterDatingTabAfterRegionCheck(pendingDatingModeAfterRegion);
+    } catch (error) {
+      console.error('[Home] activity region save failed:', error);
+      alert('활동 지역 저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setHomeActivityRegionSaving(false);
+    }
+  };
+
+
+  const handlePeopleButtonEntry = async () => {
+    const latestRegion = await getLatestActivityRegionForGate();
+    if (!latestRegion) {
+      setPendingDatingModeAfterRegion('people');
+      setHomeActivityRegionDraft('서울');
+      setShowHomeActivityRegionPopup(true);
+      return;
+    }
+
+    enterDatingTabAfterRegionCheck('people');
+  };
+
+  const handleCategoryTab = async (tab: CategoryTab) => {
+    if (tab === 'dating') {
+      if (!hasDatingProfileForRegionGate()) {
         setShowDatingProfilePopup(true);
         return;
       }
+
+      const latestRegion = await getLatestActivityRegionForGate();
+      if (!latestRegion) {
+        setPendingDatingModeAfterRegion('court');
+        setHomeActivityRegionDraft('서울');
+        setShowHomeActivityRegionPopup(true);
+        return;
+      }
     }
+
+    if (tab === categoryTab) return;
+    const userPurpose = profile?.purpose;
 
     if (tab === 'tennis' && userPurpose === 'dating') {
       if (!profile?.tennis_style) {
@@ -387,7 +513,7 @@ useEffect(() => {
 
     const { data: latestProfile } = await supabase
       .from('profiles')
-      .select('free_interest_count, interest_ticket_count, is_subscribed')
+      .select('free_interest_count, interest_ticket_count, is_subscribed,activity_region')
       .eq('user_id', user.id)
       .single();
 
@@ -425,9 +551,38 @@ useEffect(() => {
         alert('이미 관심코트 등록되었어요');
       } else {
         console.error('[InterestCourt] insert failed:', error);
-        alert('관심 코트 등록에 실패했습니다. 다시 시도해주세요.');
+        alert('관심 등록에 실패했습니다. 다시 시도해주세요.');
       }
       return;
+    }
+
+    const [{ data: senderProfile }, { data: hostProfile }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user.id)
+        .maybeSingle(),
+      supabase
+        .from('profiles')
+        .select('fcm_token')
+        .eq('user_id', court.user_id)
+        .maybeSingle(),
+    ]);
+
+    if (hostProfile?.fcm_token) {
+      await supabase.functions.invoke('send-push', {
+        body: {
+          token: hostProfile.fcm_token,
+          title: senderProfile?.name || 'Tennis Meet',
+          body: '내 코트에 관심을 보냈어요.',
+          data: {
+            type: 'court_interest_received',
+            courtId: court.id,
+            senderId: user.id,
+            purpose: court.purpose || 'tennis',
+          },
+        },
+      });
     }
 
     if (!isSubscribed) {
@@ -488,7 +643,7 @@ useEffect(() => {
     if (isDatingApply) {
       const { data } = await supabase
         .from('profiles')
-        .select('free_meeting_count, is_subscribed, gender, ticket_count')
+        .select('free_meeting_count, is_subscribed, gender, ticket_count,activity_region')
         .eq('user_id', user.id)
         .single();
 
@@ -714,12 +869,7 @@ if (!categoryTab) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setCategoryTab('dating');
-                    localStorage.setItem('home_category_tab', 'dating');
-                    setActiveTab('others');
-                    setDatingMode('people');
-                  }}
+                  onClick={handlePeopleButtonEntry}
                   className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-full font-semibold text-sm whitespace-nowrap transition active:scale-95"
                   style={{ background: '#FFF3D6', color: '#9A5A12', border: '1.5px solid rgba(201,168,76,0.45)', boxShadow: '0 2px 8px rgba(201,168,76,0.18)' }}
                 >
@@ -786,7 +936,18 @@ if (!categoryTab) {
 
       <div className={isDating ? 'px-4 py-4' : 'px-4 py-5'}>
         {activeTab === 'others' && isDating && datingMode === 'people' ? (
-          <DatingPeopleList />
+          <DatingPeopleList
+            onRequireCourtTicket={() => {
+              setPaywallKind('court');
+              setPaywallStep('first_limit');
+              setShowPaywallPopup(true);
+            }}
+            onRequireInterestTicket={() => {
+              setPaywallKind('interest');
+              setPaywallStep('first_limit');
+              setShowPaywallPopup(true);
+            }}
+          />
         ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <div
@@ -913,6 +1074,103 @@ if (!categoryTab) {
       </div>
 
       <BottomNav active="home" />
+
+      {showHomeActivityRegionPopup && (
+        <div
+          className="fixed inset-0 z-[10000] flex flex-col"
+          style={{
+            background: '#FFFFFF',
+            paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+            paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)',
+          }}
+        >
+          <div className="relative h-14 flex items-center justify-center px-5">
+            <button
+              type="button"
+              onClick={() => {
+                if (!homeActivityRegionSaving) {
+                  setShowHomeActivityRegionPopup(false);
+                }
+              }}
+              className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition"
+              style={{ color: '#00592E' }}
+              aria-label="뒤로가기"
+            >
+              <span className="text-3xl leading-none">‹</span>
+            </button>
+
+            <h2 className="text-lg font-extrabold" style={{ color: '#00592E' }}>
+              주로 활동하는 지역
+            </h2>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 pt-8 pb-28">
+            <div
+              className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8"
+              style={{ background: '#F1F3F2' }}
+            >
+              <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#00592E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+
+            <h3 className="text-2xl font-extrabold text-center leading-snug mb-6" style={{ color: '#0B2B2F' }}>
+              주로 어디에서<br />테니스를 치시나요?
+            </h3>
+
+            <p className="text-base text-center leading-7 mb-10" style={{ color: 'rgba(11,43,47,0.68)' }}>
+              선택한 지역을 기준으로<br />
+              사람부터 구할래요에서<br />
+              이성에게 노출됩니다.
+            </p>
+
+            <div className="grid grid-cols-3 gap-3">
+              {HOME_ACTIVITY_REGIONS.map((region) => {
+                const selected = homeActivityRegionDraft === region;
+                return (
+                  <button
+                    key={region}
+                    type="button"
+                    onClick={() => setHomeActivityRegionDraft(region)}
+                    className="h-16 rounded-xl text-base font-bold transition active:scale-95"
+                    style={{
+                      background: selected ? '#00592E' : '#FFFFFF',
+                      color: selected ? '#FFFFFF' : '#111827',
+                      border: selected ? '1.5px solid #00592E' : '1px solid #E1E5E2',
+                      boxShadow: selected ? '0 8px 18px rgba(0,89,46,0.18)' : 'none',
+                    }}
+                  >
+                    {region}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div
+            className="fixed left-0 right-0 bottom-0 px-6 pt-4"
+            style={{
+              background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 28%, #FFFFFF 100%)',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 20px)',
+            }}
+          >
+            <button
+              type="button"
+              disabled={homeActivityRegionSaving}
+              onClick={handleHomeActivityRegionSave}
+              className="w-full h-16 rounded-xl text-lg font-extrabold transition active:scale-95 disabled:opacity-60"
+              style={{
+                background: '#00592E',
+                color: '#FFFFFF',
+                boxShadow: '0 10px 24px rgba(0,89,46,0.20)',
+              }}
+            >
+              {homeActivityRegionSaving ? '저장 중...' : '완료'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showDatingProfilePopup && (
         <DatingProfileRequiredPopup

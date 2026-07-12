@@ -330,7 +330,7 @@ const isTennis = purpose === 'tennis';
 
       const { data: myProfile } = await supabase
         .from('profiles')
-        .select('name,age,gender,photo_url,photo_urls,tennis_photo_url,experience,mbti,height,bio')
+        .select('name,age,gender,photo_url,photo_urls,tennis_photo_url,experience,mbti,height,bio,activity_region')
         .eq('user_id', currentUser.id)
         .maybeSingle();
 

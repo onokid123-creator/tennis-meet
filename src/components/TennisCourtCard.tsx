@@ -161,7 +161,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: Det
 
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('user_id,name,photo_url,tennis_photo_url,experience,tennis_style')
+      .select('user_id,name,photo_url,tennis_photo_url,experience,tennis_style,activity_region')
       .in('user_id', ids);
 
     if (!signal.cancelled) {

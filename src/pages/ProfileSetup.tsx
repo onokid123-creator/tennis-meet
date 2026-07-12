@@ -20,6 +20,27 @@ const MBTI_LIST = [
   ['ESTJ', 'ESFJ', 'ENFJ', 'ENTJ'],
 ];
 
+const ACTIVITY_REGIONS = [
+  '전체',
+  '서울',
+  '경기',
+  '인천',
+  '부산',
+  '대구',
+  '대전',
+  '광주',
+  '울산',
+  '세종',
+  '강원',
+  '충북',
+  '충남',
+  '전북',
+  '전남',
+  '경북',
+  '경남',
+  '제주',
+];
+
 export default function ProfileSetup() {
   const navigate = useNavigate();
   const { user, profile, updateProfile } = useAuth();
@@ -49,6 +70,7 @@ export default function ProfileSetup() {
   const [extraData, setExtraData] = useState({
     mbti: '',
     height: '',
+    activity_region: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -238,6 +260,7 @@ export default function ProfileSetup() {
         photo_urls: uploadedUrls,
         mbti: extraData.mbti || null,
         height: extraData.height ? Number(extraData.height) : null,
+        activity_region: extraData.activity_region || null,
       };
 
       await supabase.from('profiles').upsert(datingData, { onConflict: 'user_id' });
@@ -263,7 +286,7 @@ export default function ProfileSetup() {
   void preloadImages;
 
   const experienceOptions = ['1년미만', '1년차', '2년차', '3년차', '4년차', '5년이상'];
-  const isStep2Valid = extraData.mbti !== '' && extraData.height.trim() !== '';
+  const isStep2Valid = extraData.mbti !== '' && extraData.height.trim() !== '' && extraData.activity_region !== '';
 
   return (
     <div className="min-h-screen bg-[#1B4332] flex flex-col items-center px-5 py-10">
@@ -432,6 +455,32 @@ export default function ProfileSetup() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-[#3F3A31] mb-3">활동 지역</label>
+              <div className="grid grid-cols-3 gap-2">
+                {ACTIVITY_REGIONS.filter((r) => r !== '전체').map((region) => {
+                  const selected = extraData.activity_region === region;
+                  return (
+                    <button
+                      key={region}
+                      type="button"
+                      onClick={() => setExtraData({ ...extraData, activity_region: region })}
+                      className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition ${
+                        selected
+                          ? 'border-[#C9A84C] bg-[#C9A84C] text-white shadow-sm'
+                          : 'border-[#E5D8C2] bg-white/70 text-[#5F5345] hover:bg-white'
+                      }`}
+                    >
+                      {region}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] mt-2 text-[#8A7B68]">
+                선택한 지역은 사람부터 구할래요에 프로필 정보로 노출돼요.
+              </p>
             </div>
 
             {error && (

@@ -338,13 +338,13 @@ function DatingProfilePopup({
 
       <div
         className="w-full max-w-md rounded-t-3xl overflow-hidden shadow-2xl"
-        style={{ background: '#FFF5F7', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}
+        style={{ background: '#F5F8F2', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
           className="flex-shrink-0 relative"
           style={{
-            background: 'linear-gradient(135deg, #FDA4AF 0%, #FECDD3 100%)',
+            background: 'linear-gradient(135deg, #2D6A4F 0%, #C9A84C 100%)',
             paddingTop: 20,
             paddingBottom: 24,
             paddingLeft: 24,
@@ -363,7 +363,7 @@ function DatingProfilePopup({
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
               <path d="M5 1.5 L6.2 4 L9 4.3 L7 6.2 L7.5 9 L5 7.6 L2.5 9 L3 6.2 L1 4.3 L3.8 4 Z" fill="#fff" stroke="none" />
             </svg>
-            <span style={{ color: '#fff', fontSize: 10, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase' }}>Flirty Meeting</span>
+            <span style={{ color: '#fff', fontSize: 10, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase' }}>Tennis Meet</span>
           </div>
 
           <div className="flex items-end justify-between">
@@ -393,10 +393,10 @@ function DatingProfilePopup({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto" style={{ background: '#FFF5F7' }}>
+        <div className="flex-1 overflow-y-auto" style={{ background: '#F5F8F2' }}>
           <div
             className="relative mx-5 mt-5 rounded-2xl overflow-hidden cursor-pointer"
-            style={{ aspectRatio: '4/3', border: '2px solid rgba(253,164,175,0.2)', boxShadow: '0 6px 24px rgba(253,164,175,0.15)' }}
+            style={{ aspectRatio: '4/3', border: '2px solid rgba(45,106,79,0.18)', boxShadow: '0 6px 24px rgba(45,106,79,0.14)' }}
             onClick={() => photos.length > 0 && setFullscreen(true)}
           >
             {photos.length > 0 ? (
@@ -417,7 +417,7 @@ function DatingProfilePopup({
                   onClick={(e) => { e.stopPropagation(); setMainIdx((i) => Math.max(0, i - 1)); }}
                   disabled={mainIdx === 0}
                   className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition active:scale-90"
-                  style={{ background: 'rgba(253,164,175,0.7)', backdropFilter: 'blur(4px)' }}
+                  style={{ background: 'rgba(27,67,50,0.72)', backdropFilter: 'blur(4px)' }}
                 >
                   <ChevronLeft className="w-4 h-4 text-white" />
                 </button>
@@ -425,7 +425,7 @@ function DatingProfilePopup({
                   onClick={(e) => { e.stopPropagation(); setMainIdx((i) => Math.min(photos.length - 1, i + 1)); }}
                   disabled={mainIdx === photos.length - 1}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition active:scale-90"
-                  style={{ background: 'rgba(253,164,175,0.7)', backdropFilter: 'blur(4px)' }}
+                  style={{ background: 'rgba(27,67,50,0.72)', backdropFilter: 'blur(4px)' }}
                 >
                   <ChevronRight className="w-4 h-4 text-white" />
                 </button>
@@ -442,8 +442,8 @@ function DatingProfilePopup({
                     style={{
                       width: i === mainIdx ? 20 : 6,
                       height: 6,
-                      background: i === mainIdx ? '#FDA4AF' : 'rgba(255,255,255,0.7)',
-                      boxShadow: i === mainIdx ? '0 0 6px rgba(253,164,175,0.7)' : 'none',
+                      background: i === mainIdx ? '#2D6A4F' : 'rgba(255,255,255,0.7)',
+                      boxShadow: i === mainIdx ? '0 0 6px rgba(27,67,50,0.72)' : 'none',
                     }}
                   />
                 ))}
@@ -452,7 +452,7 @@ function DatingProfilePopup({
 
             <div
               className="absolute inset-0 pointer-events-none"
-              style={{ background: 'linear-gradient(to top, rgba(253,164,175,0.12) 0%, transparent 40%)' }}
+              style={{ background: 'linear-gradient(to top, rgba(45,106,79,0.10) 0%, transparent 40%)' }}
             />
           </div>
 
@@ -460,20 +460,20 @@ function DatingProfilePopup({
             {profile.experience && (
               <div
                 className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                style={{ background: '#fff', border: '1.5px solid rgba(253,164,175,0.25)', boxShadow: '0 2px 8px rgba(253,164,175,0.08)' }}
+                style={{ background: '#fff', border: '1.5px solid rgba(45,106,79,0.18)', boxShadow: '0 2px 8px rgba(45,106,79,0.07)' }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(253,164,175,0.15)' }}
+                  style={{ background: 'rgba(45,106,79,0.14)' }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FDA4AF" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
                     <ellipse cx="12" cy="12" rx="10" ry="10" />
                     <path d="M2 12 Q12 4 22 12" />
                     <path d="M2 12 Q12 20 22 12" />
                   </svg>
                 </div>
                 <div>
-                  <p style={{ color: '#FDA4AF', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>테니스 구력</p>
+                  <p style={{ color: '#2D6A4F', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>테니스 구력</p>
                   <p style={{ color: '#9f1239', fontSize: 14, fontWeight: 700, marginTop: 1 }}>{profile.experience}</p>
                 </div>
               </div>
@@ -482,18 +482,18 @@ function DatingProfilePopup({
             {profile.height && (
               <div
                 className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                style={{ background: '#fff', border: '1.5px solid rgba(253,164,175,0.25)', boxShadow: '0 2px 8px rgba(253,164,175,0.08)' }}
+                style={{ background: '#fff', border: '1.5px solid rgba(45,106,79,0.18)', boxShadow: '0 2px 8px rgba(45,106,79,0.07)' }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(253,164,175,0.15)' }}
+                  style={{ background: 'rgba(45,106,79,0.14)' }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FDA4AF" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
                     <path d="M12 3v18M8 6h8M8 12h8M8 18h8" strokeLinecap="round" />
                   </svg>
                 </div>
                 <div>
-                  <p style={{ color: '#FDA4AF', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>키</p>
+                  <p style={{ color: '#2D6A4F', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>키</p>
                   <p style={{ color: '#9f1239', fontSize: 14, fontWeight: 700, marginTop: 1 }}>{profile.height}cm</p>
                 </div>
               </div>
@@ -502,18 +502,18 @@ function DatingProfilePopup({
             {profile.mbti && (
               <div
                 className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                style={{ background: '#fff', border: '1.5px solid rgba(253,164,175,0.25)', boxShadow: '0 2px 8px rgba(253,164,175,0.08)' }}
+                style={{ background: '#fff', border: '1.5px solid rgba(45,106,79,0.18)', boxShadow: '0 2px 8px rgba(45,106,79,0.07)' }}
               >
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(253,164,175,0.15)' }}
+                  style={{ background: 'rgba(45,106,79,0.14)' }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FDA4AF" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2D6A4F" strokeWidth="2">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
                 </div>
                 <div>
-                  <p style={{ color: '#FDA4AF', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>MBTI</p>
+                  <p style={{ color: '#2D6A4F', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>MBTI</p>
                   <p style={{ color: '#9f1239', fontSize: 14, fontWeight: 700, marginTop: 1 }}>{profile.mbti}</p>
                 </div>
               </div>
@@ -523,13 +523,13 @@ function DatingProfilePopup({
           {profile.bio && (
             <div
               className="mx-5 mt-3 p-4 rounded-2xl"
-              style={{ background: '#fff', border: '1.5px solid rgba(253,164,175,0.25)', boxShadow: '0 2px 8px rgba(253,164,175,0.06)' }}
+              style={{ background: '#fff', border: '1.5px solid rgba(45,106,79,0.18)', boxShadow: '0 2px 8px rgba(45,106,79,0.06)' }}
             >
               <div className="flex items-center gap-1.5 mb-2">
                 <svg width="12" height="12" viewBox="0 0 10 10" fill="none">
-                  <path d="M5 1.5 L6.2 4 L9 4.3 L7 6.2 L7.5 9 L5 7.6 L2.5 9 L3 6.2 L1 4.3 L3.8 4 Z" fill="#FDA4AF" />
+                  <path d="M5 1.5 L6.2 4 L9 4.3 L7 6.2 L7.5 9 L5 7.6 L2.5 9 L3 6.2 L1 4.3 L3.8 4 Z" fill="#2D6A4F" />
                 </svg>
-                <p style={{ color: '#FDA4AF', fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>자기소개</p>
+                <p style={{ color: '#2D6A4F', fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>자기소개</p>
               </div>
               <p style={{ color: '#9f1239', fontSize: 13, lineHeight: 1.7, fontStyle: 'italic' }}>
                 "{profile.bio}"
@@ -542,7 +542,7 @@ function DatingProfilePopup({
               <button
                 onClick={() => { onClose(); onUnblock(); }}
                 className="flex-1 py-3 rounded-2xl text-sm font-bold transition active:scale-95"
-                style={{ background: '#FDA4AF', color: '#fff' }}
+                style={{ background: '#2D6A4F', color: '#fff' }}
               >
                 차단 해제
               </button>
@@ -659,8 +659,46 @@ useEffect(() => {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [includeMealProposal, setIncludeMealProposal] = useState(false);
   const [courtId, setCourtId] = useState<string | null>(null);
+  const isPeopleApplicationRoute = (roomState as any)?.source === 'peopleApplication';
+  const [isPeopleApplicationChat, setIsPeopleApplicationChat] = useState(isPeopleApplicationRoute);
   const [courtName, setCourtName] = useState<string | null>(roomState?.initialCourtName ?? null);
   const [courtInfo, setCourtInfo] = useState<{ date?: string; start_time?: string; end_time?: string; court_number?: string } | null>(null);
+
+  useEffect(() => {
+    if (!chatId) return;
+
+    let cancelled = false;
+
+    const verifyPeopleApplicationChat = async () => {
+      const { data, error } = await supabase
+        .from('dating_people_applications')
+        .select('id')
+        .eq('chat_id', chatId)
+        .limit(1);
+
+      if (!cancelled && !error && data && data.length > 0) {
+        setIsPeopleApplicationChat(true);
+      }
+    };
+
+    verifyPeopleApplicationChat();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatId]);
+
+  useEffect(() => {
+    if (!isPeopleApplicationChat) return;
+
+    setIsHost(false);
+    setCourtId(null);
+    setCourtName(null);
+    setCourtInfo(null);
+    setMatchConfirmed(false);
+    setShowConfirmPicker(false);
+    setShowCancelPicker(false);
+  }, [isPeopleApplicationChat, isHost, courtId, courtName, courtInfo, matchConfirmed, showConfirmPicker, showCancelPicker]);
   const [inAppToast, setInAppToast] = useState<{ name: string; content: string } | null>(null);
   const [simpleToast, setSimpleToast] = useState<string | null>(null);
   const [showBlockPopup, setShowBlockPopup] = useState(false);
@@ -971,7 +1009,7 @@ useEffect(() => {
       return;
     }
 
-    const [participantsRes, chatRes] = await Promise.all([
+    const [participantsRes, chatRes, peopleApplicationRes] = await Promise.all([
       supabase
         .from('chat_participants')
         .select('user_id, is_confirmed, last_read_at, joined_at')
@@ -982,13 +1020,50 @@ useEffect(() => {
         .select('id, user1_id, user2_id, purpose, court_id, is_group, confirmed_user_ids')
         .eq('id', chatId)
         .maybeSingle(),
+      supabase
+        .from('dating_people_applications')
+        .select('id, chat_id')
+        .eq('chat_id', chatId)
+        .maybeSingle(),
     ]);
 
     if (cancelled) return;
 
     const participants = participantsRes.data ?? [];
     const chat = chatRes.data;
+
+    let isPeopleAppChat = !!peopleApplicationRes.data && !peopleApplicationRes.error;
+    const participantIds = participants.map((p) => p.user_id).filter(Boolean);
+
+    if (!isPeopleAppChat && participantIds.length >= 2) {
+      const { data: pairPeopleApplications } = await supabase
+        .from('dating_people_applications')
+        .select('id,sender_id,receiver_id,status')
+        .in('sender_id', participantIds)
+        .in('receiver_id', participantIds)
+        .limit(1);
+
+      isPeopleAppChat = (pairPeopleApplications ?? []).some((row: any) => {
+        return (
+          row.sender_id &&
+          row.receiver_id &&
+          row.sender_id !== row.receiver_id &&
+          participantIds.includes(row.sender_id) &&
+          participantIds.includes(row.receiver_id)
+        );
+      });
+    }
+
     const isGroup = !!chat?.is_group;
+
+    setIsPeopleApplicationChat(isPeopleAppChat);
+
+    if (isPeopleAppChat) {
+      setCourtId(null);
+      setCourtName(null);
+      setCourtInfo(null);
+      setMatchConfirmed(false);
+    }
 
     if (chat?.purpose) setChatPurpose(chat.purpose);
     if (chat?.user1_id === currentUser.id) setIsHost(true);
@@ -1010,7 +1085,7 @@ useEffect(() => {
       forceRefreshUntilPopulated(0);
     }
 
-    if (chat?.court_id) {
+    if (!isPeopleAppChat && chat?.court_id) {
       setCourtId(chat.court_id);
 
       supabase
@@ -1099,7 +1174,7 @@ useEffect(() => {
     const [profRes, oppPartRes] = await Promise.all([
       supabase
         .from('profiles')
-        .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height')
+        .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height,activity_region')
         .eq('user_id', opponentId)
         .maybeSingle(),
       supabase
@@ -1276,7 +1351,7 @@ useEffect(() => {
 
       setMessages(msgs);
 
-      if (msgs.some((m) => m.type === 'system' && (
+      if (!isPeopleApplicationChat && msgs.some((m) => m.type === 'system' && (
         m.content.includes('매칭이 확정됐어요') ||
         m.content.includes('매칭 확정됐어요') ||
         m.content.includes('라인업이 확정됐어요') ||
@@ -1296,7 +1371,7 @@ useEffect(() => {
       if (senderIds.length > 0) {
         const { data: profs } = await supabase
           .from('profiles')
-          .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height')
+          .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height,activity_region')
           .in('user_id', senderIds);
         if (!cancelled && profs) {
           const map: Record<string, Profile> = {};
@@ -1389,7 +1464,7 @@ const channelKey = `${chatId}_${user.id}_${resumeTick}`;
                   }
                   supabase
                     .from('profiles')
-                    .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height')
+                    .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height,activity_region')
                     .eq('user_id', msg.sender_id)
                     .maybeSingle()
                     .then(({ data }) => {
@@ -2426,6 +2501,7 @@ if (senderProfile?.fcm_token) {
   };
 
  const handleMatchConfirm = async () => {
+  if (isPeopleApplicationChat) return;
   closeAllPickers();
 
   if (isGroupChat) {
@@ -2439,6 +2515,7 @@ if (senderProfile?.fcm_token) {
 };
 
   const handleMatchConfirmDirect = async () => {
+    if (isPeopleApplicationChat) return;
     if (otherUser && blockedUserIds.includes(otherUser.user_id || otherUser.id)) {
       showToastMsg('차단된 유저는 매칭 확정이 불가합니다.');
       return;
@@ -2538,6 +2615,7 @@ if (otherUser && user) {
   };
 
  const handleMatchCancel = () => {
+  if (isPeopleApplicationChat) return;
   closeAllPickers();
   requestAnimationFrame(() => {
     pickerProcessingRef.current = false;
@@ -2546,6 +2624,7 @@ if (otherUser && user) {
 };
 
   const handleMatchCancelDirect = async () => {
+    if (isPeopleApplicationChat) return;
     if (!user) return;
     if (courtId && otherUser) {
       const courtRes = await supabase
@@ -3221,6 +3300,7 @@ paddingBottom: '14px',
 >
           <div className="flex gap-2 items-center">
             <button
+                    hidden={isPeopleApplicationChat}
               onClick={handleMatchConfirm}
               className="flex-1 py-2.5 rounded-2xl text-sm font-bold tracking-wide transition active:scale-95 text-white"
               style={{
@@ -3232,6 +3312,7 @@ paddingBottom: '14px',
              🎾 라인업 확정하기
             </button>
             <button
+                    hidden={isPeopleApplicationChat}
               onClick={handleMatchCancel}
               className="px-4 py-2.5 rounded-2xl text-sm font-semibold transition active:scale-95 flex-shrink-0"
               style={{
@@ -4390,7 +4471,7 @@ paddingBottom: '14px',
                       } else {
                         supabase
                           .from('profiles')
-                          .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height')
+                          .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height,activity_region')
                           .eq('user_id', av.user_id)
                           .maybeSingle()
                           .then(({ data }) => {

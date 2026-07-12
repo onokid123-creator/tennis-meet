@@ -67,6 +67,26 @@ function ProfileSkeleton() {
 
 type ProfileTab = 'dating' | 'tennis';
 
+const ACTIVITY_REGIONS = [
+  '서울',
+  '경기',
+  '인천',
+  '부산',
+  '대구',
+  '대전',
+  '광주',
+  '울산',
+  '세종',
+  '강원',
+  '충북',
+  '충남',
+  '전북',
+  '전남',
+  '경북',
+  '경남',
+  '제주',
+];
+
 export default function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -126,6 +146,7 @@ const [profileTab, setProfileTab] =
     experience: '',
     mbti: '',
     height: '',
+    activity_region: '',
   });
   const [editingPhotos, setEditingPhotos] = useState<string[]>([]);
   const [replaceFileMap, setReplaceFileMap] = useState<Record<number, File>>({});
@@ -149,9 +170,40 @@ const [profileTab, setProfileTab] =
   const [tennisImageLoaded, setTennisImageLoaded] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [profileActivityRegion, setProfileActivityRegion] = useState<string>('');
+
 const [showPaywallPopup, setShowPaywallPopup] = useState(false);
 const [paywallStep, setPaywallStep] = useState<'first_limit' | 'subscription_intro' | 'ticket_pack' | 'out_of_tickets' | null>(null);
 const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court'); 
+
+  useEffect(() => {
+    if (!profile?.user_id) return;
+
+    let cancelled = false;
+
+    const loadActivityRegion = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('activity_region')
+        .eq('user_id', profile.user_id)
+        .maybeSingle();
+
+      if (!cancelled && !error) {
+        const nextRegion = (data as any)?.activity_region || '';
+        setProfileActivityRegion(nextRegion);
+        setFormData((prev) => ({
+          ...prev,
+          activity_region: prev.activity_region || nextRegion,
+        }));
+      }
+    };
+
+    loadActivityRegion();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.user_id]);
 
   useEffect(() => {
     if (!isNameEditing) {
@@ -183,6 +235,7 @@ const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court');
           experience: profile.experience || '',
           mbti: profile.mbti || '',
           height: profile.height?.toString() || '',
+          activity_region: profileActivityRegion || (profile as any).activity_region || '',
         });
        setProfileTab(getInitialProfileTab());
       }
@@ -424,6 +477,7 @@ const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court');
           experience: formData.experience,
           mbti: formData.mbti || null,
           height: formData.height ? Number(formData.height) : null,
+          activity_region: formData.activity_region || null,
           photo_url: primaryPhoto,
           photo_urls: updatedPhotos,
         })
@@ -437,9 +491,11 @@ const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court');
         experience: formData.experience,
         mbti: formData.mbti || undefined,
         height: formData.height ? Number(formData.height) : undefined,
+        activity_region: formData.activity_region || undefined,
         photo_url: primaryPhoto || undefined,
         photo_urls: updatedPhotos,
       });
+      setProfileActivityRegion(formData.activity_region || '');
       setIsEditing(false);
       setReplaceFileMap({});
       setFormData((prev) => ({ ...prev, newPhotos: [], newPreviews: [], replaceIndex: null }));
@@ -579,7 +635,7 @@ const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court');
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('free_meeting_count, ticket_count, free_interest_count, interest_ticket_count, is_subscribed')
+      .select('free_meeting_count, ticket_count, free_interest_count, interest_ticket_count, is_subscribed,activity_region')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -947,23 +1003,33 @@ const isSubscribed = profile?.is_subscribed ?? false;
                   <span className="text-xl font-bold text-gray-900">{profile?.name}</span>
                   <button
                     type="button"
-                    onClick={startNameEdit}
+                    onClick={() => {
+                      const photos = profile?.photo_urls?.length
+                        ? profile.photo_urls
+                        : profile?.photo_url
+                        ? [profile.photo_url]
+                        : [];
+                      setEditingPhotos(photos);
+                      setReplaceFileMap({});
+                      setFormData((prev) => ({
+                        ...prev,
+                        newPhotos: [],
+                        newPreviews: [],
+                        replaceIndex: null,
+                        name: profile?.name || '',
+                        age: profile?.age?.toString() || '',
+                        experience: profile?.experience || '',
+                        mbti: profile?.mbti || '',
+                        height: profile?.height?.toString() || '',
+                        activity_region: profileActivityRegion || (profile as any)?.activity_region || '',
+                      }));
+                      setIsEditing(true);
+                    }}
                     className="px-2.5 py-1 rounded-full text-[11px] font-bold text-[#1B4332] bg-[#EEF5EF] border border-[#D7E6DA]"
                   >
                     수정
                   </button>
                 </div>
-              )}
-              {profile?.age && (
-                <span className="text-gray-500 font-medium">{profile.age}세</span>
-              )}
-              {profile?.gender && (
-                <span
-                  className="font-bold text-lg"
-                  style={{ color: profile.gender === '남성' ? '#93C5FD' : '#FDA4AF' }}
-                >
-                  {profile.gender === '남성' ? '♂' : '♀'}
-                </span>
               )}
             </div>
 
@@ -1011,6 +1077,38 @@ const isSubscribed = profile?.is_subscribed ?? false;
                   {profile?.gender === '남성' ? '♂ 남성' : '♀ 여성'}
                 </span>
               </div>
+            </div>
+
+            <div className="mb-4">
+              <span className="text-xs text-gray-400 font-medium block mb-2">활동 지역</span>
+              {isEditing ? (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {ACTIVITY_REGIONS.filter((region) => region !== '전체').map((region) => (
+                    <button
+                      key={region}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, activity_region: region })}
+                      className={`py-1.5 px-2 rounded-lg border text-xs font-semibold transition ${
+                        formData.activity_region === region
+                          ? 'border-[#1B4332] bg-[#2D6A4F] text-white'
+                          : 'border-gray-300 bg-white text-gray-700'
+                      }`}
+                    >
+                      {region}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold"
+                    style={{ background: '#EEF5EF', color: '#1B4332' }}
+                  >
+                    <span>📍</span>
+                    <span>{profileActivityRegion || (profile as any)?.activity_region || '미설정'}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mb-4">
@@ -1136,6 +1234,7 @@ const isSubscribed = profile?.is_subscribed ?? false;
                       experience: profile?.experience || '',
                       mbti: profile?.mbti || '',
                       height: profile?.height?.toString() || '',
+                      activity_region: profileActivityRegion || (profile as any)?.activity_region || '',
                     });
                   }}
                   className="flex-1 bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-300 transition"

@@ -45,7 +45,7 @@ export default function PaywallLimitPopup({
 
           <p className="text-sm leading-relaxed" style={{ color: 'rgba(16,37,27,0.55)' }}>
             계속 이용하시려면<br />
-            {isInterest ? '관심 코트 신청권 구매 또는 구독해주세요' : '코트 신청권 구매 또는 구독해주세요'}
+            {isInterest ? '관심 신청권 구매 또는 구독해주세요' : '코트 신청권 구매 또는 구독해주세요'}
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export default function PaywallLimitPopup({
               boxShadow: '0 6px 18px rgba(27,67,50,0.18)',
             }}
           >
-            {isInterest ? '관심 코트 신청권 구매' : '코트 신청권 구매'}
+            {isInterest ? '관심 신청권 구매' : '코트 신청권 구매'}
           </button>
         </div>
 

@@ -200,7 +200,7 @@ function DetailSheet({ court, isOwner, onClose, onApply, onEdit, onDelete }: She
 
     const { data: profs } = await supabase
       .from('profiles')
-      .select('user_id,name,photo_url,photo_urls,experience')
+      .select('user_id,name,photo_url,photo_urls,experience,activity_region')
       .in('user_id', ids);
 
     if (!signal.cancelled) setConfirmed(profs ?? []);
