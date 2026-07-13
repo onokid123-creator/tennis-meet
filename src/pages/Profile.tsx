@@ -599,10 +599,22 @@ const [paywallKind, setPaywallKind] = useState<'court' | 'interest'>('court');
     if (!confirmed) return;
 
     try {
-      const { error } = await supabase.rpc('delete_user_completely');
+      const { data, error } = await supabase.rpc('delete_user_completely');
 
       if (error) {
         throw error;
+      }
+
+      const result = data as {
+        success?: boolean;
+        user_id?: string;
+        updated_count?: number;
+      } | null;
+
+      if (!result?.success || result.updated_count !== 1) {
+        throw new Error(
+          `Account deletion was not confirmed: ${JSON.stringify(result)}`
+        );
       }
 
       try {

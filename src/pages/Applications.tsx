@@ -960,6 +960,8 @@ const [showTennisProfilePopup, setShowTennisProfilePopup] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [rejectionDetailApp, setRejectionDetailApp] = useState<Application | null>(null);
+  const [peopleRejectionDetailApp, setPeopleRejectionDetailApp] =
+    useState<DatingPeopleApplicationItem | null>(null);
   const [pendingMealProposals, setPendingMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; sender_name?: string; receiver_name?: string; court_id: string | null; receiver_deleted?: boolean }>>([]);
   const [resultMealProposals, setResultMealProposals] = useState<Array<{ id: string; sender_id: string; receiver_id: string; receiver_name?: string; status: string; rejection_reason?: string | null }>>([]);
   const [mealRejectProposalId, setMealRejectProposalId] = useState<string | null>(null);
@@ -1232,11 +1234,13 @@ let nextSentInterestApps: CourtInterestItem[] = [];
             .from('court_interests')
             .select(`*, court:court_id (*)`)
             .eq('host_id', currentUser.id)
+            .eq('receiver_deleted', false)
             .order('created_at', { ascending: false }),
           supabase
             .from('court_interests')
             .select(`*, court:court_id (*)`)
             .eq('user_id', currentUser.id)
+            .eq('sender_deleted', false)
             .order('created_at', { ascending: false }),
           supabase
             .from('dating_interests')
@@ -1599,6 +1603,63 @@ setSentInterestApps(nextSentInterestApps);
     return { chatId, isNew: true };
   };
 
+  const showUnavailableCourtPopup = () => {
+    alert('코트(유저)가 없거나 기한이 지나 사용할 수 없습니다.');
+  };
+
+  const ensureActiveCourtAvailable = async (courtId?: string | null) => {
+    if (!courtId) {
+      showUnavailableCourtPopup();
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .from('active_courts')
+      .select('id')
+      .eq('id', courtId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Applications] active court check failed:', error);
+      showUnavailableCourtPopup();
+      return false;
+    }
+
+    if (!data) {
+      showUnavailableCourtPopup();
+      return false;
+    }
+
+    return true;
+  };
+
+  const ensureActiveUserAvailable = async (targetUserId?: string | null) => {
+    if (!targetUserId) {
+      showUnavailableCourtPopup();
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('user_id', targetUserId)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[Applications] active user check failed:', error);
+      showUnavailableCourtPopup();
+      return false;
+    }
+
+    if (!data) {
+      showUnavailableCourtPopup();
+      return false;
+    }
+
+    return true;
+  };
+
   const handleStartInterestChat = async (item: CourtInterestItem) => {
     if (processingId) return;
 
@@ -1610,6 +1671,9 @@ setSentInterestApps(nextSentInterestApps);
         alert('채팅을 시작할 수 없습니다. 필수 정보가 부족합니다.');
         return;
       }
+
+      const courtAvailable = await ensureActiveCourtAvailable(item.court_id);
+      if (!courtAvailable) return;
 
       const { data: hostProfile } = await supabase
         .from('profiles')
@@ -1693,6 +1757,9 @@ setSentInterestApps(nextSentInterestApps);
         setAcceptError(`필수 정보 누락: ${missing}`);
         return;
       }
+
+      const courtAvailable = await ensureActiveCourtAvailable(app.court_id);
+      if (!courtAvailable) return;
 
       await supabase
         .from('applications')
@@ -1810,6 +1877,9 @@ if (applicantProfile?.fcm_token) {
   const reason = rejectReason.trim();
 
   try {
+    const courtAvailable = await ensureActiveCourtAvailable(app.court_id);
+    if (!courtAvailable) return;
+
     const { error } = await supabase
       .from('applications')
       .update({
@@ -1893,15 +1963,28 @@ if (applicantProfile?.fcm_token) {
     setDeleteSubmitting(true);
 
     try {
-      const updateData =
-        app.host_id === user.id
-          ? { receiver_deleted: true }
-          : { sender_deleted: true };
+      const isReceivedApp = receivedApps.some((item) => item.id === app.id);
+      const isSentApp = sentApps.some((item) => item.id === app.id);
 
-      const { error } = await supabase
+      if (!isReceivedApp && !isSentApp) {
+        alert('삭제할 신청 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      let query = supabase
         .from('applications')
-        .update(updateData)
+        .update(
+          isReceivedApp
+            ? { receiver_deleted: true }
+            : { sender_deleted: true }
+        )
         .eq('id', app.id);
+
+      query = isReceivedApp
+        ? query.eq('host_id', user.id)
+        : query.eq('applicant_id', user.id);
+
+      const { error } = await query;
 
       if (error) {
         console.error('알림 삭제 실패:', error);
@@ -1925,7 +2008,7 @@ if (applicantProfile?.fcm_token) {
   const filteredReceived = receivedApps.filter((a) => a.purpose === purposeTab && a.status === 'pending');
   const filteredSent = sentApps.filter((a) => a.purpose === purposeTab);
   const filteredPeopleReceived = purposeTab === 'dating'
-    ? receivedPeopleApps.filter((a) => a.status === 'pending')
+    ? receivedPeopleApps
     : [];
   const filteredPeopleSent = purposeTab === 'dating'
     ? sentPeopleApps
@@ -1959,7 +2042,7 @@ if (applicantProfile?.fcm_token) {
   const unreadDatingInterestCount = purposeTab === 'dating' ? visibleInterestApps.length : interestApps.length;
 
   const pendingReceivedCount = purposeTab === 'dating'
-    ? ((isPeopleDatingMode ? visiblePeopleReceived.length : visibleCourtReceived.filter((a) => a.status === 'pending').length) + mealProposalReceivedCount)
+    ? ((isPeopleDatingMode ? visiblePeopleReceived.filter((a) => a.status === 'pending').length : visibleCourtReceived.filter((a) => a.status === 'pending').length) + mealProposalReceivedCount)
     : filteredReceived.filter((a) => a.status === 'pending').length;
   const pendingSentCount = purposeTab === 'dating'
     ? ((isPeopleDatingMode ? visiblePeopleSent.filter((a) => a.status === 'pending').length : visibleCourtSent.filter((a) => a.status === 'pending').length) + mealProposalResultCount)
@@ -2027,9 +2110,41 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
   };
 
 
+  const isCourtApplicationUnavailable = (app: Application) => {
+    const court = app.court as any;
+
+    if (!court) return true;
+
+    if (court.is_deleted === true || court.status === 'deleted') {
+      return true;
+    }
+
+    if (court.delete_at) {
+      const deleteAt = new Date(court.delete_at).getTime();
+      if (!Number.isNaN(deleteAt) && deleteAt <= Date.now()) {
+        return true;
+      }
+    }
+
+    if (court.date) {
+      const hideAfter = new Date(`${court.date}T00:00:00`);
+      hideAfter.setDate(hideAfter.getDate() + 1);
+
+      if (
+        !Number.isNaN(hideAfter.getTime()) &&
+        Date.now() >= hideAfter.getTime()
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const renderReceivedCard = (app: Application) => {
     const applicant = app.applicant;
     const isTennisApp = app.purpose === 'tennis';
+    const courtUnavailable = isCourtApplicationUnavailable(app);
     const photos: string[] = isTennisApp
   ? applicant?.tennis_photo_urls?.length
     ? applicant.tennis_photo_urls
@@ -2045,14 +2160,27 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     return (
       <div
         key={app.id}
-        className="overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+        className={`overflow-hidden transition-transform ${
+          courtUnavailable
+            ? 'cursor-not-allowed opacity-70'
+            : 'cursor-pointer active:scale-[0.98]'
+        }`}
         style={{
           borderRadius: '18px',
           background: isDatingCard ? 'linear-gradient(160deg, #FFF9F6 0%, #FFF5F0 100%)' : '#fff',
           border: isDatingCard ? '1px solid rgba(183,110,121,0.15)' : '1px solid #EBEBEB',
           boxShadow: isDatingCard ? '0 2px 12px rgba(183,110,121,0.08)' : '0 2px 12px rgba(0,0,0,0.06)',
         }}
-        onClick={() => applicant && setSelectedApp(app)}
+        onClick={() => {
+          if (courtUnavailable) {
+            showUnavailableCourtPopup();
+            return;
+          }
+
+          if (applicant) {
+            setSelectedApp(app);
+          }
+        }}
       >
         <div className="flex items-stretch gap-0">
           <div
@@ -2070,7 +2198,16 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               </div>
             ) : photos.length > 0 ? (
               <img
-                onClick={(e) => openPhotoProfile(applicant, e, photos)}
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  if (courtUnavailable) {
+                    showUnavailableCourtPopup();
+                    return;
+                  }
+
+                  openPhotoProfile(applicant, e, photos);
+                }}
                 src={photos[0]}
                 alt={applicant?.name}
                 className="w-full h-full"
@@ -2110,7 +2247,20 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                   </span>
                 )}
               </div>
-              {renderStatusBadge(app.status)}
+              {courtUnavailable ? (
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: 'rgba(107,114,128,0.12)',
+                    color: '#6B7280',
+                    border: '1px solid rgba(107,114,128,0.25)',
+                  }}
+                >
+                  종료된 코트
+                </span>
+              ) : (
+                renderStatusBadge(app.status)
+              )}
             </div>
 
             {applicant?.experience && (
@@ -2156,8 +2306,43 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           style={{ borderTop: '1px solid #F0F0F0' }}
         >
           <div className="flex items-center gap-2">
-            {app.status === 'pending' ? (
-              <span className="text-xs font-medium" style={{ color: '#C9A84C' }}>탭하여 프로필 보기</span>
+            {courtUnavailable ? (
+              <span />
+            ) : app.status === 'pending' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAccept(app);
+                  }}
+                  disabled={peopleApplicationActionId === app.id}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full transition active:scale-95 disabled:opacity-50"
+                  style={{
+                    background: 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)',
+                    color: '#FFFFFF',
+                    boxShadow: '0 2px 8px rgba(27,67,50,0.18)',
+                  }}
+                >
+                  수락
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReject(app);
+                  }}
+                  disabled={peopleApplicationActionId === app.id}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full transition active:scale-95 disabled:opacity-50"
+                  style={{
+                    background: 'rgba(239,68,68,0.08)',
+                    color: '#DC2626',
+                    border: '1px solid rgba(239,68,68,0.18)',
+                  }}
+                >
+                  거절
+                </button>
+              </>
             ) : app.status === 'accepted' && app.chat_id ? (
               <button
                 type="button"
@@ -2226,6 +2411,9 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     setPeopleApplicationActionId(item.id);
 
     try {
+      const userAvailable = await ensureActiveUserAvailable(item.sender_id);
+      if (!userAvailable) return;
+
       const { data: chatId, error } = await supabase.rpc('accept_dating_people_application', {
         p_application_id: item.id,
       });
@@ -2257,6 +2445,9 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     setPeopleApplicationActionId(item.id);
 
     try {
+      const userAvailable = await ensureActiveUserAvailable(item.sender_id);
+      if (!userAvailable) return;
+
       const { error } = await supabase
         .from('dating_people_applications')
         .update({
@@ -2289,9 +2480,12 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     setPeopleApplicationActionId(item.id);
 
     try {
-      const { data: deletedRows, error } = await supabase
+      const { data: updatedRows, error } = await supabase
         .from('dating_people_applications')
-        .delete()
+        .update({
+          sender_deleted: true,
+          receiver_deleted: true,
+        })
         .eq('id', item.id)
         .eq('sender_id', user.id)
         .eq('status', 'pending')
@@ -2299,7 +2493,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
 
       if (error) throw error;
 
-      if (!deletedRows || deletedRows.length === 0) {
+      if (!updatedRows || updatedRows.length === 0) {
         alert('신청 취소에 실패했습니다. 권한 또는 신청 상태를 확인해주세요.');
         return;
       }
@@ -2333,8 +2527,70 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     }
   };
 
+  const handleDeletePeopleApplication = async (
+    item: DatingPeopleApplicationItem,
+    direction: 'received' | 'sent'
+  ) => {
+    if (!user || peopleApplicationActionId) return;
+
+    const ok = window.confirm('이 신청 기록을 목록에서 삭제하시겠어요?');
+    if (!ok) return;
+
+    setPeopleApplicationActionId(item.id);
+
+    try {
+      let query = supabase
+        .from('dating_people_applications')
+        .update(
+          direction === 'received'
+            ? { receiver_deleted: true }
+            : { sender_deleted: true }
+        )
+        .eq('id', item.id);
+
+      query = direction === 'received'
+        ? query.eq('receiver_id', user.id)
+        : query.eq('sender_id', user.id);
+
+      const { data, error } = await query
+        .select('id')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data?.id) {
+        alert('신청 기록을 삭제하지 못했습니다.');
+        return;
+      }
+
+      if (direction === 'received') {
+        setReceivedPeopleApps((prev) =>
+          prev.filter((app) => app.id !== item.id)
+        );
+      } else {
+        setSentPeopleApps((prev) =>
+          prev.filter((app) => app.id !== item.id)
+        );
+      }
+
+      setExpandedPeopleMessages((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+    } catch (error) {
+      console.error('[Applications] delete people application failed:', error);
+      alert('신청 기록 삭제에 실패했습니다.');
+    } finally {
+      setPeopleApplicationActionId(null);
+    }
+  };
+
   const renderPeopleApplicationCard = (item: DatingPeopleApplicationItem, direction: 'received' | 'sent') => {
     const member = direction === 'received' ? item.sender : item.receiver;
+    const personUnavailable =
+      !member || Boolean((member as any)?.deleted_at);
+
     const photos: string[] = member?.photo_urls?.length
       ? member.photo_urls
       : member?.photo_url
@@ -2375,10 +2631,21 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       <div
         key={`people-application-${item.id}`}
         className="rounded-3xl px-4 py-4"
+        onClick={() => {
+          if (personUnavailable) {
+            showUnavailableCourtPopup();
+          }
+        }}
         style={{
           background: '#FFFFFF',
-          border: '1px solid rgba(45,106,79,0.12)',
-          boxShadow: '0 8px 24px rgba(27,67,50,0.08)',
+          border: personUnavailable
+            ? '1px solid rgba(107,114,128,0.18)'
+            : '1px solid rgba(45,106,79,0.12)',
+          boxShadow: personUnavailable
+            ? 'none'
+            : '0 8px 24px rgba(27,67,50,0.08)',
+          opacity: personUnavailable ? 0.58 : 1,
+          cursor: personUnavailable ? 'not-allowed' : 'default',
         }}
       >
         <div className="flex items-start gap-3">
@@ -2388,7 +2655,16 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           >
             {photos[0] ? (
               <img
-                onClick={(e) => openPhotoProfile(member, e, photos)}
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  if (personUnavailable) {
+                    showUnavailableCourtPopup();
+                    return;
+                  }
+
+                  openPhotoProfile(member, e, photos);
+                }}
                 src={photos[0]}
                 alt={member?.name || 'profile'}
                 className="w-full h-full"
@@ -2405,7 +2681,9 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             <div className="flex items-start justify-between gap-2 mb-1">
               <div className="min-w-0">
                 <p className="text-base font-bold truncate" style={{ color: '#10251B' }}>
-                  {member?.name || '알 수 없음'}
+                  {personUnavailable
+                    ? '이용할 수 없는 사용자'
+                    : member?.name || '알 수 없음'}
                 </p>
                 <div className="flex items-center gap-1.5 text-xs mt-0.5" style={{ color: 'rgba(16,37,27,0.55)' }}>
                   {member?.age && <span>나이: {member.age}세</span>}
@@ -2422,10 +2700,16 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                     border: item.status === 'pending' ? '1px solid rgba(45,106,79,0.18)' : item.status === 'accepted' ? '1px solid rgba(201,168,76,0.28)' : '1px solid rgba(239,68,68,0.18)',
                   }}
                 >
-                  {item.status === 'pending' ? '대기중' : item.status === 'accepted' ? '수락됨' : '거절됨'}
+                  {personUnavailable
+                    ? '이용 불가'
+                    : item.status === 'pending'
+                    ? '대기중'
+                    : item.status === 'accepted'
+                    ? '수락됨'
+                    : '거절됨'}
                 </span>
 
-                {item.status === 'accepted' && item.chat_id && (
+                {!personUnavailable && item.status === 'accepted' && item.chat_id && (
                   <button
                     type="button"
                     onClick={(event) => {
@@ -2515,7 +2799,45 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               {statusDate ? ` · ${statusDate}` : ''}
             </div>
 
-            {item.status === 'pending' && direction === 'received' && (
+            {direction === 'sent' &&
+              item.status === 'rejected' &&
+              item.rejection_reason && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPeopleRejectionDetailApp(item);
+                  }}
+                  className="w-full mt-3 flex items-center justify-between px-3 py-2.5 rounded-2xl transition active:opacity-80"
+                  style={{
+                    background: 'rgba(239,68,68,0.07)',
+                    border: '1px solid rgba(239,68,68,0.16)',
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                      style={{ background: '#DC2626' }}
+                    >
+                      X
+                    </span>
+                    <span className="text-xs font-bold" style={{ color: '#DC2626' }}>
+                      거절 사유 도착
+                    </span>
+                  </div>
+
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: '#DC2626', color: '#FFFFFF' }}
+                  >
+                    확인
+                  </span>
+                </button>
+              )}
+
+            {!personUnavailable &&
+              item.status === 'pending' &&
+              direction === 'received' && (
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <button
                   type="button"
@@ -2542,7 +2864,9 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               </div>
             )}
 
-            {item.status === 'pending' && direction === 'sent' && (
+            {!personUnavailable &&
+              item.status === 'pending' &&
+              direction === 'sent' && (
               <div className="flex justify-end mt-3">
                 <button
                   type="button"
@@ -2556,6 +2880,27 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                   }}
                 >
                   {peopleApplicationActionId === item.id ? '취소 중' : '신청 취소'}
+                </button>
+              </div>
+            )}
+
+            {personUnavailable && (
+              <div className="flex justify-end mt-3">
+                <button
+                  type="button"
+                  disabled={peopleApplicationActionId === item.id}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDeletePeopleApplication(item, direction);
+                  }}
+                  className="py-2.5 px-4 rounded-xl text-xs font-bold transition active:scale-95 disabled:opacity-60"
+                  style={{
+                    background: 'rgba(239,68,68,0.08)',
+                    color: '#DC2626',
+                    border: '1px solid rgba(239,68,68,0.18)',
+                  }}
+                >
+                  {peopleApplicationActionId === item.id ? '삭제 중' : '삭제'}
                 </button>
               </div>
             )}
@@ -2575,8 +2920,16 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
 
     try {
       const query = item.kind === 'person'
-        ? supabase.from('dating_interests').delete().eq('id', item.id).eq('sender_id', user.id)
-        : supabase.from('court_interests').delete().eq('id', item.id).eq('user_id', user.id);
+        ? supabase
+            .from('dating_interests')
+            .update({ sender_deleted: true })
+            .eq('id', item.id)
+            .eq('sender_id', user.id)
+        : supabase
+            .from('court_interests')
+            .update({ sender_deleted: true })
+            .eq('id', item.id)
+            .eq('user_id', user.id);
 
       const { error } = await query;
 
@@ -2585,6 +2938,44 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       setSentInterestApps((prev) => prev.filter((app) => app.id !== item.id));
     } catch (error) {
       console.error('[Applications] delete sent interest failed:', error);
+      alert('관심 삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setDeletingInterestId(null);
+    }
+  };
+
+  const handleDeleteReceivedInterest = async (item: CourtInterestItem) => {
+    if (!user || !item.id || deletingInterestId === item.id) return;
+
+    const ok = window.confirm(
+      item.kind === 'person'
+        ? '받은 관심을 삭제하시겠어요?'
+        : '받은 관심 코트를 삭제하시겠어요?'
+    );
+    if (!ok) return;
+
+    setDeletingInterestId(item.id);
+
+    try {
+      const query = item.kind === 'person'
+        ? supabase
+            .from('dating_interests')
+            .update({ receiver_deleted: true })
+            .eq('id', item.id)
+            .eq('receiver_id', user.id)
+        : supabase
+            .from('court_interests')
+            .update({ receiver_deleted: true })
+            .eq('id', item.id)
+            .eq('host_id', user.id);
+
+      const { error } = await query;
+
+      if (error) throw error;
+
+      setInterestApps((prev) => prev.filter((app) => app.id !== item.id));
+    } catch (error) {
+      console.error('[Applications] delete received interest failed:', error);
       alert('관심 삭제에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setDeletingInterestId(null);
@@ -2765,10 +3156,48 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
     }
   };
 
+  const isCourtInterestUnavailable = (item: CourtInterestItem) => {
+    if (item.kind === 'person') return false;
+
+    const court = item.court as any;
+
+    if (!court) return true;
+
+    if (court.is_deleted === true || court.status === 'deleted') {
+      return true;
+    }
+
+    if (court.delete_at) {
+      const deleteAt = new Date(court.delete_at).getTime();
+
+      if (!Number.isNaN(deleteAt) && deleteAt <= Date.now()) {
+        return true;
+      }
+    }
+
+    if (court.date) {
+      const hideAfter = new Date(`${court.date}T00:00:00`);
+      hideAfter.setDate(hideAfter.getDate() + 1);
+
+      if (
+        !Number.isNaN(hideAfter.getTime()) &&
+        Date.now() >= hideAfter.getTime()
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const renderInterestCard = (item: CourtInterestItem) => {
     const member = item.user;
     const court = item.court;
     const isSentInterest = interestDirectionTab === 'sent';
+    const personUnavailable =
+      item.kind === 'person' &&
+      (!member || Boolean((member as any)?.deleted_at));
+    const courtUnavailable = isCourtInterestUnavailable(item);
     const photos: string[] = member?.tennis_photo_urls?.length
       ? member.tennis_photo_urls
       : member?.tennis_photo_url
@@ -2794,16 +3223,36 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
         <div
           key={item.id}
           className="rounded-3xl px-4 py-4"
+          onClick={() => {
+            if (personUnavailable) {
+              showUnavailableCourtPopup();
+            }
+          }}
           style={{
             background: '#FFFFFF',
-            border: '1px solid rgba(45,106,79,0.12)',
-            boxShadow: '0 8px 24px rgba(27,67,50,0.08)',
+            border: personUnavailable
+              ? '1px solid rgba(107,114,128,0.18)'
+              : '1px solid rgba(45,106,79,0.12)',
+            boxShadow: personUnavailable
+              ? 'none'
+              : '0 8px 24px rgba(27,67,50,0.08)',
+            opacity: personUnavailable ? 0.58 : 1,
+            cursor: personUnavailable ? 'not-allowed' : 'default',
           }}
         >
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={(e) => openPhotoProfile(member, e)}
+              onClick={(e) => {
+                e.stopPropagation();
+
+                if (personUnavailable) {
+                  showUnavailableCourtPopup();
+                  return;
+                }
+
+                openPhotoProfile(member, e);
+              }}
               className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0"
               style={{ background: '#F3F4F6', border: '1px solid rgba(45,106,79,0.14)', padding: 0 }}
             >
@@ -2824,11 +3273,26 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className="text-base font-bold truncate" style={{ color: '#10251B' }}>
-                  {member?.name || '알 수 없음'}
+                  {personUnavailable
+                    ? '이용할 수 없는 사용자'
+                    : member?.name || '알 수 없음'}
                 </span>
 
-                {isSentInterest && (
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {personUnavailable && (
+                    <span
+                      className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{
+                        background: 'rgba(107,114,128,0.12)',
+                        color: '#6B7280',
+                        border: '1px solid rgba(107,114,128,0.25)',
+                      }}
+                    >
+                      이용 불가
+                    </span>
+                  )}
+
+                  {isSentInterest && !personUnavailable && (
                     <button
                       type="button"
                       onClick={(event) => {
@@ -2845,24 +3309,30 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                     >
                       {sentPeopleApplicationIds.has(item.user_id) ? '신청 완료' : '신청하기'}
                     </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+
+                      if (isSentInterest) {
                         handleDeleteSentInterest(item);
-                      }}
-                      disabled={deletingInterestId === item.id}
-                      className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60"
-                      style={{
-                        color: '#DC2626',
-                        background: 'rgba(239,68,68,0.08)',
-                        border: '1px solid rgba(239,68,68,0.18)',
-                      }}
-                    >
-                      {deletingInterestId === item.id ? '삭제 중' : '삭제'}
-                    </button>
-                  </div>
-                )}
+                      } else {
+                        handleDeleteReceivedInterest(item);
+                      }
+                    }}
+                    disabled={deletingInterestId === item.id}
+                    className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60"
+                    style={{
+                      color: '#DC2626',
+                      background: 'rgba(239,68,68,0.08)',
+                      border: '1px solid rgba(239,68,68,0.18)',
+                    }}
+                  >
+                    {deletingInterestId === item.id ? '삭제 중' : '삭제'}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: 'rgba(16,37,27,0.55)' }}>
@@ -2897,16 +3367,36 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       <div
         key={item.id}
         className="rounded-3xl px-4 py-4"
+        onClick={() => {
+          if (courtUnavailable) {
+            showUnavailableCourtPopup();
+          }
+        }}
         style={{
           background: '#FFFFFF',
-          border: '1px solid rgba(45,106,79,0.12)',
-          boxShadow: '0 8px 24px rgba(27,67,50,0.08)',
+          border: courtUnavailable
+            ? '1px solid rgba(107,114,128,0.18)'
+            : '1px solid rgba(45,106,79,0.12)',
+          boxShadow: courtUnavailable
+            ? 'none'
+            : '0 8px 24px rgba(27,67,50,0.08)',
+          opacity: courtUnavailable ? 0.58 : 1,
+          cursor: courtUnavailable ? 'not-allowed' : 'default',
         }}
       >
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={(e) => openPhotoProfile(member, e)}
+            onClick={(e) => {
+              e.stopPropagation();
+
+              if (courtUnavailable) {
+                showUnavailableCourtPopup();
+                return;
+              }
+
+              openPhotoProfile(member, e);
+            }}
             className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0"
             style={{ background: '#F3F4F6', border: '1px solid rgba(45,106,79,0.14)', padding: 0 }}
           >
@@ -2930,15 +3420,33 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 {member?.name || '알 수 없음'}
               </span>
 
-              {isSentInterest && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {courtUnavailable && (
+                  <span
+                    className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                    style={{
+                      background: 'rgba(107,114,128,0.12)',
+                      color: '#6B7280',
+                      border: '1px solid rgba(107,114,128,0.25)',
+                    }}
+                  >
+                    종료된 코트
+                  </span>
+                )}
+
                 <button
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
-                    handleDeleteSentInterest(item);
+
+                    if (isSentInterest) {
+                      handleDeleteSentInterest(item);
+                    } else {
+                      handleDeleteReceivedInterest(item);
+                    }
                   }}
                   disabled={deletingInterestId === item.id}
-                  className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60 flex-shrink-0"
+                  className="text-xs font-bold px-2.5 py-1 rounded-full active:opacity-80 disabled:opacity-60"
                   style={{
                     color: '#DC2626',
                     background: 'rgba(239,68,68,0.08)',
@@ -2947,7 +3455,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                 >
                   {deletingInterestId === item.id ? '삭제 중' : '삭제'}
                 </button>
-              )}
+              </div>
             </div>
 
             <div className="flex items-center gap-1.5 text-xs mb-1.5" style={{ color: 'rgba(16,37,27,0.55)' }}>
@@ -3000,12 +3508,28 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           <div className="mt-3">
             <button
               type="button"
-              onClick={() => {
+              aria-disabled={courtUnavailable || processingId === item.id}
+              onClick={(event) => {
+                event.stopPropagation();
+
+                if (courtUnavailable) {
+                  showUnavailableCourtPopup();
+                  return;
+                }
+
                 handleStartInterestChat(item);
               }}
               disabled={processingId === item.id}
               className="w-full py-3.5 rounded-xl text-sm font-bold active:opacity-80 disabled:opacity-60"
-              style={{ background: '#1B4332', color: '#fff' }}
+              style={{
+                background: courtUnavailable ? '#D1D5DB' : '#1B4332',
+                color: courtUnavailable ? '#6B7280' : '#FFFFFF',
+                border: courtUnavailable
+                  ? '1px solid rgba(107,114,128,0.22)'
+                  : 'none',
+                cursor: courtUnavailable ? 'not-allowed' : 'pointer',
+                boxShadow: 'none',
+              }}
             >
               {processingId === item.id ? '여는 중...' : '먼저 채팅 보내기'}
             </button>
@@ -3018,6 +3542,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
   const renderSentCard = (app: Application) => {
     const host = app.owner;
     const isTennisApp = app.purpose === 'tennis';
+    const courtUnavailable = isCourtApplicationUnavailable(app);
     const hostPhotos: string[] = isTennisApp
       ? (host as any)?.tennis_photo_urls?.length
         ? (host as any).tennis_photo_urls
@@ -3030,8 +3555,16 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
       ? [host.photo_url]
       : [];
     const hostPhoto = hostPhotos[0];
-    const hasRejectionReason = app.status === 'rejected' && !!app.rejection_reason;
-    const hasAcceptedNotif = app.status === 'accepted' && !app.applicant_notified && !!app.chat_id;
+    const hasRejectionReason =
+      !courtUnavailable &&
+      app.status === 'rejected' &&
+      !!app.rejection_reason;
+
+    const hasAcceptedNotif =
+      !courtUnavailable &&
+      app.status === 'accepted' &&
+      !app.applicant_notified &&
+      !!app.chat_id;
 
     const acceptedNotifMsg = isTennisApp
       ? '호스트가 신청을 수락했어요! 이제 채팅방에서 이야기 나눠보세요 🎾'
@@ -3123,7 +3656,16 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           >
             {hostPhoto ? (
               <img
-                onClick={(e) => openPhotoProfile(host, e, hostPhotos)}
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  if (courtUnavailable) {
+                    showUnavailableCourtPopup();
+                    return;
+                  }
+
+                  openPhotoProfile(host, e, hostPhotos);
+                }}
                 src={hostPhoto}
                 alt={host?.name}
                 className="w-full h-full"
@@ -3147,7 +3689,20 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                   <span className="text-sm text-gray-500">{host.age}세</span>
                 )}
               </div>
-              {renderStatusBadge(app.status)}
+              {courtUnavailable ? (
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: 'rgba(107,114,128,0.12)',
+                    color: '#6B7280',
+                    border: '1px solid rgba(107,114,128,0.25)',
+                  }}
+                >
+                  종료된 코트
+                </span>
+              ) : (
+                renderStatusBadge(app.status)
+              )}
             </div>
 
             {app.court && (
@@ -3235,22 +3790,40 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                     window.dispatchEvent(new Event('tennismeet:bottomnav-refresh'));
                   }, 80);
                 }}
+                aria-pressed={datingMeetModeTab === tab.key}
                 className="h-14 rounded-2xl text-sm font-extrabold transition-all flex items-center justify-center gap-2"
                 style={{
                   background: datingMeetModeTab === tab.key
-                    ? 'linear-gradient(135deg, #1B4332 0%, #2D6A4F 100%)'
-                    : '#FFFFFF',
-                  color: datingMeetModeTab === tab.key ? '#FFFFFF' : '#1B4332',
+                    ? 'linear-gradient(135deg, #163C2C 0%, #286246 100%)'
+                    : '#E9EFEB',
+                  color: datingMeetModeTab === tab.key
+                    ? '#FFFFFF'
+                    : '#78867E',
                   border: datingMeetModeTab === tab.key
-                    ? '1.5px solid rgba(27,67,50,0.28)'
-                    : '1.5px solid rgba(27,67,50,0.18)',
+                    ? '2px solid #C9A84C'
+                    : '1.5px solid rgba(27,67,50,0.10)',
                   boxShadow: datingMeetModeTab === tab.key
-                    ? '0 8px 20px rgba(27,67,50,0.18)'
-                    : '0 4px 12px rgba(27,67,50,0.05)',
+                    ? '0 8px 22px rgba(27,67,50,0.24)'
+                    : 'none',
+                  opacity: datingMeetModeTab === tab.key ? 1 : 0.78,
+                  transform: datingMeetModeTab === tab.key
+                    ? 'translateY(-1px)'
+                    : 'none',
                 }}
               >
                 <span>{tab.key === 'court' ? '▦' : '♙'}</span>
-                {tab.label}
+                <span>{tab.label}</span>
+                {datingMeetModeTab === tab.key && (
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full text-[11px]"
+                    style={{
+                      background: '#C9A84C',
+                      color: '#163C2C',
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -3916,6 +4489,63 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
           </div>
         );
       })()}
+
+      {peopleRejectionDetailApp && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-end justify-center"
+          style={{
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setPeopleRejectionDetailApp(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-5 shadow-2xl"
+            style={{
+              background: '#FFF8F5',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)',
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-red-200" />
+
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                style={{ background: '#DC2626', flexShrink: 0 }}
+              >
+                X
+              </span>
+              <p className="font-bold text-gray-900 text-base">거절 사유</p>
+            </div>
+
+            <p className="text-xs text-gray-400 mb-4">
+              테니스 메이트 · 사람부터 구할래요
+            </p>
+
+            <div
+              className="rounded-2xl px-4 py-4 mb-5"
+              style={{
+                background: 'rgba(239,68,68,0.06)',
+                border: '1px solid rgba(239,68,68,0.18)',
+              }}
+            >
+              <p className="text-sm leading-relaxed" style={{ color: '#1A1A1A' }}>
+                {peopleRejectionDetailApp.rejection_reason}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPeopleRejectionDetailApp(null)}
+              className="w-full py-3 rounded-2xl text-sm font-bold"
+              style={{ background: '#DC2626', color: '#FFFFFF' }}
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
 
       {rejectionDetailApp && (
         <div

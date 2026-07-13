@@ -110,6 +110,7 @@ export default function GroupChatRoom() {
   const [showMealSentPopup, setShowMealSentPopup] = useState(false);
   const [showMealAcceptPopup, setShowMealAcceptPopup] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sendingMessageRef = useRef(false);
 
   const showToastMsg = (msg: string) => {
     setToast(msg);
@@ -407,42 +408,89 @@ export default function GroupChatRoom() {
   }, [messages.length, updateMyLastRead]);
 
   const sendMessage = async (content: string, type: string = 'user') => {
-    if (!content.trim() || !user) return;
-
     const trimmed = content.trim();
-    const tempId = `temp_${Date.now()}_${Math.random()}`;
-    const optimistic: GroupChatMessage = {
-      id: tempId,
-      group_chat_id: groupChatId!,
-      sender_id: user.id,
-      content: trimmed,
-      type: type as GroupChatMessage['type'],
-      is_read: false,
-      created_at: new Date().toISOString(),
-    };
+    const shouldLockUserMessage = type === 'user';
 
-    setMessages((prev) => [...prev, optimistic]);
-    if (type === 'user') setNewMessage('');
+    if (!trimmed || !user || !groupChatId) return false;
 
-    const { data: inserted, error } = await supabase
-      .from('court_group_chat_messages')
-      .insert({
-        group_chat_id: groupChatId!,
+    if (shouldLockUserMessage && sendingMessageRef.current) {
+      return false;
+    }
+
+    if (shouldLockUserMessage) {
+      sendingMessageRef.current = true;
+    }
+
+    let tempId: string | null = null;
+
+    try {
+      tempId = `temp_${Date.now()}_${Math.random()}`;
+
+      const optimistic: GroupChatMessage = {
+        id: tempId,
+        group_chat_id: groupChatId,
         sender_id: user.id,
         content: trimmed,
-        type,
+        type: type as GroupChatMessage['type'],
         is_read: false,
-      })
-      .select(`*, sender:sender_id (*)`)
-      .maybeSingle();
+        created_at: new Date().toISOString(),
+      };
 
-    if (error) {
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      if (type === 'user') alert(`메시지 전송 실패: ${error.message}`);
-      return;
-    }
-    if (inserted) {
-      setMessages((prev) => prev.map((m) => (m.id === tempId ? (inserted as GroupChatMessage) : m)));
+      setMessages((prev) => [...prev, optimistic]);
+
+      if (type === 'user') {
+        setNewMessage('');
+      }
+
+      const { data: inserted, error } = await supabase
+        .from('court_group_chat_messages')
+        .insert({
+          group_chat_id: groupChatId,
+          sender_id: user.id,
+          content: trimmed,
+          type,
+          is_read: false,
+        })
+        .select(`*, sender:sender_id (*)`)
+        .maybeSingle();
+
+      if (error || !inserted) {
+        if (tempId) {
+          setMessages((prev) => prev.filter((message) => message.id !== tempId));
+        }
+
+        if (type === 'user') {
+          alert(`메시지 전송 실패: ${error?.message || '저장 결과를 확인할 수 없습니다.'}`);
+        }
+
+        return false;
+      }
+
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === tempId
+            ? (inserted as GroupChatMessage)
+            : message
+        )
+      );
+
+      return true;
+    } catch (error) {
+      console.error('그룹 메시지 전송 실패:', error);
+
+      if (tempId) {
+        setMessages((prev) => prev.filter((message) => message.id !== tempId));
+      }
+
+      if (type === 'user') {
+        alert('메시지 전송 중 오류가 발생했습니다.');
+      }
+
+      return false;
+    } finally {
+      if (shouldLockUserMessage) {
+        sendingMessageRef.current = false;
+      }
     }
   };
 
@@ -1458,7 +1506,13 @@ export default function GroupChatRoom() {
 
               const isMe = message.sender_id === user!.id;
               const senderProfile = message.sender as Profile | undefined;
-              const senderName = senderProfile?.name ?? '탈퇴한 사용자';
+              const senderUnavailable =
+                !senderProfile ||
+                senderProfile.name === '탈퇴한 사용자' ||
+                !!(senderProfile as Profile & { deleted_at?: string | null })?.deleted_at;
+              const senderName = senderUnavailable
+                ? '이용할 수 없는 사용자'
+                : senderProfile.name;
               const isBlocked = !isMe && message.sender_id ? blockedUserIds.includes(message.sender_id) : false;
 
               if (isBlocked && message.sender_id) {

@@ -831,6 +831,7 @@ const messagesEndRef = useRef<HTMLDivElement>(null);
 const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sendingMessageRef = useRef(false);
   const typingStateRef = useRef(false);
   const typingLastTrueTrackAtRef = useRef(0);
   const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -1448,35 +1449,6 @@ const channelKey = `${chatId}_${user.id}_${resumeTick}`;
             if (matchingTemp) {
               return prev.map((m) => (m.id === matchingTemp.id ? msg : m));
             }
-            if (msg.sender_id !== user.id && msg.type !== 'system') {
-              if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-              const showToastWithProfile = (prof: Profile | null) => {
-                const name = prof?.name ?? '';
-                setInAppToast({ name, content: msg.content });
-                toastTimeoutRef.current = setTimeout(() => setInAppToast(null), 3200);
-              };
-              setSenderProfiles((prev) => {
-                if (msg.sender_id) {
-                  const existing = prev[msg.sender_id];
-                  if (existing) {
-                    showToastWithProfile(existing);
-                    return prev;
-                  }
-                  supabase
-                    .from('profiles')
-                    .select('id, user_id, name, age, gender, photo_url, photo_urls, tennis_photo_url, experience, purpose, profile_completed, created_at, tennis_style, bio, mbti, height,activity_region')
-                    .eq('user_id', msg.sender_id)
-                    .maybeSingle()
-                    .then(({ data }) => {
-                      if (data) {
-                        setSenderProfiles((p) => ({ ...p, [data.user_id]: data as Profile }));
-                        showToastWithProfile(data as Profile);
-                      }
-                    });
-                }
-                return prev;
-              });
-            }
             return [...prev, msg];
           });
         }
@@ -1697,10 +1669,25 @@ const channelKey = `${chatId}_${user.id}_${resumeTick}`;
 
 const sendMessage = async (content: string, type: string = 'user', extraPayload?: Record<string, unknown>) => {
   const trimmed = content.trim();
-  const currentUser = await getCurrentUser();
+  const shouldLockUserMessage = type === 'user';
 
-  if (!trimmed || !currentUser || !chatId) return false;
- 
+  if (!trimmed || !chatId) return false;
+
+  if (shouldLockUserMessage && sendingMessageRef.current) {
+    return false;
+  }
+
+  if (shouldLockUserMessage) {
+    sendingMessageRef.current = true;
+  }
+
+  try {
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      return false;
+    }
+
     broadcastTyping(false);
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
@@ -1796,7 +1783,12 @@ console.log('[PUSH] send-push result:', JSON.stringify({
   setMessages((prev) => prev.map((m) => (m.id === tempId ? (inserted as Message) : m)));
 }
     return true;
-  };
+  } finally {
+    if (shouldLockUserMessage) {
+      sendingMessageRef.current = false;
+    }
+  }
+};
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -3103,8 +3095,9 @@ if (receiverProfile?.fcm_token) {
 
       {inAppToast && (
         <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl shadow-xl"
+          className="fixed left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl shadow-xl"
           style={{
+            top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
             background: isDating ? 'rgba(45,24,32,0.92)' : 'rgba(15,33,24,0.92)',
             backdropFilter: 'blur(12px)',
             border: '1px solid rgba(201,168,76,0.3)',
@@ -3607,11 +3600,15 @@ paddingBottom: '14px',
              const senderPhoto = senderProf
   ? (isDating ? (senderProf.photo_urls?.[0] ?? senderProf.photo_url) : senderProf.tennis_photo_url)
   : null;
-              const senderName = senderProf
-                ? ((senderProf as Profile & { tennis_name?: string }).tennis_name && !isDating
+              const senderUnavailable =
+                !senderProf ||
+                senderProf.name === '탈퇴한 사용자' ||
+                !!(senderProf as Profile & { deleted_at?: string | null })?.deleted_at;
+              const senderName = senderUnavailable
+                ? '이용할 수 없는 사용자'
+                : ((senderProf as Profile & { tennis_name?: string }).tennis_name && !isDating
                     ? (senderProf as Profile & { tennis_name?: string }).tennis_name!
-                    : senderProf.name)
-                : '탈퇴한 사용자';
+                    : senderProf.name);
               const showSenderName = isGroupChat && !isMe && msg.type !== 'system';
               const prevSenderId = prevMsg?.sender_id;
               const isFirstInGroup = isGroupChat && !isMe && prevSenderId !== msg.sender_id;

@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
-import { PushNotifications } from '@capacitor/push-notifications';
+import {
+  PushNotifications,
+  type PushNotificationSchema,
+} from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { FCM } from '@capacitor-community/fcm';
 import { supabase } from './lib/supabase';
 
@@ -9,9 +13,158 @@ let pushInitialized = false;
 let pushRegistering = false;
 let lastSavedToken: string | null = null;
 
+type NotificationData = Record<string, unknown>;
+
+const normalizeNotificationData = (value: unknown): NotificationData => {
+  if (!value || typeof value !== 'object') return {};
+  return value as NotificationData;
+};
+
+const readNotificationString = (
+  data: NotificationData,
+  keys: string[]
+): string | null => {
+  for (const key of keys) {
+    const value = data[key];
+
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return null;
+};
+
+const getNotificationChatId = (data: NotificationData): string | null =>
+  readNotificationString(data, [
+    'chatId',
+    'chat_id',
+    'groupChatId',
+    'group_chat_id',
+  ]);
+
+const getCurrentOpenChatId = (): string | null => {
+  const match = window.location.pathname.match(
+    /^\/(?:chat|group-chat|groupchat)\/([^/?#]+)/
+  );
+
+  return match?.[1] || null;
+};
+
+const createLocalNotificationId = (): number =>
+  Math.floor(Date.now() % 2_000_000_000);
+
 export default function PushNotificationBootstrap() {
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
+
+  const navigateFromNotificationData = (rawData: unknown) => {
+    const data = normalizeNotificationData(rawData);
+    const type = readNotificationString(data, ['type']);
+    const chatId = getNotificationChatId(data);
+
+    if (type === 'chat' && chatId) {
+      navigateRef.current(`/chat/${chatId}`);
+      return;
+    }
+
+    if (
+      type === 'meal_proposal' ||
+      type === 'application_accepted' ||
+      type === 'application_rejected' ||
+      type === 'match'
+    ) {
+      navigateRef.current('/applications');
+      return;
+    }
+
+    if (
+      (type === 'meal_proposal_accepted' ||
+        type === 'meal_proposal_rejected' ||
+        type === 'match_confirmed' ||
+        type === 'match_cancelled') &&
+      chatId
+    ) {
+      navigateRef.current(`/chat/${chatId}`);
+      return;
+    }
+
+    if (type === 'court') {
+      navigateRef.current('/home');
+    }
+  };
+
+  const ensureLocalNotificationPermission = async () => {
+    const current = await LocalNotifications.checkPermissions();
+
+    if (current.display === 'granted') {
+      return true;
+    }
+
+    if (
+      current.display === 'prompt' ||
+      current.display === 'prompt-with-rationale'
+    ) {
+      const requested = await LocalNotifications.requestPermissions();
+      return requested.display === 'granted';
+    }
+
+    return false;
+  };
+
+  const showForegroundNotification = async (
+    notification: PushNotificationSchema
+  ) => {
+    const data = normalizeNotificationData(notification.data);
+    const type = readNotificationString(data, ['type']);
+    const notificationChatId = getNotificationChatId(data);
+    const currentChatId = getCurrentOpenChatId();
+
+    if (
+      type === 'chat' &&
+      notificationChatId &&
+      currentChatId === notificationChatId
+    ) {
+      console.log(
+        '[PUSH] foreground same chat notification suppressed',
+        notificationChatId
+      );
+      return;
+    }
+
+    const permissionGranted = await ensureLocalNotificationPermission();
+
+    if (!permissionGranted) {
+      console.warn('[PUSH] local notification permission not granted');
+      return;
+    }
+
+    const title =
+      notification.title ||
+      readNotificationString(data, ['title', 'senderName', 'sender_name']) ||
+      '테니스미트';
+
+    const body =
+      notification.body ||
+      readNotificationString(data, ['body', 'message', 'content']) ||
+      '새 알림이 도착했습니다.';
+
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: createLocalNotificationId(),
+          title,
+          body,
+          extra: data,
+        },
+      ],
+    });
+
+    console.log('[PUSH] foreground local notification displayed', {
+      type,
+      notificationChatId,
+    });
+  };
 
   useEffect(() => {
     navigateRef.current = navigate;
@@ -120,45 +273,35 @@ export default function PushNotificationBootstrap() {
         console.error('[PUSH] registrationError', err);
       });
 
-      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        console.log('[PUSH RECEIVED]', notification);
-      });
+      await PushNotifications.addListener(
+        'pushNotificationReceived',
+        async (notification) => {
+          console.log('[PUSH RECEIVED]', notification);
 
-      await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-        const data = notification.notification.data;
-        const type = data?.type;
-        const chatId = data?.chatId;
-
-        if (type === 'chat' && chatId) {
-          navigateRef.current(`/chat/${chatId}`);
-          return;
+          try {
+            await showForegroundNotification(notification);
+          } catch (error) {
+            console.error(
+              '[PUSH] foreground notification handling failed',
+              error
+            );
+          }
         }
+      );
 
-        if (
-          type === 'meal_proposal' ||
-          type === 'application_accepted' ||
-          type === 'application_rejected' ||
-          type === 'match'
-        ) {
-          navigateRef.current('/applications');
-          return;
+      await PushNotifications.addListener(
+        'pushNotificationActionPerformed',
+        (notification) => {
+          navigateFromNotificationData(notification.notification.data);
         }
+      );
 
-        if (
-          (type === 'meal_proposal_accepted' ||
-            type === 'meal_proposal_rejected' ||
-            type === 'match_confirmed' ||
-            type === 'match_cancelled') &&
-          chatId
-        ) {
-          navigateRef.current(`/chat/${chatId}`);
-          return;
+      await LocalNotifications.addListener(
+        'localNotificationActionPerformed',
+        (notification) => {
+          navigateFromNotificationData(notification.notification.extra);
         }
-
-        if (type === 'court') {
-          navigateRef.current('/home');
-        }
-      });
+      );
 
       await registerAndSaveToken();
     };

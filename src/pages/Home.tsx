@@ -219,8 +219,10 @@ let query = supabase
   .from('courts')
   .select(COURT_FIELDS)
   .eq('purpose', purpose)
+  .eq('is_deleted', false)
+  .neq('status', 'deleted')
   .or(`delete_at.is.null,delete_at.gt.${now}`)
-.order('created_at', { ascending: false });
+  .order('created_at', { ascending: false });
       if (tab === 'mine') {
         query = query.eq('user_id', currentUser.id);
       }
@@ -737,11 +739,46 @@ if (hostProfile?.fcm_token) {
 
   const handleDeleteConfirm = async () => {
     if (!deleteConfirmId || !user) return;
+
+    const deletingCourtId = deleteConfirmId;
     setDeleteLoading(true);
-    const { error } = await supabase.from('courts').delete().eq('id', deleteConfirmId).eq('user_id', user.id);
-    setDeleteLoading(false);
-    setDeleteConfirmId(null);
-    if (!error) triggerRefresh();
+
+    try {
+      const { data, error } = await supabase
+        .from('courts')
+        .update({
+          status: 'deleted',
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_by: user.id,
+        })
+        .eq('id', deletingCourtId)
+        .eq('user_id', user.id)
+        .select('id')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!data?.id) {
+        alert('코트를 삭제하지 못했습니다. 다시 시도해주세요.');
+        return;
+      }
+
+      setCourts((prev) => prev.filter((court) => court.id !== deletingCourtId));
+
+      if (categoryTab) {
+        localStorage.removeItem(getCourtCacheKey(categoryTab, 'mine'));
+        localStorage.removeItem(getCourtCacheKey(categoryTab, 'others'));
+      }
+
+      setDeleteConfirmId(null);
+      triggerRefresh();
+    } catch (error) {
+      console.error('[Home] 코트 삭제 실패:', error);
+      alert('코트 삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleEdit = (court: Court) => {

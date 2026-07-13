@@ -293,6 +293,7 @@ export default function DatingPeopleList({
         .from('profiles')
         .select('user_id,name,age,gender,photo_url,photo_urls,dating_representative_photo_url,experience,mbti,height,activity_region,purpose,profile_completed,created_at')
         .eq('profile_completed', true)
+        .is('deleted_at', null)
         .in('gender', targetGenderValues)
         .neq('user_id', user.id)
         .not('age', 'is', null)
@@ -384,17 +385,40 @@ export default function DatingPeopleList({
   };
 
   const filteredPeople = useMemo(() => {
-    return people.filter((person) => {
-      const selectedRegion = regionFilter || '전체';
+    const selectedRegion = regionFilter || '전체';
+
+    const list = people.filter((person) => {
       const personRegion = String(person.activity_region || '').trim();
+
       if (selectedRegion !== '전체' && personRegion && personRegion !== selectedRegion) {
         return false;
       }
+
       return (
         isAgeMatched(person.age, ageFilter) &&
         isExperienceMatched(person.experience, experienceFilter)
       );
     });
+
+    if (selectedRegion === '전체') {
+      return list;
+    }
+
+    return list
+      .map((person, index) => ({ person, index }))
+      .sort((a, b) => {
+        const aRegion = String(a.person.activity_region || '').trim();
+        const bRegion = String(b.person.activity_region || '').trim();
+        const aMatched = aRegion === selectedRegion ? 1 : 0;
+        const bMatched = bRegion === selectedRegion ? 1 : 0;
+
+        if (aMatched !== bMatched) {
+          return bMatched - aMatched;
+        }
+
+        return a.index - b.index;
+      })
+      .map(({ person }) => person);
   }, [people, ageFilter, experienceFilter, regionFilter]);
 
   const isMaleUser = (gender?: string | null) => {

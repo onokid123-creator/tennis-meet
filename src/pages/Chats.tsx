@@ -1155,15 +1155,27 @@ function TennisChatRow({
   const hasUnread = (chat.unread_count ?? 0) > 0;
   const isGroup = !!chat.is_group;
   const isOtherBlocked = otherUser ? blockedIds.includes(otherUser.user_id) : false;
-  const maskedName = isOtherBlocked ? '알 수 없음' : (otherUser?.name ?? (isGroup ? '테니스 그룹' : '상대방 불러오는 중'));
+  const isOtherUnavailable = !!otherUser && (
+    otherUser.name === '탈퇴한 사용자' ||
+    !!(otherUser as Profile & { deleted_at?: string | null }).deleted_at
+  );
+  const maskedName = isOtherBlocked
+    ? '알 수 없음'
+    : isOtherUnavailable
+      ? '이용할 수 없는 사용자'
+      : (otherUser?.name ?? (isGroup ? '테니스 그룹' : '상대방 불러오는 중'));
   const maskedGroupTitle = isGroup && groupTitle
     ? groupTitle.split(', ').map((n) => {
         const match = groupParticipantPhotos?.find((p) => p.name === n);
-        return match && blockedIds.includes(match.user_id) ? '알 수 없음' : n;
+        if (match && blockedIds.includes(match.user_id)) return '알 수 없음';
+        if (n === '탈퇴한 사용자') return '이용할 수 없는 사용자';
+        return n;
       }).join(', ')
     : groupTitle;
   const displayName = maskedGroupTitle ?? maskedName;
-  const tennisPhoto = isOtherBlocked ? undefined : otherUser?.tennis_photo_url;
+  const tennisPhoto = isOtherBlocked || isOtherUnavailable
+    ? undefined
+    : otherUser?.tennis_photo_url;
 
   return (
     <button
@@ -1374,11 +1386,21 @@ function DatingChatRow({
   const hasUnread = (chat.unread_count ?? 0) > 0;
   const isGroup = !!chat.is_group;
   const isOtherBlocked = otherUser ? blockedIds.includes(otherUser.user_id) : false;
- const maskedName = isOtherBlocked ? '알 수 없음' : (otherUser?.name ?? (isGroup ? '설레는 만남 그룹' : '상대방 불러오는 중'));
+  const isOtherUnavailable = !!otherUser && (
+    otherUser.name === '탈퇴한 사용자' ||
+    !!(otherUser as Profile & { deleted_at?: string | null }).deleted_at
+  );
+  const maskedName = isOtherBlocked
+    ? '알 수 없음'
+    : isOtherUnavailable
+      ? '이용할 수 없는 사용자'
+      : (otherUser?.name ?? (isGroup ? '설레는 만남 그룹' : '상대방 불러오는 중'));
   const maskedGroupTitle = isGroup && groupTitle
     ? groupTitle.split(', ').map((n) => {
         const match = groupParticipantPhotos?.find((p) => p.name === n);
-        return match && blockedIds.includes(match.user_id) ? '알 수 없음' : n;
+        if (match && blockedIds.includes(match.user_id)) return '알 수 없음';
+        if (n === '탈퇴한 사용자') return '이용할 수 없는 사용자';
+        return n;
       }).join(', ')
     : groupTitle;
   const displayName = maskedGroupTitle ?? maskedName;
