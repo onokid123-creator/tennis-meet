@@ -266,29 +266,130 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: { data: { name, age, gender } },
     });
+
     if (error) {
       const msg = error.message.toLowerCase();
-      if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already'))
+
+      if (
+        msg.includes('already registered') ||
+        msg.includes('already exists') ||
+        msg.includes('user already')
+      ) {
         throw new Error('이미 가입된 이메일입니다. 로그인 화면에서 시도해주세요.');
-      if (msg.includes('password')) throw new Error('비밀번호는 6자 이상이어야 합니다.');
-      if (msg.includes('email')) throw new Error('올바른 이메일 형식이 아닙니다.');
+      }
+
+      if (msg.includes('password')) {
+        throw new Error('비밀번호는 6자 이상이어야 합니다.');
+      }
+
+      if (msg.includes('email')) {
+        throw new Error('올바른 이메일 형식이 아닙니다.');
+      }
+
       throw new Error(`회원가입에 실패했습니다: ${error.message}`);
     }
-    if (!data.user) throw new Error('회원가입 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
 
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .upsert(
-        { user_id: data.user.id, name, age, gender, profile_completed: false },
-        { onConflict: 'user_id' }
-      );
-    if (profileError && profileError.code !== '23505') {
-      console.error('[SignUp] profile upsert error:', profileError.message);
+    if (!data.user) {
+      throw new Error('회원가입 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
 
+    // Supabase 설정에 따라 기존 이메일 가입 시 오류 대신
+    // identities가 비어 있는 가짜 사용자 객체가 반환될 수 있다.
+    // 기존 계정의 user_id를 신규 가입에 절대 재사용하지 않는다.
+    if (data.user.identities?.length === 0) {
+      await supabase.auth.signOut();
+      clearProfileCache();
+      userRef.current = null;
+      setUser(null);
+      setProfile(null);
+
+      throw new Error(
+        '이미 가입되었거나 탈퇴한 이메일입니다. 기존 계정 복구는 고객센터에 문의해주세요.'
+      );
+    }
+
+    let signedInUser = data.session?.user ?? null;
+
+    if (!signedInUser) {
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+      if (signInError || !signInData.user) {
+        throw new Error(
+          '회원가입은 완료됐지만 로그인 세션을 만들지 못했습니다. 로그인 화면에서 다시 로그인해주세요.'
+        );
+      }
+
+      signedInUser = signInData.user;
+    }
+
+    const { data: deletedProfile, error: deletedProfileError } = await supabase
+      .from('profiles')
+      .select('user_id, deleted_at')
+      .eq('user_id', signedInUser.id)
+      .not('deleted_at', 'is', null)
+      .maybeSingle();
+
+    if (deletedProfileError) {
+      console.error('[SignUp] deleted profile check error:', deletedProfileError);
+      await supabase.auth.signOut();
+      throw new Error('회원 상태 확인에 실패했습니다. 다시 시도해주세요.');
+    }
+
+    if (deletedProfile) {
+      await supabase.auth.signOut();
+      clearProfileCache(signedInUser.id);
+      userRef.current = null;
+      setUser(null);
+      setProfile(null);
+
+      throw new Error(
+        '탈퇴한 계정입니다. 동일 이메일 계정 복구는 고객센터에 문의해주세요.'
+      );
+    }
+
+    const newProfile = {
+      user_id: signedInUser.id,
+      name,
+      age,
+      gender,
+      purpose: null,
+      profile_completed: false,
+    };
+
+    const { data: savedProfile, error: profileError } = await supabase
+      .from('profiles')
+      .upsert(newProfile, { onConflict: 'user_id' })
+      .select(PROFILE_FIELDS)
+      .single();
+
+    if (profileError || !savedProfile) {
+      console.error('[SignUp] profile upsert error:', profileError);
+      throw new Error('회원 프로필 생성에 실패했습니다. 다시 시도해주세요.');
+    }
+
+    clearProfileCache(signedInUser.id);
+    profileCache[signedInUser.id] = {
+      data: savedProfile as unknown as Profile,
+      ts: Date.now(),
+    };
+
+    userRef.current = signedInUser;
+    setUser(signedInUser);
+    setProfile(savedProfile as unknown as Profile);
+    setLoading(false);
+
     const pendingToken = localStorage.getItem('pending_fcm_token');
+
     if (pendingToken) {
-      await supabase.from('profiles').update({ fcm_token: pendingToken }).eq('user_id', data.user.id);
+      await supabase
+        .from('profiles')
+        .update({ fcm_token: pendingToken })
+        .eq('user_id', signedInUser.id);
+
       localStorage.removeItem('pending_fcm_token');
     }
   };

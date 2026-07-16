@@ -2588,6 +2588,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
 
   const renderPeopleApplicationCard = (item: DatingPeopleApplicationItem, direction: 'received' | 'sent') => {
     const member = direction === 'received' ? item.sender : item.receiver;
+    const memberRegion = String(member?.activity_region ?? '').trim();
     const personUnavailable =
       !member || Boolean((member as any)?.deleted_at);
 
@@ -2730,6 +2731,18 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
             </div>
 
             <div className="flex flex-wrap gap-1.5 mt-2">
+              {memberRegion && (
+                <span
+                  className="px-2 py-1 rounded-full text-[11px] font-semibold"
+                  style={{
+                    background: 'rgba(201,168,76,0.12)',
+                    color: '#8A6A18',
+                    border: '1px solid rgba(201,168,76,0.22)',
+                  }}
+                >
+                  {memberRegion}
+                </span>
+              )}
               {member?.experience && (
                 <span className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}>
                   구력: {member.experience}
@@ -3192,6 +3205,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
 
   const renderInterestCard = (item: CourtInterestItem) => {
     const member = item.user;
+    const memberRegion = String(member?.activity_region ?? '').trim();
     const court = item.court;
     const isSentInterest = interestDirectionTab === 'sent';
     const personUnavailable =
@@ -3292,7 +3306,7 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
                     </span>
                   )}
 
-                  {isSentInterest && !personUnavailable && (
+                  {!personUnavailable && (
                     <button
                       type="button"
                       onClick={(event) => {
@@ -3341,6 +3355,18 @@ const handlePurposeTabChange = (tab: PurposeTab) => {
               </div>
 
               <div className="flex flex-wrap gap-1.5 mb-2">
+                {memberRegion && (
+                  <span
+                    className="px-2 py-1 rounded-full text-[11px] font-semibold"
+                    style={{
+                      background: 'rgba(201,168,76,0.12)',
+                      color: '#8A6A18',
+                      border: '1px solid rgba(201,168,76,0.22)',
+                    }}
+                  >
+                    {memberRegion}
+                  </span>
+                )}
                 {member?.experience && (
                   <span className="px-2 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(31,61,42,0.06)', color: '#3D6B4E' }}>
                     구력: {member.experience}

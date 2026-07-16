@@ -20,6 +20,7 @@ type DatingPerson = {
   purpose?: string | null;
   profile_completed?: boolean | null;
   activity_region?: string | null;
+  is_subscribed?: boolean | null;
   created_at?: string | null;
 };
 
@@ -200,6 +201,10 @@ export default function DatingPeopleList({
   const [applicationTarget, setApplicationTarget] = useState<DatingPerson | null>(null);
   const [applicationMessage, setApplicationMessage] = useState('');
   const [applicationSubmitting, setApplicationSubmitting] = useState(false);
+  const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(new Set());
+  const [personMenuTarget, setPersonMenuTarget] = useState<DatingPerson | null>(null);
+  const [blockTarget, setBlockTarget] = useState<DatingPerson | null>(null);
+  const [blockSubmitting, setBlockSubmitting] = useState(false);
 
   const movePhotoViewer = (direction: 'prev' | 'next') => {
     setPhotoViewer((prev) => {
@@ -282,6 +287,36 @@ export default function DatingPeopleList({
       const myGender = latestProfile?.gender || profile?.gender;
       const targetGenderValues = getOppositeGenderValues(myGender);
 
+      const localBlockedRaw = localStorage.getItem('blocked_users');
+      let localBlockedIds: string[] = [];
+
+      try {
+        localBlockedIds = localBlockedRaw ? JSON.parse(localBlockedRaw) : [];
+      } catch {
+        localBlockedIds = [];
+      }
+
+      const [{ data: blockedByMeRows }, { data: blockedByOthersRows }] = await Promise.all([
+        supabase
+          .from('blocks')
+          .select('blocked_id')
+          .eq('blocker_id', user.id),
+        supabase
+          .from('blocks')
+          .select('blocker_id')
+          .eq('blocked_id', user.id),
+      ]);
+
+      const blockedByMeIds = (blockedByMeRows ?? []).map((row) => row.blocked_id);
+      const blockedByOthersIds = (blockedByOthersRows ?? []).map((row) => row.blocker_id);
+      const relationshipBlockedIds = new Set([
+        ...localBlockedIds,
+        ...blockedByMeIds,
+        ...blockedByOthersIds,
+      ]);
+
+      setBlockedUserIds(relationshipBlockedIds);
+
       if (targetGenderValues.length === 0) {
         setPeople([]);
         setError('성별 정보가 없어 회원 목록을 불러올 수 없습니다.');
@@ -291,7 +326,7 @@ export default function DatingPeopleList({
 
       const { data, error: peopleError } = await supabase
         .from('profiles')
-        .select('user_id,name,age,gender,photo_url,photo_urls,dating_representative_photo_url,experience,mbti,height,activity_region,purpose,profile_completed,created_at')
+        .select('user_id,name,age,gender,photo_url,photo_urls,dating_representative_photo_url,experience,mbti,height,activity_region,is_subscribed,purpose,profile_completed,created_at')
         .eq('profile_completed', true)
         .is('deleted_at', null)
         .in('gender', targetGenderValues)
@@ -317,7 +352,11 @@ export default function DatingPeopleList({
           return lower.includes('/dating-') || lower.includes('dating-');
         });
 
-        return photos.length > 0 && (hasDatingRepresentative || hasDatingNamedPhoto);
+        return (
+          !relationshipBlockedIds.has(candidate.user_id) &&
+          photos.length > 0 &&
+          (hasDatingRepresentative || hasDatingNamedPhoto)
+        );
       });
 
       const regionPeople = validPeople;
@@ -400,20 +439,35 @@ export default function DatingPeopleList({
       );
     });
 
-    if (selectedRegion === '전체') {
-      return list;
-    }
-
     return list
       .map((person, index) => ({ person, index }))
       .sort((a, b) => {
-        const aRegion = String(a.person.activity_region || '').trim();
-        const bRegion = String(b.person.activity_region || '').trim();
-        const aMatched = aRegion === selectedRegion ? 1 : 0;
-        const bMatched = bRegion === selectedRegion ? 1 : 0;
+        const getSubscribedMalePriority = (person: DatingPerson) => {
+          const gender = String(person.gender || '').trim().toLowerCase();
+          const isMale =
+            gender === '남성' ||
+            gender === '남자' ||
+            gender === 'male';
 
-        if (aMatched !== bMatched) {
-          return bMatched - aMatched;
+          return isMale && person.is_subscribed ? 1 : 0;
+        };
+
+        const aSubscribedMale = getSubscribedMalePriority(a.person);
+        const bSubscribedMale = getSubscribedMalePriority(b.person);
+
+        if (aSubscribedMale !== bSubscribedMale) {
+          return bSubscribedMale - aSubscribedMale;
+        }
+
+        if (selectedRegion !== '전체') {
+          const aRegion = String(a.person.activity_region || '').trim();
+          const bRegion = String(b.person.activity_region || '').trim();
+          const aMatched = aRegion === selectedRegion ? 1 : 0;
+          const bMatched = bRegion === selectedRegion ? 1 : 0;
+
+          if (aMatched !== bMatched) {
+            return bMatched - aMatched;
+          }
         }
 
         return a.index - b.index;
@@ -544,6 +598,97 @@ export default function DatingPeopleList({
     return false;
   };
 
+  const isRelationshipBlocked = async (targetUserId: string) => {
+    if (!user) return true;
+
+    if (blockedUserIds.has(targetUserId)) {
+      return true;
+    }
+
+    const [{ data: blockedByMe }, { data: blockedByOther }] = await Promise.all([
+      supabase
+        .from('blocks')
+        .select('id')
+        .eq('blocker_id', user.id)
+        .eq('blocked_id', targetUserId)
+        .maybeSingle(),
+      supabase
+        .from('blocks')
+        .select('id')
+        .eq('blocker_id', targetUserId)
+        .eq('blocked_id', user.id)
+        .maybeSingle(),
+    ]);
+
+    return Boolean(blockedByMe || blockedByOther);
+  };
+
+  const handleBlockConfirm = async () => {
+    if (!user || !blockTarget || blockSubmitting) return;
+
+    setBlockSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('blocks')
+        .upsert(
+          {
+            blocker_id: user.id,
+            blocked_id: blockTarget.user_id,
+          },
+          {
+            onConflict: 'blocker_id,blocked_id',
+            ignoreDuplicates: true,
+          }
+        );
+
+      if (error) throw error;
+
+      const localBlockedRaw = localStorage.getItem('blocked_users');
+      let localBlocked: string[] = [];
+
+      try {
+        localBlocked = localBlockedRaw ? JSON.parse(localBlockedRaw) : [];
+      } catch {
+        localBlocked = [];
+      }
+
+      const nextBlocked = Array.from(new Set([...localBlocked, blockTarget.user_id]));
+      localStorage.setItem('blocked_users', JSON.stringify(nextBlocked));
+
+      setBlockedUserIds((prev) => new Set(prev).add(blockTarget.user_id));
+      setPeople((prev) => prev.filter((person) => person.user_id !== blockTarget.user_id));
+      setSentInterestIds((prev) => {
+        const next = new Set(prev);
+        next.delete(blockTarget.user_id);
+        return next;
+      });
+      setPendingApplicationIds((prev) => {
+        const next = new Set(prev);
+        next.delete(blockTarget.user_id);
+        return next;
+      });
+
+      setPersonMenuTarget(null);
+      setBlockTarget(null);
+      alert('사용자를 차단했습니다.');
+    } catch (error) {
+      console.error('[DatingPeopleList] block user error:', {
+        message: (error as any)?.message,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint,
+        raw: error,
+      });
+
+      alert(
+        `사용자 차단에 실패했습니다.${(error as any)?.message ? `\n${(error as any).message}` : ''}`
+      );
+    } finally {
+      setBlockSubmitting(false);
+    }
+  };
+
   const handleSendInterest = async (person: DatingPerson) => {
     if (!user || processingPersonId) return;
 
@@ -555,6 +700,14 @@ export default function DatingPeopleList({
     setProcessingPersonId(person.user_id);
 
     try {
+      const relationshipBlocked = await isRelationshipBlocked(person.user_id);
+
+      if (relationshipBlocked) {
+        setPeople((prev) => prev.filter((item) => item.user_id !== person.user_id));
+        alert('이 사용자에게 관심을 보낼 수 없습니다.');
+        return;
+      }
+
       const canProceed = await consumeInterestTicketIfNeeded();
       if (!canProceed) return;
 
@@ -615,7 +768,15 @@ export default function DatingPeopleList({
     }
   };
 
-  const openApplicationPopup = (person: DatingPerson) => {
+  const openApplicationPopup = async (person: DatingPerson) => {
+    const relationshipBlocked = await isRelationshipBlocked(person.user_id);
+
+    if (relationshipBlocked) {
+      setPeople((prev) => prev.filter((item) => item.user_id !== person.user_id));
+      alert('이 사용자에게 신청을 보낼 수 없습니다.');
+      return;
+    }
+
     if (pendingApplicationIds.has(person.user_id)) {
       alert('이미 신청을 보낸 회원입니다.');
       return;
@@ -638,6 +799,18 @@ export default function DatingPeopleList({
     setProcessingPersonId(applicationTarget.user_id);
 
     try {
+      const relationshipBlocked = await isRelationshipBlocked(applicationTarget.user_id);
+
+      if (relationshipBlocked) {
+        setPeople((prev) =>
+          prev.filter((item) => item.user_id !== applicationTarget.user_id)
+        );
+        setApplicationTarget(null);
+        setApplicationMessage('');
+        alert('이 사용자에게 신청을 보낼 수 없습니다.');
+        return;
+      }
+
       const canProceed = await consumeApplicationTicketIfNeeded();
       if (!canProceed) return;
 
@@ -991,6 +1164,21 @@ export default function DatingPeopleList({
                         </p>
                       </div>
 
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setPersonMenuTarget(person);
+                        }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-xl font-bold shrink-0 active:scale-95"
+                        style={{
+                          color: '#3D6B4E',
+                          background: 'rgba(31,61,42,0.06)',
+                        }}
+                        aria-label="사용자 메뉴"
+                      >
+                        ⋮
+                      </button>
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 mt-2">
@@ -1041,6 +1229,103 @@ export default function DatingPeopleList({
           })}
         </div>
       )}
+      {personMenuTarget && (
+        <div
+          className="fixed inset-0 z-[10020] flex items-end justify-center"
+          style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setPersonMenuTarget(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl px-5 pt-4 pb-5"
+            style={{
+              background: '#FFFFFF',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 12px), 18px)',
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full mx-auto mb-4 bg-gray-200" />
+
+            <p className="text-base font-extrabold mb-4" style={{ color: '#1B4332' }}>
+              {personMenuTarget.name || '사용자'}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setBlockTarget(personMenuTarget);
+                setPersonMenuTarget(null);
+              }}
+              className="w-full py-3.5 rounded-xl text-sm font-bold text-left px-4"
+              style={{
+                color: '#DC2626',
+                background: 'rgba(239,68,68,0.07)',
+              }}
+            >
+              이 사용자 차단
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPersonMenuTarget(null)}
+              className="w-full py-3.5 rounded-xl text-sm font-bold mt-2"
+              style={{
+                color: '#374151',
+                background: '#F3F4F6',
+              }}
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+
+      {blockTarget && (
+        <div
+          className="fixed inset-0 z-[10030] flex items-center justify-center px-6"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+          onClick={() => {
+            if (!blockSubmitting) setBlockTarget(null);
+          }}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white px-5 py-6"
+            style={{ boxShadow: '0 18px 60px rgba(0,0,0,0.22)' }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-xl font-extrabold text-center mb-3" style={{ color: '#10251B' }}>
+              사용자를 차단할까요?
+            </h3>
+
+            <p className="text-sm text-center leading-6 mb-5" style={{ color: 'rgba(16,37,27,0.65)' }}>
+              {blockTarget.name || '이 사용자'}님은 사람 목록과 코트 게시물에서 보이지 않게 됩니다.
+              기존 채팅 내용은 유지됩니다.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={blockSubmitting}
+                onClick={() => setBlockTarget(null)}
+                className="h-12 rounded-xl text-sm font-bold disabled:opacity-60"
+                style={{ background: '#F3F4F6', color: '#374151' }}
+              >
+                취소
+              </button>
+
+              <button
+                type="button"
+                disabled={blockSubmitting}
+                onClick={handleBlockConfirm}
+                className="h-12 rounded-xl text-sm font-bold text-white disabled:opacity-60"
+                style={{ background: '#DC2626' }}
+              >
+                {blockSubmitting ? '차단 중...' : '차단하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {applicationTarget && (
         <div
           className="fixed inset-0 z-[10000] flex items-end justify-center"

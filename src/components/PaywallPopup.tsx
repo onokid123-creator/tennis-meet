@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { purchaseProduct } from '../lib/billing';
 
 type PaywallStep =
@@ -71,13 +72,19 @@ export default function PaywallPopup({
                 <p className="font-bold text-sm mb-2 text-[#4A1D1F]">💎 월 구독</p>
                 <p className="text-base font-bold mb-2">₩14,900 / 월</p>
                <p className="text-xs text-gray-500 mb-3 leading-5">
-  • 무제한 코트 신청
+  • 코트 신청 무제한
   <br />
-  • 우선 매칭
+  • 관심 신청 무제한
+  <br />
+  • 사람부터 구할래요에서 먼저 노출
+  <br />
+  • 더 많은 이성에게 프로필 노출
   <br />
   • 월간 자동 갱신 구독
   <br />
-  • Apple 계정 설정에서 언제든 해지 가능
+  • {Capacitor.getPlatform() === 'android'
+    ? 'Google Play 구독에서 언제든 해지 가능'
+    : 'App Store 구독에서 언제든 해지 가능'}
 </p>
 
 <p className="text-[11px] text-gray-400 text-center leading-5 mt-3">
@@ -184,13 +191,19 @@ export default function PaywallPopup({
           </p>
 
         <p className="text-xs text-gray-500 mb-3 leading-5">
-  • 무제한 코트 신청
+  • 코트 신청 무제한
   <br />
-  • 우선 매칭
+  • 관심 신청 무제한
+  <br />
+  • 사람부터 구할래요에서 먼저 노출
+  <br />
+  • 더 많은 이성에게 프로필 노출
   <br />
   • 월간 자동 갱신 구독
   <br />
-  • Apple 계정 설정에서 언제든 해지 가능
+  • {Capacitor.getPlatform() === 'android'
+    ? 'Google Play 구독에서 언제든 해지 가능'
+    : 'App Store 구독에서 언제든 해지 가능'}
 </p>
 
 <p className="text-[11px] text-gray-400 text-center leading-5 mt-3">

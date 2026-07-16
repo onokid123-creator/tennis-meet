@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, X, Check } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 type ModalType = 'terms' | 'privacy' | null;
 
@@ -161,6 +162,8 @@ export default function SignUp() {
   const [agreeAge, setAgreeAge] = useState(false);
   const [modal, setModal] = useState<ModalType>(null);
   const [toast, setToast] = useState('');
+  const [emailChecked, setEmailChecked] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
 
   const allAgreed = agreeTerms && agreePrivacy && agreeAge;
 
@@ -193,6 +196,55 @@ export default function SignUp() {
     setModal(null);
   };
 
+  const handleCheckEmail = async () => {
+    const email = formData.email.trim().toLowerCase();
+
+    if (!email) {
+      setEmailChecked(false);
+      showToast('이메일을 입력해주세요.');
+      return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      setEmailChecked(false);
+      showToast('올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+
+    if (emailChecking) return;
+
+    setEmailChecking(true);
+    setEmailChecked(false);
+
+    try {
+      const { data, error } = await supabase.rpc('check_email_available', {
+        p_email: email,
+      });
+
+      if (error) {
+        console.error('[SignUp] email availability error:', error);
+        showToast('이메일 확인에 실패했습니다.');
+        return;
+      }
+
+      if (data === true) {
+        setFormData((prev) => ({ ...prev, email }));
+        setEmailChecked(true);
+        showToast('사용 가능한 이메일입니다.');
+      } else {
+        setEmailChecked(false);
+        showToast('사용할 수 없는 이메일입니다.');
+      }
+    } catch (error) {
+      console.error('[SignUp] email availability exception:', error);
+      setEmailChecked(false);
+      showToast('이메일 확인에 실패했습니다.');
+    } finally {
+      setEmailChecking(false);
+    }
+  };
+
   const calculateAge = (birthdate: string) => {
     const today = new Date();
     const birth = new Date(birthdate);
@@ -204,6 +256,11 @@ export default function SignUp() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!emailChecked) {
+      showToast('이메일 중복확인을 해주세요.');
+      return;
+    }
+
     if (!agreeTerms || !agreePrivacy || !agreeAge) {
       showToast('이용약관, 개인정보처리방침 및 연령 확인에 동의해주세요.');
       return;
@@ -224,8 +281,8 @@ export default function SignUp() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       console.error('[SignUp Page] 회원가입 실패:', msg);
-      if (msg.includes('이미 가입된')) {
-        navigate('/purpose-selection');
+      if (msg.includes('이미 가입된') || msg.includes('탈퇴한 계정')) {
+        setError(msg);
         return;
       }
       setError(msg || '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.');
@@ -325,18 +382,46 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#1B4332' }}>이메일</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-                className="w-full px-4 py-3.5 focus:outline-none"
-                style={inputStyle('email')}
-                placeholder="example@email.com"
-                required
-              />
+              <label className="block text-sm font-medium mb-2" style={{ color: '#1B4332' }}>
+                이메일
+              </label>
+
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    setEmailChecked(false);
+                  }}
+                  onFocus={() => setFocusedField('email')}
+                  onBlur={() => setFocusedField(null)}
+                  className="flex-1 min-w-0 px-4 py-3.5 focus:outline-none"
+                  style={inputStyle('email')}
+                  placeholder="example@email.com"
+                  required
+                />
+
+                <button
+                  type="button"
+                  onClick={handleCheckEmail}
+                  disabled={emailChecking}
+                  className="flex-shrink-0 px-4 font-bold transition active:scale-95 disabled:opacity-60"
+                  style={{
+                    minWidth: 88,
+                    borderRadius: 14,
+                    fontSize: 13,
+                    background: emailChecked ? '#C9A84C' : '#1B4332',
+                    color: emailChecked ? '#1B4332' : '#fff',
+                  }}
+                >
+                  {emailChecking
+                    ? '확인 중'
+                    : emailChecked
+                      ? '확인 완료'
+                      : '중복확인'}
+                </button>
+              </div>
             </div>
 
             <div>

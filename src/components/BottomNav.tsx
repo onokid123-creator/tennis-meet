@@ -67,9 +67,10 @@ export default function BottomNav({ active }: BottomNavProps) {
         if (chatIds.length > 0) {
           const { data: messages, error: messagesError } = await supabase
             .from('messages')
-            .select('id,chat_id,sender_id,created_at')
+            .select('id,chat_id,sender_id,created_at,type')
             .in('chat_id', chatIds)
-            .neq('sender_id', user.id);
+            .neq('sender_id', user.id)
+            .or('type.is.null,type.neq.system');
 
           if (messagesError) {
             console.error('[BottomNav] unread messages failed', messagesError);

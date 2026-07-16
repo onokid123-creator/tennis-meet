@@ -1591,6 +1591,16 @@ const isSubscribed = profile?.is_subscribed ?? false;
 </button>
 
 <button
+  onClick={() => navigate('/blocked-users')}
+  className="w-full py-3 rounded-lg font-medium transition flex items-center justify-center gap-2 mb-2"
+  style={{ backgroundColor: '#E5E7EB', color: '#374151' }}
+  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#D1D5DB')}
+  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#E5E7EB')}
+>
+  차단한 사람
+</button>
+
+<button
   onClick={handleSignOut}
   className="w-full py-3 rounded-lg font-medium transition flex items-center justify-center gap-2"
   style={{ backgroundColor: '#E5E7EB', color: '#6B7280' }}

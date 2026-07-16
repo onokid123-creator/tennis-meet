@@ -15,7 +15,7 @@ export default function SubscriptionPopup({
   const cancelGuide =
     platform === 'android'
       ? 'Google Play 구독에서 언제든 해지 가능'
-      : 'Apple 계정 설정에서 언제든 해지 가능';
+      : 'App Store 구독에서 언제든 해지 가능';
 
   return (
     <div
@@ -44,6 +44,8 @@ export default function SubscriptionPopup({
             <p className="text-sm leading-relaxed text-gray-700 mb-4">
               · 코트 신청 무제한<br />
               · 관심 신청 무제한<br />
+              · 사람부터 구할래요에서 먼저 노출<br />
+              · 더 많은 이성에게 프로필 노출<br />
               · 월간 자동 갱신 구독<br />
               · {cancelGuide}
             </p>

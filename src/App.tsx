@@ -36,6 +36,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const TennisProfileSetup = lazy(() => import('./pages/TennisProfileSetup'));
 const DatingProfileSetup = lazy(() => import('./pages/DatingProfileSetup'));
 const InquiryPage = lazy(() => import('./pages/InquiryPage'));
+const BlockedUsers = lazy(() => import('./pages/BlockedUsers'));
 
 function LoadingScreen() {
   return (
@@ -320,6 +321,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <InquiryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/blocked-users"
+          element={
+            <ProtectedRoute>
+              <BlockedUsers />
             </ProtectedRoute>
           }
         />

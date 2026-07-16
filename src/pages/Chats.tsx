@@ -273,10 +273,11 @@ const [allMessagesRes, unreadMessagesRes, allGroupPartsRes] = await Promise.all(
 
   supabase
     .from('messages')
-    .select('id, chat_id')
+    .select('id, chat_id, type')
     .in('chat_id', directChatIds)
     .eq('is_read', false)
-    .neq('sender_id', currentUser.id),
+    .neq('sender_id', currentUser.id)
+    .or('type.is.null,type.neq.system'),
 
   supabase
     .from('chat_participants')
